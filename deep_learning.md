@@ -184,6 +184,14 @@ def OR(x1, x2):
 가중치는 w1과 w2는 각 입력 신호가 결과에 주는 영향력(중요도)을 조절하는 매개변수<br>
 편향은 뉴런이 얼마나 쉽게 활성화(결과로 1을 출력)하느냐를 조정하는 매개변수
 
+위의 단층 퍼셉트론을 그래프로 나타내면 다음과 같다.
+
+<img src="/images/AND_perceptron.png" width="600">
+
+<img src="/images/OR_perceptron.png" width="600">
+
+<img src="/images/NAND_perceptron.png" width="600">
+
 ## Limitations of Perceptrons
 
 우리는 지금까지 AND, OR, NAND 게이트를 구현했다. 이제 XOR 게이트를 구현해보자.<br>
