@@ -1,10 +1,10 @@
 # Theme settings
 doks:
     baseurl:
-    color_theme: # Available themes: blue (default), green, purple, red and yellow
+    color_theme: blue # Available themes: blue (default), green, purple, red and yellow
     header:
         logo:
-            text: Project name
+            text: InchanBaek Note
             image:
         nav:
             - item_name: Item 1
@@ -16,18 +16,16 @@ doks:
     footer:
         content:
             logo:
-                text: Project name
+                text: InchanBaek Note
                 image:
-            copyright: Copyright &copy; 2017. - Project name <br>All rights reserved.
+            copyright: Copyright &copy; 2017. - InchanBaek Note <br>All rights reserved.
         social_list:
-            - network_name: facebook
-              profile_url: '#'
-            - network_name: twitter
-              profile_url: '#'
+            - network_name: linkedin
+              profile_url: 'https://www.linkedin.com/in/inchan-baek-728197265/'
             - network_name: instagram
-              profile_url: '#'
+              profile_url: 'https://www.instagram.com/in_chanchan/'
             - network_name: youtube
-              profile_url: '#'
+              profile_url: 'https://www.youtube.com/@icb6048'
     google_analytics:
         tracking_code: # Add your Google Analytics tracking code to activate Google Analytics
     comments:
