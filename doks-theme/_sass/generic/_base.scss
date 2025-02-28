@@ -22,6 +22,20 @@ body {
 	line-height: $line-height-base;
 }
 
+/* Apply Korean font to Korean language pages */
+html[lang="ko"] body {
+	font-family: $font-family-korean;
+}
+
+html[lang="ko"] h1, 
+html[lang="ko"] h2, 
+html[lang="ko"] h3, 
+html[lang="ko"] h4, 
+html[lang="ko"] h5, 
+html[lang="ko"] h6 {
+	font-family: $font-family-korean;
+}
+
 /* ----- Everything ----- */
 * {
 	&,

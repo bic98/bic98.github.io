@@ -1,0 +1,19 @@
+/**
+ * Custom styles for Korean language support
+ */
+
+/* Apply NanumSquare font to Korean text */
+:lang(ko) {
+  font-family: 'NanumSquare', sans-serif;
+}
+
+/* Korean heading styles */
+h1:lang(ko), h2:lang(ko), h3:lang(ko), h4:lang(ko), h5:lang(ko), h6:lang(ko) {
+  font-family: 'NanumSquare', sans-serif;
+  font-weight: 700;
+}
+
+/* Korean paragraph styles */
+p:lang(ko) {
+  font-family: 'NanumSquare', sans-serif;
+}

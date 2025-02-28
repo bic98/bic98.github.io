@@ -28,9 +28,9 @@ grid_navigation:
     - title: Deep Learning
       excerpt: Deep Learning from scratch
       cta: Read more
-      url: '#'
+      url: 'deep_learning'
     - title: Reinforcement Learning
       excerpt: Reinforcement Learning from scratch
       cta: Read more
-      url: '#'
+      url: 'reinforce'
 ---
