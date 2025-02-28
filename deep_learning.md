@@ -123,7 +123,7 @@ def OR(x1, x2):
         return 1
 ``` 
 
-## Introducing Weights and Bias
+### Introducing Weights and Bias
 
 세타를 -b로 치환하면 다음과 같이 표현할 수 있다.<br>
 
@@ -139,7 +139,7 @@ $$
 여기서 b는 편향이라고 하며, w1과 w2는 가중치이다.
 
 
-## Implementing Weights and Bias
+### Implementing Weights and Bias
 
 넘파이를 이용해 가중치와 편향을 도입한 AND 게이트를 구현해보자.<br>
 그렇다면 왜 넘파이를 사용하는가? 넘파이를 사용하면 배열을 쉽게 다룰 수 있기 때문이다.<br>
@@ -211,7 +211,7 @@ XOR 게이트는 단층 퍼셉트론으로 구현할 수 없다.
 <b>이러한 한계를 해결하기 위해 다층 퍼셉트론을 사용한다.</b>
 </div>
 
-## Multi-Layer Perceptron
+### Multi-Layer Perceptron
 
 일단 XOR 게이트를 구현하려면 AND, NAND, OR 게이트를 조합해야 한다.<br>
 
