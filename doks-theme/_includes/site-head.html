@@ -13,3 +13,31 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@1.0/nanumsquare.css">
 <link rel="stylesheet" href="{% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}/doks-theme/assets/css/style.css">
 <link rel="stylesheet" href="{% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}/doks-theme/assets/css/custom.css">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+    
+    // Find all pre blocks with mermaid class and render them
+    document.querySelectorAll('pre code.language-mermaid').forEach(function(element) {
+      // Get the mermaid code
+      const mermaidCode = element.textContent;
+      
+      // Create a new div for the mermaid diagram
+      const newDiv = document.createElement('div');
+      newDiv.className = 'mermaid';
+      newDiv.textContent = mermaidCode;
+      
+      // Replace the pre element with the new div
+      const preElement = element.parentElement;
+      preElement.parentElement.replaceChild(newDiv, preElement);
+    });
+    
+    // Trigger mermaid render
+    mermaid.init();
+  });
+</script>

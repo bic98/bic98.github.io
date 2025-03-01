@@ -265,4 +265,107 @@ def XOR(x1, x2):
 
 위의 그림과 같이 다층구조의 퍼셉트론을 이용해 XOR 게이트를 구현할 수 있다.
 
+## From Perceptron to Neural Networks
+
+우리는 지금까지 퍼셉트론을 이용해 AND, OR, NAND, XOR 게이트를 구현했다.
+신경망은 가중치의 매개변수를 적절한 값으로 자동으로 학습하는 능력이다.
+
+### Examples of Neural Networks
+
+신경망은 입력층, 은닉층, 출력층으로 구성되어 있다.
+
+<div style="text-align: center;">
+    <div class="mermaid">
+    graph LR;
+        subgraph Input Layer
+            I1["input1"] 
+            I2["input2"]
+            I3["input3"]
+        end
+
+        subgraph Hidden Layer
+            H1["Hidden1"]
+            H2["Hidden2"]
+            H3["Hidden3"]
+        end
+
+        subgraph Output Layer
+            O1["output1"]
+            O2["output2"]
+        end
+
+        %% 가중치를 포함한 엣지 연결
+        I1 -- w1 --> H1
+        I2 -- w2 --> H1
+        I3 -- w3 --> H1
+        I1 -- w4 --> H2
+        I2 -- w5 --> H2
+        I3 -- w6 --> H2
+        I1 -- w7 --> H3
+        I2 -- w8 --> H3
+        I3 -- w9 --> H3
+
+        H1 -- w10 --> O1
+        H2 -- w11 --> O1
+        H3 -- w12 --> O1
+        H1 -- w13 --> O2
+        H2 -- w14 --> O2
+        H3 -- w15 --> O2
+    </div>
+</div>
+
+신경망은 위에서 볼 수 있듯이 가중치를 곱한 입력 신호의 총합이 활성화 함수를 거쳐 출력값을 내보낸다.
+가중치는 사람이 직접 설정하는 것이 아니라, 데이터를 학습하여 자동으로 설정된다. 이것이 신경망의 중요한 특징이다.
+
+
+
+
+
+### Emergence of Activation Functions
+
+신경망의 활성화 함수는 입력 신호의 총합을 출력 신호로 변환하는 함수이다.
+활성화 함수는 h(x)로 표현하며, 입력 신호의 총합이 활성화를 일으키는지를 정하는 역할을 한다.
+
+
+$$ y = h(b + w_1 x_1 + w_2 x_2) $$
+
+$$
+h(x) =
+\begin{cases} 
+0, & x \leq 0 \\
+1, & x > 0
+\end{cases}
+$$
+
+
+## Activation Functions
+### Sigmoid Function
+### Implementing a Step Function
+### Graph of the Step Function
+### Implementing the Sigmoid Function
+### Comparison of Sigmoid and Step Functions
+### Non-Linear Functions
+### ReLU Function
+
+## Computation with Multi-Dimensional Arrays
+### Multi-Dimensional Arrays
+### Matrix Multiplication
+### Matrix Multiplication in Neural Networks
+
+## Implementing a Three-Layer Neural Network
+### Notation Explanation
+### Implementing Signal Transmission in Each Layer
+### Implementation Summary
+
+## Designing the Output Layer
+### Implementing Identity and Softmax Functions
+### Considerations When Implementing the Softmax Function
+### Characteristics of the Softmax Function
+### Determining the Number of Neurons in the Output Layer
+
+## Handwritten Digit Recognition
+### MNIST Dataset
+### Inference Processing in Neural Networks
+### Batch Processing
+
 ---
