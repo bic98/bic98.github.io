@@ -31,7 +31,6 @@ page_nav:
 ---
 ## Introduction to AI
 This document summarizes key concepts from *Deep Learning from Scratch (Volume 1).*
-
 ## What is a Perceptron?
 <u>퍼셉트론</u>이란 무엇인가?<br>
 
@@ -329,6 +328,31 @@ def XOR(x1, x2):
 
 $$ y = h(b + w_1 x_1 + w_2 x_2) $$
 
+
+
+<div style="text-align: center;">
+    <div class="mermaid">
+    graph LR;
+        subgraph h_x
+            style h_x fill:#f9f9f9,stroke:#333,stroke-width:2px,rx:50,ry:50;
+            A[h]
+            Y[y]
+        end
+
+        X1[x₁] -- w₁ --> A[h]
+        X2[x₂] -- w₂ --> A[h]
+        B[b] -- b --> A[h]
+        A -- h(b + w1x1 + w2x2) --> Y[y]
+    </div>
+</div>
+
+위의 그림은 활성화 함수 처리 과정을 나타낸다.
+
+
+
+### step Function
+활성화 함수에 대해 알아보자. 먼저 계단 함수를 소개한다.
+
 $$
 h(x) =
 \begin{cases} 
@@ -337,20 +361,99 @@ h(x) =
 \end{cases}
 $$
 
+위의 활성화 함수는 계단 함수라고 한다. 계단 함수는 입력이 0을 넘으면 1을 출력하고, 그 외에는 0을 출력한다.
 
-## Activation Functions
+<div align="center">
+    <img src="/images/step_function.png" alt="step function" width="400">
+</div>
+
 ### Sigmoid Function
-### Implementing a Step Function
-### Graph of the Step Function
-### Implementing the Sigmoid Function
+
+두번째로 소개할 활성화 함수는 시그모이드 함수이다. 시그모이드 함수는 입력이 커지면 1에 가까워지고, 작아지면 0에 가까워진다.
+
+신경망에서는 활성화 함수로 시그모이드 함수를 이용해 신호를 변환하고, 그 변환된 신호를 다음 뉴런에 전달한다.
+$$ h(x) = \frac{1}{1 + \exp(-x)} $$
+
+
+<div align="center">
+    <img src="/images/sigmoid_function.png" alt="sigmoid function" width="400">
+</div>
 ### Comparison of Sigmoid and Step Functions
+두개의 활성화 함수를 비교해보자.
+시그모이드 함수는 곡선이며, 입력에 따라 출력이 연속적으로 변화한다. 반면 계단 함수는 0을 경계로 출력이 갑자기 변화한다.<br><br>
+두 활성화 함수의 공통점은 입력이 작을 때는 0에 가깝고, 입력이 커지면 1에 가까워진다는 것이다.
+또한 두 함수는 모두 비선형 함수이다.(선형함수의 예시 : f(x) = ax + b, 비선형함수의 예시 : f(x) = x^2)
+
 ### Non-Linear Functions
+
+왜 비선형 함수를 사용해야 하는가? 비선형 함수를 사용하지 않으면 신경망의 층을 깊게 하는 의미가 없어진다.
+선형함수의 문제는 다음과 같다. 층을 깊게 쌓아도 은닉층이 없는 네트워크로 표현할 수 있다.<br> <br>
+예를 들어, h(x) = cx라는 선형함수가 있다고 하자. 이 함수를 사용한 신경망은 y(x) = h(h(h(x)))로 표현할 수 있다. 이는 y(x) = c * c * c * x로 표현할 수 있으며, 이는 y(x) = ax로 표현할 수 있다. 따라서 선형함수를 사용하면 층을 깊게 쌓는 것이 의미가 없어진다.(a = c^3 으로 표현할 수 있기 때문)
+그래서 층을 쌓기 위해서는 비선형 함수를 사용해야 한다.
+
+
 ### ReLU Function
 
+신경망 분야에서는 최근에 ReLU 함수를 주로 사용한다. ReLU 함수는 입력이 0을 넘으면 그 입력을 그대로 출력하고, 0 이하이면 0을 출력한다.
+
+$$ h(x) = \max(0, x) $$
+
+<div align="center">
+    <img src="/images/relu_function.png" alt="relu function" width="400">
+</div>
+
+왜 시그모이드 함수 대신 ReLU 함수를 사용하는가? ReLU 함수는 시그모이드 함수보다 계산이 간단하다. 또한, 신경망의 학습 속도를 빠르게 하고, 효율적으로 학습할 수 있다.
+<br><br>
+어떻게 ReLU 함수가 학습 속도를 빠르게 하는가? 시그모이드 함수는 입력이 작을 때 기울기가 0에 가까워지는 문제가 있다. 이는 역전파에서 기울기가 사라지는 문제를 야기한다. 하지만 ReLU 함수는 입력이 0 이상이면 기울기가 1이므로, 역전파에서 기울기가 사라지는 문제를 해결할 수 있다. 기울기가 사라진다는 의미가 무엇인가? 기울기가 사라지면 가중치가 제대로 갱신되지 않는다는 의미이다. 따라서 ReLU 함수를 사용하면 학습 속도가 빨라진다.
+
 ## Computation with Multi-Dimensional Arrays
-### Multi-Dimensional Arrays
-### Matrix Multiplication
-### Matrix Multiplication in Neural Networks
+
+넘파이를 이용하면 다차원 배열을 쉽게 다룰 수 있다. 넘파이를 이용해 행렬의 곱셈을 계산해보자.
+
+-1차원 배열
+```python
+import numpy as np
+A = np.array([1, 2, 3, 4])
+print(A)
+# [1 2 3 4]
+```
+
+
+-2차원 배열
+```python
+B = np.array([[1, 2], [3, 4], [5, 6]])
+print(B)
+# [[1 2] [3 4] [5 6]]
+```
+
+-행렬의 곱셈
+```python
+C = np.dot(A, B)
+print(C)
+# [22 28]
+``` 
+행렬의 곱셈은 다음과 같이 계산된다.
+하지만 행렬의 곱셈은 행렬의 대응하는 차원의 원소 수가 일치해야 한다. 즉, 앞의 행렬의 열 수와 뒤의 행렬의 행 수가 일치해야 한다. 또한 행렬의 곱셈은 교환법칙이 성립하지 않는다.
+
+<div align="center">
+    <img src="/images/matrix_multiplication.png" alt="matrix multiplication" width="400">
+</div>
+<br>
+
+```python
+A = np.array([[1, 2], [3, 4]])
+B = np.array([[5, 6], [7, 8]])
+C = np.dot(A, B)
+print(C)
+# [[19 22] [43 50]]
+C = np.dot(B, A)
+print(C)
+# [[23 34] [31 46]]
+```
+
+
+
+
 
 ## Implementing a Three-Layer Neural Network
 ### Notation Explanation
