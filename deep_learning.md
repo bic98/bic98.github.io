@@ -457,11 +457,324 @@ print(C)
 
 
 ## Implementing a Three-Layer Neural Network
-### Notation Explanation
+
+이제 3층 신경망을 구현해보자. 이 신경망은 입력층, 은닉층, 출력층으로 구성되어 있다.
+
+<div style = "text-align: center;">
+    <div class="mermaid">
+        graph LR;
+    %% 입력층
+    X1["x₁"] --> H1
+    X1 --> H2
+    X1 --> H3
+    X2["x₂"] --> H1
+    X2 --> H2
+    X2 --> H3
+
+    subgraph Input
+        style Input fill:#add8e6,stroke:#333,stroke-width:2px,rx:20,ry:20;
+        X1["x₁"]
+        X2["x₂"]
+    end
+
+    %% 첫 번째 은닉층 (1층)
+    subgraph Hidden1
+        style Hidden1 fill:#f9f9f9,stroke:#333,stroke-width:2px,rx:20,ry:20; 
+        H1["●"]
+        H2["●"]
+        H3["●"]
+    end
+
+    %% 첫 번째 은닉층에서 두 번째 은닉층으로 연결
+    H1 --> I1
+    H1 --> I2
+    H2 --> I1
+    H2 --> I2
+    H3 --> I1
+    H3 --> I2
+
+    %% 두 번째 은닉층 (2층)
+    subgraph Hidden2
+        style Hidden2 fill:#f9f9f9,stroke:#333,stroke-width:2px,rx:20,ry:20;
+        I1["●"]
+        I2["●"]
+    end
+
+    %% 두 번째 은닉층에서 출력층으로 연결
+    I1 --> Y1["y₁"]
+    I1 --> Y2["y₂"]
+    I2 --> Y1
+    I2 --> Y2
+
+    %% 출력층
+    subgraph Output
+        style Output fill:#ffc0cb,stroke:#333,stroke-width:2px,rx:20,ry:20;
+        Y1["y₁"]
+        Y2["y₂"]
+    end
+
+    %% 스타일 적용
+    classDef neuron fill:#f9f9f9,stroke:#333,stroke-width:2px,radius:50%;
+    class X1,X2,H1,H2,H3,I1,I2,Y1,Y2 neuron;
+
+    </div>
+</div>
+
 ### Implementing Signal Transmission in Each Layer
-### Implementation Summary
+
+
+<div style="text-align: center;">
+    <div class="mermaid">
+        graph LR;
+    subgraph Input
+        style Input fill:#add8e6,stroke:#333,stroke-width:2px,rx:20,ry:20;
+        X1["x₁"]
+        X2["x₂"]
+    end
+    %% 입력층
+    B["1"] -->|b₁¹| A1
+    X1["x₁"] -->|w₁₁¹| A1
+    X1 -->|w₁₂¹| A2
+    X1 -->|w₁₃¹| A3
+    X2["x₂"] -->|w₂₁¹| A1
+    X2 -->|w₂₂¹| A2
+    X2 -->|w₂₃¹| A3
+
+    %% 첫 번째 은닉층 (1층)
+    subgraph Hidden1
+        style Hidden1 fill:#f9f9f9,stroke:#333,stroke-width:2px,rx:20,ry:20;
+        A1["a₁¹"]
+        A2["a₂¹"]
+        A3["a₃¹"]
+    end
+
+    %% 스타일 적용
+    classDef neuron fill:#f9f9f9,stroke:#333,stroke-width:2px,radius:50%;
+    class B,X1,X2,A1,A2,A3 neuron;
+
+    %% 강조 표시 (굵은 선)
+    linkStyle 0 stroke-width:3px;
+
+    </div>
+</div>
+
+
+1층 뉴런 $$a_1^{(1)}$$ 은 가중치를 곱한 신호 두 개와 편향을 합하여 계산한다
+
+$$
+a_1^{(1)} = w_{11}^{(1)} x_1 + w_{21}^{(1)} x_2 + b_1^{(1)}
+$$
+
+
+행렬의 곱을 이용하면 1층의 가중치 부분을 다음과 같이 간소화할 수 있다.
+
+$$
+A^{(1)} = X W^{(1)} + B^{(1)}
+$$
+
+이때 행렬 
+$$A^{(1)}, X, B^{(1)}, W^{(1)}$$
+는 각각 다음과 같다.
+
+$$
+A^{(1)} =
+\begin{bmatrix}
+a_1^{(1)} \\
+a_2^{(1)} \\
+a_3^{(1)}
+\end{bmatrix},
+\quad
+X =
+\begin{bmatrix}
+x_1 & x_2
+\end{bmatrix},
+\quad
+B^{(1)} =
+\begin{bmatrix}
+b_1^{(1)} \\
+b_2^{(1)} \\
+b_3^{(1)}
+\end{bmatrix}
+$$
+
+$$
+W^{(1)} =
+\begin{bmatrix}
+w_{11}^{(1)} & w_{12}^{(1)} & w_{13}^{(1)} \\
+w_{21}^{(1)} & w_{22}^{(1)} & w_{23}^{(1)}
+\end{bmatrix}
+$$
+
+입력층에서 1층으로의 신호 전달을 행렬의 곱으로 나타낼 수 있다.
+그렇게 나온 결과를 활성화 함수에 넣어 출력값을 계산한다.
+
+
+<div style="text-align: center;">
+    <div class="mermaid">
+        graph LR;
+
+            B["1"] -->|b₁¹| A1
+            X1["x₁"] -->|w₁₁¹| A1
+            X1 -->|w₁₂¹| A2
+            X1 -->|w₁₃¹| A3
+            X2["x₂"] -->|w₂₁¹| A1
+            X2 -->|w₂₂¹| A2
+            X2 -->|w₂₃¹| A3
+
+            A1["a₁¹"] -->|h| Z1["z₁¹"]
+            A2["a₂¹"] -->|h| Z2["z₂¹"]
+            A3["a₃¹"] -->|h| Z3["z₃¹"]
+
+        %% 스타일 적용
+        classDef neuron fill:#f9f9f9,stroke:#333,stroke-width:2px,radius:50%;
+        class B,X1,X2,A1,A2,A3,Z1,Z2,Z3 neuron;
+    </div>
+</div>
+
+
+왜 비선형 활성화함수의 출력값을 다음 레이어의 입력값으로 사용해야 하는지 알 수 있다. 만약 활성화 함수가 없다면, 신경망은 선형함수가 되어버린다. 즉, 층을 깊게 쌓는 것이 의미가 없어진다. 따라서 비선형 활성화 함수를 사용해야 한다. 또한 비선형 활성화 함수를 사용하면 신경망이 더 복잡한 문제를 풀 수 있다.
+
+
+<div style="text-align: center;">
+    <div class="mermaid">
+     graph LR
+    %% 입력층 (Input Layer)
+    subgraph Input["Input Layer"]
+        style Input fill:#add8e6,stroke:#333,stroke-width:2px,rx:20,ry:20;
+        X1["x₁"]
+        X2["x₂"]
+    end
+
+    %% 편향 뉴런 (Bias)
+    B1["1"] 
+    B2["1"] 
+    B3["1"] 
+
+    %% 1층 (Hidden Layer 1)
+    subgraph Hidden1["Hidden Layer 1"]
+        style Hidden1 fill:#f9f9f9,stroke:#333,stroke-width:2px,rx:20,ry:20;
+        A1["a₁¹"] -->|σ| Z1["z₁¹"]
+        A2["a₂¹"] -->|σ| Z2["z₂¹"]
+        A3["a₃¹"] -->|σ| Z3["z₃¹"]
+    end
+
+    %% 2층 (Hidden Layer 2)
+    subgraph Hidden2["Hidden Layer 2"]
+        style Hidden2 fill:#f9f9f9,stroke:#333,stroke-width:2px,rx:20,ry:20;
+        A4["a₁²"] -->|σ| Z4["z₁²"]
+        A5["a₂²"] -->|σ| Z5["z₂²"]
+    end
+
+    %% 출력층 (Output Layer)
+    subgraph Output["Output Layer"]
+        style Output fill:#ffc0cb,stroke:#333,stroke-width:2px,rx:20,ry:20;
+        A6["a₁³"] -->|σ| Y1["y₁"]
+        A7["a₂³"] -->|σ| Y2["y₂"]
+    end
+
+    %% 입력층 → 1층
+    X1 -->|w₁₁¹| A1
+    X1 -->|w₁₂¹| A2
+    X1 -->|w₁₃¹| A3
+    X2 -->|w₂₁¹| A1
+    X2 -->|w₂₂¹| A2
+    X2 -->|w₂₃¹| A3
+    B1 -->|b₁¹| A1
+    B1 -->|b₂¹| A2
+    B1 -->|b₃¹| A3
+
+    %% 1층 → 2층
+    Z1 -->|w₁₁²| A4
+    Z2 -->|w₂₁²| A4
+    Z3 -->|w₃₁²| A4
+    Z1 -->|w₁₂²| A5
+    Z2 -->|w₂₂²| A5
+    Z3 -->|w₃₂²| A5
+    B2 -->|b₁²| A4
+    B2 -->|b₂²| A5
+
+    %% 2층 → 출력층
+    Z4 -->|w₁₁³| A6
+    Z5 -->|w₂₁³| A6
+    Z4 -->|w₁₂³| A7
+    Z5 -->|w₂₂³| A7
+    B3 -->|b₁³| A6
+    B3 -->|b₂³| A7
+
+    %% 스타일 적용
+    classDef neuron fill:#f9f9f9,stroke:#333,stroke-width:2px,radius:50%;
+    class B1,B2,B3,X1,X2,A1,A2,A3,A4,A5,A6,A7,Z1,Z2,Z3,Z4,Z5,Y1,Y2 neuron;
+
+    %% 강조 표시 (굵은 선)
+    linkStyle 0 stroke-width:3px;
+    linkStyle 1 stroke-width:3px;
+    linkStyle 2 stroke-width:3px;   
+
+    </div>
+</div>
+
+
+위의 진행식을 파이썬으로 구현해보자.
+
+```python
+
+import numpy as np
+
+def init_network():
+    network = {
+        'W1': np.array([[0.1, 0.3, 0.5], [0.2, 0.4, 0.6]]),
+        'b1': np.array([0.1, 0.2, 0.3]),
+        'W2': np.array([[0.1, 0.4], [0.2, 0.5], [0.3, 0.6]]),
+        'b2': np.array([0.1, 0.2]),
+        'W3': np.array([[0.1, 0.3], [0.2, 0.4]]),
+        'b3': np.array([0.1, 0.2])
+    }
+    return network
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+def identity_function(x):
+    return x
+
+def forward(network, x):
+    W1, W2, W3 = network['W1'], network['W2'], network['W3']
+    b1, b2, b3 = network['b1'], network['b2'], network['b3']
+    
+    a1 = np.dot(x, W1) + b1
+    z1 = sigmoid(a1)
+    
+    a2 = np.dot(z1, W2) + b2
+    z2 = sigmoid(a2)
+    
+    a3 = np.dot(z2, W3) + b3
+    y = identity_function(a3)
+    
+    return y
+
+network = init_network()
+x = np.array([1.0, 0.5])
+y = forward(network, x)
+print(y)  # [0.31682708 0.69627909]
+```
+
 
 ## Designing the Output Layer
+
+가중치와 편향은 network 딕셔너리에 저장한다. 이 딕셔너리는 init_network 함수로 초기화한다.
+순전파는 forward 함수로 구현한다. 이 함수는 입력 신호를 출력으로 변환하는 처리 과정을 모두 구현한다.
+순전파 처리는 다음과 같다.
+1. 입력 신호를 1층의 가중치와 편향의 곱을 계산한다.
+2. 1층의 출력을 활성화 함수인 시그모이드 함수에 넣어 출력을 계산한다.
+3. 2층의 가중치와 편향의 곱을 계산한다.
+4. 2층의 출력을 활성화 함수인 시그모이드 함수에 넣어 출력을 계산한다.
+5. 3층의 가중치와 편향의 곱을 계산한다.
+6. 출력층의 출력을 활성화 함수인 항등 함수에 넣어 최종 출력을 계산한다.
+
+신경망은 분류와 회귀 문제에 모두 사용할 수 있다. 분류는 데이터가 어느 클래스에 속하는지를 구분하는 문제이다. 회귀는 입력 데이터에서 (연속적인) 수치를 예측하는 문제이다.
+ 
+일반적으로 분류에는 소프트맥스 함수를, 회귀에는 항등 함수를 사용한다.
+
 ### Implementing Identity and Softmax Functions
 ### Considerations When Implementing the Softmax Function
 ### Characteristics of the Softmax Function
