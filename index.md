@@ -33,4 +33,8 @@ grid_navigation:
       excerpt: Reinforcement Learning from scratch
       cta: Read more
       url: 'reinforce'
+    - title:  QGIS tutorial
+      excerpt: QGIS tutorial for beginners
+      cta: Read more
+      url: 'qgis'
 ---
