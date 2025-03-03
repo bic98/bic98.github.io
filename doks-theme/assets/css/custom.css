@@ -44,16 +44,16 @@ p:lang(ko) {
 }
 
 .hero-categories .category-btn {
-    margin-right: 5px;
-    margin-bottom: 5px;
-    font-size: 9px !important;
-    padding: 1px 6px !important;
+    margin-right: 8px;
+    margin-bottom: 8px;
+    font-size: 12px !important;
+    padding: 4px 10px !important;
     transition: all 0.2s ease;
     min-width: 0 !important;
     height: auto !important;
-    line-height: 1.2 !important;
-    border-radius: 2px !important;
-    transform: scale(0.9) !important;
+    line-height: 1.5 !important;
+    border-radius: 4px !important;
+    transform: scale(1) !important;
     transform-origin: left center;
 }
 
