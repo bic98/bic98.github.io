@@ -19,13 +19,13 @@ description: QGIS tutorial for beginners
 micro_nav: true
 
 # Page navigation
-page_nav:
-    prev:
-        content: Previous page
-        url: '/reinforce/'
-    next:
-        content: Next page
-        url: '/o3p/'
+# page_nav:
+#     prev:
+#         content: Previous page
+#         url: '/reinforce/'
+#     next:
+#         content: Next page
+#         url: '/o3p/'
 
 # Language setting
 ---

@@ -19,13 +19,6 @@ description: Optimized 3D Printing build plate for enhanced performance and effi
 micro_nav: true
 
 # Page navigation
-page_nav:
-    prev:
-        content: Previous page
-        url: '/qgis/'
-    next:
-        content: Next page
-        url: '/'
 
 # Language setting
 ---

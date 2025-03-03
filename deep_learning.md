@@ -19,13 +19,13 @@ description: A collection of deep learning basics.
 micro_nav: true
 
 # Page navigation
-page_nav:
-    prev:
-        content: Previous page
-        url: '/'
-    next:
-        content: Next page
-        url: '/reinforce/'
+# page_nav:
+#     prev:
+#         content: Previous page
+#         url: '/'
+#     next:
+#         content: Next page
+#         url: '/reinforce/'
 
 # Language setting
 ---

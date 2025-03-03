@@ -19,13 +19,13 @@ description: Reinforcement Learning from scratch
 micro_nav: true
 
 # Page navigation
-page_nav:
-    prev:
-        content: Previous page
-        url: '/deep_learning/'
-    next:
-        content: Next page
-        url: '/qgis/'
+# page_nav:
+#     prev:
+#         content: Previous page
+#         url: '/deep_learning/'
+#     next:
+#         content: Next page
+#         url: '/qgis/'
 
 
 # Language setting
