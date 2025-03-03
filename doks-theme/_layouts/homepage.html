@@ -29,6 +29,16 @@
 									</a>
 									{% endif %}
 								{% endfor %}
+								
+								{% if page.categories %}
+								<div class="hero-categories" style="margin-top: 18px; margin-left: -2px;">
+									{% for category in page.categories %}
+										<a href="#" class="btn btn--dark btn--rounded category-btn {% if category.active %}active{% endif %}" data-category="{{ category.name }}">
+											{{ category.name }}
+										</a>
+									{% endfor %}
+								</div>
+								{% endif %}
 							</div><!-- /.align-inner -->
 						</div><!-- /.align-container -->
 					</div><!-- /.col -->
@@ -59,6 +69,7 @@
 				</div><!-- /.row -->
 			</div><!-- /.container -->
 		</div><!-- /.hero-subheader -->
+		
 		{% if page.grid_navigation %}
 			<div class="section section--darker-theme-color-bg">
 				<div class="container">
@@ -67,7 +78,7 @@
 							<div class="nav-grid nav-grid--out">
 								<div class="row">
 									{% for item in page.grid_navigation %}
-										<div class="col-sm-6 col-lg-4">
+										<div class="col-sm-6 col-lg-4 grid-item" data-category="{{ item.category }}">
 											<a href="{% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}{{ item.url }}" class="nav-grid__item">
 												<div class="nav-grid__content" data-mh>
 													<h2 class="nav-grid__title">{{ item.title }}</h2>
@@ -87,6 +98,79 @@
 				</div><!-- /.container -->
 			</div><!-- /.section -->
 		{% endif %}
+		
 		{% include site-footer.html %}
+		
+		{% if page.categories %}
+		<script>
+			document.addEventListener('DOMContentLoaded', function() {
+				// Get all category links and grid items
+				const categoryLinks = document.querySelectorAll('.category-btn');
+				const gridItems = document.querySelectorAll('.grid-item');
+				
+				// Initialize all items as visible
+				gridItems.forEach(item => {
+					item.classList.add('visible');
+				});
+				
+				// Add click event listener to each category link
+				categoryLinks.forEach(link => {
+					link.addEventListener('click', function(e) {
+						e.preventDefault();
+						
+						// Simple click effect
+						this.style.transform = 'scale(0.97)';
+						setTimeout(() => {
+							this.style.transform = '';
+						}, 150);
+						
+						// Remove active class from all links - sync selection across all category links
+						const selectedCategory = this.getAttribute('data-category');
+						categoryLinks.forEach(l => {
+							if (l.getAttribute('data-category') === selectedCategory) {
+								l.classList.add('active');
+							} else {
+								l.classList.remove('active');
+							}
+						});
+						
+						// Animate grid items based on category
+						gridItems.forEach(item => {
+							const itemCategory = item.getAttribute('data-category');
+							
+							if (selectedCategory === 'All' || selectedCategory === itemCategory) {
+								// First remove hidden class if it exists
+								item.classList.remove('hidden');
+								// Short delay before adding visible class for smoother animation
+								setTimeout(() => {
+									item.classList.add('visible');
+									item.style.display = 'block';
+								}, 50);
+							} else {
+								// First remove visible class
+								item.classList.remove('visible');
+								item.classList.add('hidden');
+								// Hide after animation completes
+								setTimeout(() => {
+									item.style.display = 'none';
+								}, 400); // Match the transition duration from CSS
+							}
+						});
+						
+						// Smooth scroll to grid section if clicked from hero section
+						if (this.closest('.hero-categories')) {
+							const gridSection = document.querySelector('.section--darker-theme-color-bg');
+							if (gridSection) {
+								window.scrollTo({
+									top: gridSection.offsetTop - 50,
+									behavior: 'smooth'
+								});
+							}
+						}
+					});
+				});
+			});
+		</script>
+		{% endif %}
 	</body>
 </html>

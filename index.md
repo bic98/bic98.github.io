@@ -12,10 +12,10 @@ buttons:
     # - content: Button
     #   url: '#'
     #   external_url: false
-    - icon: github
-      content: GitHub  
-      url: 'https://github.com/bic98'
-      external_url: true
+    # - icon: github
+    #   content: GitHub  
+    #   url: 'https://github.com/bic98
+    #   external_url: true
 
 # Author box
 author:
@@ -30,16 +30,28 @@ grid_navigation:
       excerpt: Deep Learning from scratch
       cta: Read more
       url: 'deep_learning'
+      category: AI
     - title: Reinforcement Learning
       excerpt: Reinforcement Learning from scratch
       cta: Read more
       url: 'reinforce'
+      category: AI
     - title:  QGIS tutorial
       excerpt: QGIS tutorial for beginners
       cta: Read more
       url: 'qgis'
+      category: GIS
     - title: Optimized 3D Printing
       excerpt: Optimized 3D Printing build plate for enhanced performance and efficiency
       cta: Read more
       url: 'o3p'
+      category: APP
+
+# Categories for navigation
+categories:
+    - name: All
+      active: true
+    - name: AI
+    - name: GIS
+    - name: APP
 ---
