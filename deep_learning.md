@@ -583,19 +583,29 @@ a_1^{(1)} \\
 a_2^{(1)} \\
 a_3^{(1)}
 \end{bmatrix},
-\quad
+$$
+
+<br>
+
+$$
 X =
 \begin{bmatrix}
 x_1 & x_2
 \end{bmatrix},
-\quad
+$$
+
+<br>
+
+$$
 B^{(1)} =
 \begin{bmatrix}
 b_1^{(1)} \\
 b_2^{(1)} \\
 b_3^{(1)}
-\end{bmatrix}
+\end{bmatrix},
 $$
+
+<br>
 
 $$
 W^{(1)} =
@@ -776,13 +786,105 @@ print(y)  # [0.31682708 0.69627909]
 일반적으로 분류에는 소프트맥스 함수를, 회귀에는 항등 함수를 사용한다.
 
 ### Implementing Identity and Softmax Functions
+
+**항등함수**는 입력을 그대로 출력한다. 즉, 입력이 1이면 출력도 1이다. 항등 함수는 회귀 문제에 사용된다. 회귀 문제는 입력 데이터에서 연속적인 수치를 예측하는 문제이다. 예를 들어, 입력 데이터에서 주택 가격을 예측하는 문제가 있다. 이때 출력층의 활성화 함수로 항등 함수를 사용한다.
+
+<div style = "text-align: center;">
+    <div class="mermaid">
+        graph LR;
+            A6["a₁³"] -->|σ| Y1["y₁"]
+            A7["a₂³"] -->|σ| Y2["y₂"]
+    </div>
+</div>
+<br>
+<br>
+**소프트맥스 함수**는 다음과 같이 정의된다.
+
+$$
+y_k = \frac{\exp(a_k)}{\sum_{i=1}^{n} \exp(a_i)}
+$$
+
+```python
+def softmax(a):
+    exp_a = np.exp(a)
+    sum_exp_a = np.sum(exp_a)
+    y = exp_a / sum_exp_a
+    return y
+```
+
+
+n은 출력층의 뉴런 수이다. 소프트맥스 함수는 출력층의 각 뉴런이 모든 입력 신호에서 영향을 받는다. 이때 소프트맥스 함수의 출력은 0에서 1.0 사이의 실수이며, 출력의 총합은 1이다. 이는 확률로 해석할 수 있다. 즉, 소프트맥스 함수를 이용해 문제를 확률적(통계적)으로 대응할 수 있다.
+
+<div style = "text-align: center;">
+    <div class="mermaid">
+graph LR;
+    A1["a₁"] -->|σ| Y1["y₁"]
+    A1 --> Y2
+    A1 --> Y3
+    A2["a₂"] -->|σ| Y2["y₂"]
+    A2 --> Y1
+    A2 --> Y3
+    A3["a₃"] -->|σ| Y3["y₃"]
+    A3 --> Y1
+    A3 --> Y2
+            
+    </div>
+</div>
+
+
+
+
 ### Considerations When Implementing the Softmax Function
+
+exp(x)에 만약 큰 값이 들어가면 오버플로 문제가 발생할 수 있다. 이를 해결하기 위해 소프트맥스 함수를 다음과 같이 수정할 수 있다.
+
+
+```python
+a = np.array([1010, 1000, 990])
+```
+
+이라면, exp(1010)은 너무 큰 값이므로 오버플로 문제가 발생한다. 이를 해결하기 위해 C를 빼주면 다음과 같다.
+<br>
+
+지수함수의 성질을 이용하여 오버플로 문제를 해결할 수 있다. 지수함수는 단조증가 함수이므로, 지수함수에 어떤 값을 더하거나 빼도 함수의 형태는 변하지 않는다. 따라서 입력 신호 중 최댓값을 빼주어 오버플로 문제를 해결할 수 있다.
+<br>
+
+
+$$
+y_k = \frac{\exp(a_k - C)}{\sum_{i=1}^{n} \exp(a_i - C)}
+$$
+
+<br>
+
+
+```python
+c = np.max(a)
+exp_a = np.exp(a - c)
+exp_a / np.sum(exp_a)
+# [9.99954600e-01 4.53978686e-05 2.06106005e-09]
+```
+C는 입력 신호 중 최댓값이다. 이를 이용해 소프트맥스 함수를 구현해보자.
+
+```python
+def softmax(a):
+    c = np.max(a)
+    exp_a = np.exp(a - c)
+    sum_exp_a = np.sum(exp_a)
+    y = exp_a / sum_exp_a
+    return y
+```
+
 ### Characteristics of the Softmax Function
+
+소프트맥스 함수의 특징은 모든 출력이 0에서 1.0 사이의 실수이며, 출력의 총합은 1이라는 것이다. 이는 소프트맥스 함수의 출력을 '확률'로 해석할 수 있다. 즉, 소프트맥스 함수를 이용해 문제를 확률적(통계적)으로 대응할 수 있다.
+<br>
+<br>
+하지만 소프트맥스 함수를 사용하지 않고 출력층의 각 뉴런의 출력값 중 가장 큰 값을 선택해도 결과는 같다. 이는 신경망의 출력이 가장 큰 뉴런에 해당하는 클래스로만 인식한다는 것이다. 이를 '단일 뉴런의 출력'이라고 한다.현업에서도 지수함수 계산에 드는 자원 낭비를 줄이기 위해 출력층의 소프트맥스 함수는 생략하는 경우가 많다. 이때는 출력층의 뉴런 중에서 가장 큰 값을 선택하면 된다.
+
 ### Determining the Number of Neurons in the Output Layer
 
-## Handwritten Digit Recognition
-### MNIST Dataset
-### Inference Processing in Neural Networks
-### Batch Processing
+출력층의 뉴런 수는 문제에 따라 다른다. 예를 들어, 손글씨 숫자 인식에서는 10개의 숫자(0에서 9)를 구분해야 하므로 출력층의 뉴런 수는 10개이다. 이때 소프트맥스 함수를 이용해 출력층의 출력을 계산한다. 소프트맥스 함수의 출력은 각 클래스에 대응하는 확률로 해석할 수 있다. 즉, 소프트맥스 함수를 이용해 문제를 확률적(통계적)으로 대응할 수 있다.
+
+
 
 ---
