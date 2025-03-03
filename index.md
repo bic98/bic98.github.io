@@ -37,4 +37,8 @@ grid_navigation:
       excerpt: QGIS tutorial for beginners
       cta: Read more
       url: 'qgis'
+    - title: Optimized 3D Printing
+      excerpt: Optimized 3D Printing build plate for enhanced performance and efficiency
+      cta: Read more
+      url: 'o3p'
 ---

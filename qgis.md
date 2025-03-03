@@ -2,7 +2,7 @@
 # Page settings
 layout: default
 keywords:
-comments: false
+comments: true
 
 # Hero section
 title: QGIS tutorial
@@ -25,7 +25,7 @@ page_nav:
         url: '/reinforce/'
     next:
         content: Next page
-        url: '/'
+        url: '/o3p/'
 
 # Language setting
 ---

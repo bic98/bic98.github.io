@@ -5,8 +5,8 @@ keywords:
 comments: false
 
 # Hero section
-title: 강화학습 기초
-description: 강화학습의 기초 개념과 알고리즘에 대한 정리
+title: Reinforcement Learning
+description: Reinforcement Learning from scratch
 
 # # Author box
 # author:
@@ -25,10 +25,10 @@ page_nav:
         url: '/deep_learning/'
     next:
         content: Next page
-        url: '/'
+        url: '/qgis/'
+
 
 # Language setting
-lang: ko
 ---
 
 Write your markdown here ...
