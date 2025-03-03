@@ -2,6 +2,7 @@
 # Page settings
 layout: homepage
 keywords: AI, Architecture, Technology, Research
+comments: true
 
 # Hero section
 title: InchanBaek Note
