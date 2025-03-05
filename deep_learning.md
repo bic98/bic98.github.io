@@ -959,12 +959,155 @@ E = - \sum_{k} t_k \log y_k
 $$
 
 여기서 $$y_k$$는 신경망의 출력, $$t_k$$는 정답 레이블, k는 데이터의 차원 수를 나타낸다.
+교차 엔트로피의 성질은 정답일 때의 출력이 전체 값을 정하게 된다. 
 
-평균제곱 오차를 사용해야하는 경우는 예를 들어, 확률
+$$
+y = log(x)
+$$
 
-- Mini-Batch Learning
-- Implementing Batch Cross-Entropy Loss
-- Why Define a Loss Function?
+<div align="center">
+    <img src="/images/log_function.png" alt="log" width="400">
+</div>
+
+
+의 그래프를 보면 x가 1일때, y는 0이 되고, x가 0에 가까워질수록 y는음의 무한대로 커진다. 따라서 정답일 때의 출력이 전체 값을 정하게 된다.
+
+```python
+def cross_entropy_error(y, t):
+    delta = 1e-7
+    return -np.sum(t * np.log(y + delta))
+```
+
+delta의 값을 더하는 이유는 np.log() 함수에 0을 입력하면 마이너스 무한대를 뜻하는 -inf가 되어 더 이상 계산을 진행할 수 없기 때문이다. 따라서 아주 작은 값을 더해준다.
+
+예를 들어,
+```python
+y = np.array([0.1, 0.05, 0.6, 0.0, 0.05, 0.1, 0.0, 0.1, 0.0, 0.0])
+t = np.array([0, 0, 1, 0, 0, 0, 0, 0, 0, 0])
+cross_entropy_error(y, t)
+# 0.510825457099338
+```
+
+```python
+y = np.array([0.1, 0.05, 0.1, 0.0, 0.05, 0.1, 0.0, 0.6, 0.0, 0.0])
+cross_entropy_error(y, t)
+# 2.302584092994546
+``` 
+
+첫번째는 정답일 때의 출력이 0.6이고, 두번째는 0.1이다. 따라서 첫번째의 오차가 더 작다.
+즉, 정답을 2라고 추정할 수 있다. 
+
+### Mini-Batch Learning
+
+훈련데이터에 대한 손실함수의 값을 구하고, 이 값을 최대한 줄여주는 가중치 매개변수를 찾는 것이다. 이때 손실함수의 값을 가장 작게 만드는 가중치 매개변수를 찾는 것이 목표이다.
+
+$$
+E = -\frac{1}{N} \sum_{n} \sum_{k} t_{nk} \log y_{nk}
+$$
+
+여기서 N은 데이터의 개수이다. 이때 손실함수의 값을 가장 작게 만드는 가중치 매개변수를 찾는 것이 목표이다.
+N으로 나누어 정규화한다. N으로 나눔으로써 "평균 손실함수"를 구할 수 있다. 이는 데이터 개수와 관계없이 통일된 지표를 얻을 수 있다.
+
+모든 데이터를 대상으로 손실함수의 합을 구하면 시간이 오래 걸린다. 따라서 데이터 일부를 추려 전체의 근사치로 이용할 수 있다. 이를 **미니배치 학습**이라고 한다.
+
+
+먼저 케라스에 있는 데이터 셋을 가지고와서 데이터를 가공해보자. 
+
+```python
+import tensorflow as tf
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras.utils import to_categorical
+
+# MNIST 데이터 불러오기
+(x_train, t_train), (x_test, t_test) = mnist.load_data()
+
+print("훈련 데이터 크기:", x_train.shape)  # (60000, 28, 28)
+print("훈련 라벨 크기:", t_train.shape)  # (60000,)
+print("테스트 데이터 크기:", x_test.shape)  # (10000, 28, 28)
+print("테스트 라벨 크기:", t_test.shape)  # (10000,)
+
+x_train = x_train.reshape(-1, 28*28)  # (60000, 784)
+x_test = x_test.reshape(-1, 28*28)    # (10000, 784)
+print("Flatten 후 훈련 데이터 크기:", x_train.shape)  # (60000, 784)
+
+t_train = to_categorical(t_train, num_classes=10)
+t_test = to_categorical(t_test, num_classes=10)
+print("One-hot 변환 후 레이블 크기:", t_train.shape)  # (60000, 10)
+``` 
+
+x_train에서 10개의 데이터를 무작위로 추출해보자.
+
+```python
+train_size = x_train.shape[0]
+batch_size = 10
+batch_mask = np.random.choice(train_size, batch_size)
+x_batch = x_train[batch_mask]
+t_batch = t_train[batch_mask]
+```
+
+np.random.choice(a, b)는 0 이상 a 미만의 수 중에서 무작위로 b개를 골라낸다. 이를 이용해 미니배치를 뽑아낼 수 있다.
+
+
+```python
+np.random.choice(60000, 10)
+# array([8013, 1232, 8549, 12334, 9815, 123,  456,  789,  1234, 5678])
+```
+
+원-핫 인코딩으로 변환된 정답 레이블을 사용할 경우
+
+```python
+def cross_entropy_error(y, t):
+    if y.ndim == 1:
+        t = t.reshape(1, t.size)
+        y = y.reshape(1, y.size)
+        
+    batch_size = y.shape[0]
+    return -np.sum(t * np.log(y + 1e-7)) / batch_size
+```
+
+ 2, 7등의 레이블로 주어진 경우는 아래의 코드를 사용한다. 
+
+```python
+def cross_entropy_error(y, t):
+    if y.ndim == 1:
+        t = t.reshape(1, t.size)
+        y = y.reshape(1, y.size)
+        
+    batch_size = y.shape[0]
+    return -np.sum(np.log(y[np.arange(batch_size), t] + 1e-7)) / batch_size
+```
+
+```python
+# 예측 확률 분포 (3개의 샘플, 4개의 클래스)
+y = np.array([
+    [0.1, 0.3, 0.4, 0.2],  # 첫 번째 샘플의 확률 분포
+    [0.3, 0.2, 0.5, 0.0],  # 두 번째 샘플의 확률 분포
+    [0.25, 0.25, 0.25, 0.25]  # 세 번째 샘플의 확률 분포
+])
+
+# 정답 레이블 (정수형, 각 샘플의 정답 클래스 인덱스)
+t = np.array([2, 0, 3])  # 첫 번째 샘플은 클래스 2, 두 번째 샘플은 클래스 0, 세 번째 샘플은 클래스 3
+
+# np.arange를 사용하여 정답 클래스의 확률값을 가져오기
+batch_size = y.shape[0]
+selected_probs = y[np.arange(batch_size), t]  # 정답 클래스에 해당하는 확률만 선택
+print(selected_probs)  # [0.4 0.3 0.25]
+
+# y[np.arange(batch_size), t]의 작동방식
+y[0, 2] = 0.4   # 첫 번째 샘플의 정답 클래스(2)의 확률값
+y[1, 0] = 0.3   # 두 번째 샘플의 정답 클래스(0)의 확률값
+y[2, 3] = 0.25  # 세 번째 샘플의 정답 클래스(3)의 확률값
+```
+
+
+### Why Define a Loss Function?
+
+왜 손실함수를 설정하는가? 신경망 학습에서 미분의 역할에 주목하면 해결된다. 신경망의 목적은 손실함의 값을 가능한 한 작게 하는 매개변수를 찾는 것이다. 이때 매개변수의 미분(정확히는 기울기)을 계산하고, 그 미분값을 단서로 매개변수의 값을 서서히 갱신하는 과정을 반복한다. 이때 손실함수의 미분값이 중요하다.
+
+신경망을 학습할 때 정확도를 지표로 삼아서는 안된다. 정확도를 지표로 하면 매개변수의 미분이 대부분의 장소에서 0이 되기 때문이다. 즉, 매개변수의 값을 조금 바꾼다고 해도 정확도는 거의 개선되지 않는다. 이는 계단 함수를 활성화 함수로 사용하지 않는 이유와도 일맥상통한다. 계단 함수는 미분값이 대부분 0이기 때문에 신경망 학습에 사용할 수 없다.
+
+시그모이드 함수의 미분은 어느장소라도 0이 되지 않는다. 따라서 신경망 학습에 사용할 수 있다.
+
 
 ### Numerical Differentiation
 - Differentiation
