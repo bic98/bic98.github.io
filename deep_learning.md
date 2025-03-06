@@ -1108,15 +1108,232 @@ y[2, 3] = 0.25  # 세 번째 샘플의 정답 클래스(3)의 확률값
 
 시그모이드 함수의 미분은 어느장소라도 0이 되지 않는다. 따라서 신경망 학습에 사용할 수 있다.
 
+<div align="center">
+    <img src="/images/step_and_sigmoid_derivative.png" alt="sigmoid_derivative" width="800">
+</div>
 
-### Numerical Differentiation
-- Differentiation
-- Examples of Numerical Differentiation
-- Partial Derivatives
+### Gradient Descent Method
 
-### Gradient
-- Gradient Descent Method
-- Gradients in Neural Networks
+경사하강법이란 함수의 기울기를 구해 기울기가 낮은 쪽으로 이동시키는 방법이다. 이때 기울기를 구할 때 사용하는 것이 바로 미분이다. 미분은 한순간의 변화량을 나타낸다. 이를 이용해 손실함수의 기울기를 구하고, 그 기울기의 반대 방향으로 매개변수를 갱신한다.
+
+$$
+\frac{\partial f(x)}{\partial x} = \lim_{h \to 0} \frac{f(x+h) - f(x)}{h}
+$$
+
+이때 h는 0에 가까운 아주 작은 값이다. 이를 이용해 수치 미분을 구할 수 있다.
+
+```python   
+def numerical_diff(f, x):
+    h = 1e-4
+    return (f(x+h) - f(x-h)) / (2*h)
+```
+
+모든 변수의 편미분을 벡터로 정리한 것을 **기울기(gradient)**라고 한다. 기울기는 다음과 같이 구할 수 있다.
+
+$$
+(\frac{\partial f}{\partial x_0}, \frac{\partial f}{\partial x_1})
+$$
+
+이때 기울기가 가리키는 쪽은 각 장소에서 함수의 출력 값을 가장 크게 줄이는 방향이다. 
+
+```python
+def numerical_gradient(f, x):
+    h = 1e-4
+    grad = np.zeros_like(x)
+    
+    for idx in range(x.size):
+        tmp_val = x[idx]
+        
+        # f(x+h) 계산
+        x[idx] = tmp_val + h
+        fxh1 = f(x)
+        
+        # f(x-h) 계산
+        x[idx] = tmp_val - h
+        fxh2 = f(x)
+        
+        grad[idx] = (fxh1 - fxh2) / (2*h)
+        x[idx] = tmp_val
+        
+    return grad
+```
+
+이를 이용해 $$f(x0, x1) = x0^2 + x1^2$$의 기울기를 구해보자.
+
+```python
+def function_2(x):
+    return x[0]**2 + x[1]**2
+
+numerical_gradient(function_2, np.array([3.0, 4.0]))
+# array([6., 8.])
+```
+
+<div align="center">
+    <img src="/images/function_and_gradient.png" alt="gradient" width="900">
+</div>
+
+
+
+하지만 기울기가 가리키는 곳에 정말 함수의 최솟값이 있는지는 보장할 수 없다. 이는 기울기가 가리키는 방향이 꼭 최솟값이 아닐 수도 있기 때문이다. 이를 해결하기 위해 경사하강법을 사용한다.
+
+경사법을 수식으로 나타내면 다음과 같다.
+
+$$
+x_0 = x_0 - \eta \frac{\partial f}{\partial x_0}
+$$
+
+$$
+x_1 = x_1 - \eta \frac{\partial f}{\partial x_1}
+$$
+
+이때 $$\eta$$는 학습률을 의미한다. 이는 매개변수 값을 갱신하는 양을 나타낸다. 즉, 학습률은 매개변수 값을 얼마나 갱신하느냐를 정하는 하이퍼파라미터이다.
+
+```python
+def gradient_descent(f, init_x, lr=0.01, step_num=100):
+    x = init_x
+    
+    for i in range(step_num):
+        grad = numerical_diff(f, x)
+        x -= lr * grad
+        
+    return x
+```
+
+경사법으로 $$ f(x0, x1) = x0^2 + x1^2$$의 최솟값을 구해보자.
+
+```python
+def function_2(x):
+    return x[0]**2 + x[1]**2
+    
+
+init_x = np.array([-3.0, 4.0])
+gradient_descent(function_2, init_x=init_x, lr=0.1, step_num=100)
+# array([-6.11110793e-10,  8.14814391e-10])
+``` 
+
+이를 이용해 경사하강법을 구현할 수 있다. 이때 lr은 학습률을 의미한다. 학습률은 매개변수 값을 갱신할 때 얼마나 갱신할지를 정하는 하이퍼파라미터이다. 이 값이 너무 크거나 작으면 좋은 장소를 찾아갈 수 없다.
+
+<div align="center">
+    <img src="/images/gradient_descent_convergence.png" alt="learning_rate" width="600">
+</div>
+
+### Gradients in Neural Networks
+
+신경망 학습에서도 기울기를 구해야 한다. 여기서 말하는 기울기는 가중치 매개변수에 대한 손실 함수의 기울기이다. 이 기울기는 가중치 매개변수의 값을 갱신하기 위해 사용한다. 이때 가중치 매개변수의 기울기를 구해야 한다. 이를 구현해보자.
+
+가중치가 $$W$$, 손실함수가 $$L$$인 경우, 가중치 매개변수에 대한 기울기는 다음과 같이 구할 수 있다.
+각 원소에 대한 편미분을 계산한다.
+
+$$
+\frac{\partial L}{\partial W}
+$$
+
+형상이 2x3인 가중치 $$W$$, 손실함수 $$L$$인 경우의 기울기를 구해보자.
+
+$$
+W = \begin{pmatrix} w_{11} & w_{12} & w_{13} \\ w_{21} & w_{22} & w_{23} \end{pmatrix}
+$$
+
+$$
+\frac{\partial L}{\partial W} = \begin{pmatrix} \frac{\partial L}{\partial w_{11}} & \frac{\partial L}{\partial w_{12}} & \frac{\partial L}{\partial w_{13}} \\ \frac{\partial L}{\partial w_{21}} & \frac{\partial L}{\partial w_{22}} & \frac{\partial L}{\partial w_{23}} \end{pmatrix}
+$$
+
+
+$$\frac{\partial L}{\partial W}$$ 라는 의미는 손실 함수 $$L$$을 가중치 행렬 $$𝑊$$에 대해 편미분한 것으로,$$𝐿$$의 각 원소에 대한 편미분을 정리한 행렬이다.
+
+예를 들어, 1행 1번째 원소인 $$\frac{\partial L}{\partial w_{11}}$$. 이는 $$w_{11}$$을 조금 변경했을 때 손실함수 $$L$$이 얼마나 변화하느냐를 나타낸다.
+
+
+
+이를 구현해보자.
+
+```python
+import numpy as np  # Missing import for np
+
+# Define softmax function which is used but not defined
+def softmax(x):
+    exp_x = np.exp(x - np.max(x, axis=-1, keepdims=True))
+    return exp_x / np.sum(exp_x, axis=-1, keepdims=True)
+
+# Define cross_entropy_error function which is used but not defined
+def cross_entropy_error(y, t):
+    if y.ndim == 1:
+        t = t.reshape(1, t.size)
+        y = y.reshape(1, y.size)
+    
+    # If t is one-hot encoded
+    if t.size == y.size:
+        return -np.sum(t * np.log(y + 1e-7)) / y.shape[0]
+    # If t is label encoded
+    else:
+        return -np.sum(np.log(y[np.arange(y.shape[0]), t] + 1e-7)) / y.shape[0]
+
+class simpleNet:
+    def __init__(self):
+        self.W = np.random.randn(2, 3)  # 정규분포로 초기화
+        
+    def predict(self, x):
+        return np.dot(x, self.W)
+    
+    def loss(self, x, t):
+        z = self.predict(x)
+        y = softmax(z)
+        loss = cross_entropy_error(y, t)
+        
+        return loss
+```
+
+```python
+net = simpleNet()
+print(net.W)
+# [[ 0.47355232 -1.6420551  -0.4380743 ]
+#  [-1.1186056  -0.51709446 -0.99752602]]
+
+x = np.array([0.6, 0.9])
+p = net.predict(x)
+print(p)
+# [-1.06852808 -1.57996397 -1.19312484] 
+
+np.argmax(p)  # 0
+t = np.array([0, 0, 1])
+net.loss(x, t)  # 1.413822588029725
+``` 
+
+이제 손실함수를 구하는 함수를 구현했으니, 이를 이용해 기울기를 구해보자.
+
+```python
+def numerical_gradient(f, x):
+    h = 1e-4
+    grad = np.zeros_like(x)
+    
+    for idx in range(x.size):
+        tmp_val = x[idx]
+        
+        # f(x+h) 계산
+        x[idx] = tmp_val + h
+        fxh1 = f(x)
+        
+        # f(x-h) 계산
+        x[idx] = tmp_val - h
+        fxh2 = f(x)
+        
+        grad[idx] = (fxh1 - fxh2) / (2*h)
+        x[idx] = tmp_val
+        
+    return grad
+
+def f(W):
+    return net.loss(x, t)
+
+dW = numerical_gradient(f, net.W)
+print(dW)
+# [[ 0.21603469  0.14352979 -0.35956448]
+#  [ 0.32405204  0.21529468 -0.53934672]]
+```
+
+신경망의 기울기를 구한 다음 경사하강법을 이용해 가중치 매개변수를 갱신한다.
+
+
 
 ### Implementing Learning Algorithms
 - Implementing a Two-Layer Neural Network Class
