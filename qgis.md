@@ -133,3 +133,261 @@ micro_nav: true
     - 행정정보를 제공하며, 다양한 정보를 제공한다.
     - 주민등록, 주소, 건물 등 다양한 정보를 제공한다.
 
+## python에서 GIS 데이터 다루기
+
+qgis에서 사용하는 데이터는 shp파일이다. shp파일은 벡터 데이터로, 지리정보를 다루는데 사용된다. python에서 shp파일을 다루기 위해서는 geopandas를 사용한다.
+
+QgsVectorLayer() 함수를 사용하여 shp파일을 불러올 수 있다.
+
+```python   
+import qgis.core
+
+# shp파일을 불러온다.
+layer = QgsVectorLayer('data/TL_SCCO_SIG.shp', 'layer_name', 'ogr')
+
+# 레이어를 추가한다.
+QgsProject.instance().addMapLayer(layer)
+``` 
+
+- **QgsVectorLayer()**
+    - shp파일을 불러오는 함수
+    - shp파일의 경로, 레이어 이름, 데이터 포맷을 입력하여 shp파일을 불러온다.
+    - shp파일의 경로는 절대경로나 상대경로로 입력할 수 있다.
+    - 레이어 이름은 레이어의 이름을 지정하는 것으로, 레이어 이름을 지정하지 않으면 shp파일의 이름으로 레이어 이름이 지정된다.
+    - 데이터 포맷은 shp파일의 데이터 포맷을 지정하는 것으로, 'ogr'을 입력하면 shp파일을 불러올 수 있다.
+
+- **QgsProject.instance().addMapLayer()**
+    - 레이어를 추가하는 함수
+    - 레이어를 추가하면 qgis에 레이어가 추가된다.
+    - 레이어를 추가하면 qgis에서 레이어를 확인할 수 있다.
+
+addVectorLayer() 함수를 사용하면 레이어를 생성하고 바로 맵에 추가할 수 있다.
+
+```python
+# shp파일을 불러온다.
+layer = iface.addVectorLayer('data/TL_SCCO_SIG.shp', 'layer_name', 'ogr')
+``` 
+
+- **iface.addVectorLayer()**
+    - shp파일을 불러오는 함수
+    - shp파일의 경로, 레이어 이름, 데이터 포맷을 입력하여 shp파일을 불러온다.
+    - shp파일의 경로는 절대경로나 상대경로로 입력할 수 있다.
+    - 레이어 이름은 레이어의 이름을 지정하는 것으로, 레이어 이름을 지정하지 않으면 shp파일의 이름으로 레이어 이름이 지정된다.
+    - 데이터 포맷은 shp파일의 데이터 포맷을 지정하는 것으로, 'ogr'을 입력하면 shp파일을 불러올 수 있다.
+
+**ogr**은 **OGR Simple Feature Library**의 약자로, 벡터 데이터를 다루는 라이브러리이다. **ogr**은 다양한 데이터 포맷을 지원하며, 벡터 데이터를 다루는데 사용된다.
+
+파일을 불러오면 레이어의 정보를 확인할 수 있다. 하지만 코드를 더할때마다 계속해서 레이어를 불러오게 되면, 레이어가 중복되어 레이어가 계속해서 추가된다. 따라서 레이어를 추가하기 전에 레이어가 이미 있는지 확인해야 한다.
+
+```python
+# 경로 설정
+shp_path = r"C:\Users\@@@@@\Downloads\(B100)국토통계_인구정보-총 인구 수(전체)-읍면동경계_서울특별시_202410\nlsp_003001001.shp"
+layer_name = '행정동별인구'
+
+# 이미 해당 이름의 레이어가 있는지 확인
+layer_exists = False
+layers = QgsProject.instance().mapLayersByName(layer_name)
+if layers:
+    layer_exists = True
+
+# 레이어가 없는 경우에만 추가
+if not layer_exists:
+    iface.addVectorLayer(shp_path, layer_name, 'ogr')
+else:
+    print(f"레이어 '{layer_name}'이(가) 이미 존재합니다.")
+```
+
+<div align="center">
+    <img src="/images/qgis_avl.png" alt="qgis" width = "500">
+</div>
+
+---
+
+### 필드를 가지고 오는 방법
+
+```python
+# 레이어를 불러온다.
+layer = iface.addVectorLayer('data/TL_SCCO_SIG.shp', 'layer_name', 'ogr')
+
+# 필드를 가지고 온다.
+fields = layer.fields()
+
+# 필드를 출력한다.
+for field in fields:
+    print(field.name())
+```
+
+근데 위와 같이 addVectorLayer()를 사용하면 실행할때마다 레이어가 중복되어 추가된다. 그래서 QgsVectorLayer()를 사용하여 레이어를 불러온다.
+
+```python
+# shp파일을 불러온다.
+layer = QgsVectorLayer('data/TL_SCCO_SIG.shp', 'layer_name', 'ogr')
+
+fields = layer.fields()
+
+# 필드를 출력한다.
+for field in fields:
+    print(field.name())
+``` 
+
+### 필드와 데이터를 판다스 데이터프레임으로 변환
+
+데이터 정제와 분석을 위해 필드와 데이터를 판다스 데이터프레임으로 변환할 수 있다.
+
+```python
+import pandas as pd
+df = pd.DataFrame([feat.attributes() for feat in vlayer.getFeatures()],
+                  columns=[field.name() for field in vlayer.fields()])
+print(df)
+```
+
+위의 코드에서 feat.attributes()는 레이어의 속성을 리스트 형태로 반환한다.
+field.name()은 레이어의 필드 이름을 반환한다. 필드 이름을 데이터 프레임의 열 이름으로 사용한다.
+
+```python
+print(df)
+gid       lbl      val
+0    11290110   2435.00   2435.0
+1    11140101      8.00      8.0
+2    11110152     54.00     54.0
+3    11410111  55081.00  55081.0
+4    11650109   7877.00   7877.0
+..                   ...
+462  11560131      NULL     NULL
+463  11170135      NULL     NULL
+464  11500111      NULL     NULL
+465  11110127      NULL     NULL
+466  11140106      NULL     NULL
+```
+---
+
+### 데이터프레임에서 속성 타입 확인 및 변환
+
+데이터프레임(df)에서 속성들이 문자열인지 실수형인지 확인하고 변환하는 방법은 다음과 같다.
+
+1. 속성 타입 확인:
+```python
+print(df.dtypes)
+```
+
+2. 문자열을 실수형으로 변환:
+```python
+df['속성명'] = df['속성명'].astype(float)
+```
+
+예시:
+```python
+import pandas as pd
+
+# 예제 데이터프레임 생성
+
+```python
+data = {
+    'gid': [0, 1, 2, 3, 4],
+    'lbl': ['11290110', '11140101', '11110152', '11410111', '11650109'],
+    'val': ['2435.00', '8.00', '54.00', '55081.00', '7877.00']
+}
+
+df = pd.DataFrame(data)
+
+# 속성 타입 확인
+print(df.dtypes)
+
+# 문자열을 실수형으로 변환
+df['val'] = df['val'].astype(float)
+
+# 변환 후 속성 타입 확인
+print(df.dtypes)
+
+print(df)
+```
+
+만약에 null값이 포함되어 있으면, null값을 0으로 변환하거나 null값을 제거해야 한다.
+
+```python
+# null값을 0으로 변환
+df['val'] = df['val'].fillna(0)
+
+# null값을 제거
+df = df.dropna()
+``` 
+
+하지만 그래도 오류가 나는 경우에는 다음과 같은 방법을 사용한다. 
+
+```python
+import pandas as pd
+import numpy as np
+
+# 먼저 null 값 확인
+print("변환 전 null 값 개수:")
+print(df.isnull().sum())
+
+# 문자열을 숫자로 변환 시도 (변환 불가능한 값은 NaN으로 처리)
+df['gid'] = pd.to_numeric(df['gid'], errors='coerce')
+df['lbl'] = pd.to_numeric(df['lbl'], errors='coerce')
+
+# 변환 후 null 값 확인
+print("\n변환 후 null 값 개수:")
+print(df.isnull().sum())
+
+# 방법 1: null 값을 0으로 치환
+df['gid'] = df['gid'].fillna(0)
+df['lbl'] = df['lbl'].fillna(0)
+
+# 또는
+# 방법 2: null 값을 평균값으로 치환
+# df['gid'] = df['gid'].fillna(df['gid'].mean())
+# df['lbl'] = df['lbl'].fillna(df['lbl'].mean())
+
+# 최종 확인
+print("\n치환 후 데이터 타입:")
+print(df.dtypes)
+print("\n남은 null 값 개수:")
+print(df.isnull().sum())
+```
+
+따라서 지금까지 모든 코드를 합치면 다음과 같다.
+
+```python
+# 경로 설정
+shp_path = r"C:\Users\BaekInchan\Downloads\(B100)국토통계_인구정보-총 인구 수(전체)-읍면동경계_서울특별시_202410\nlsp_003001001.shp"
+layer_name = '행정동별인구'
+
+# 이미 해당 이름의 레이어가 있는지 확인
+layer_exists = False
+layers = QgsProject.instance().mapLayersByName(layer_name)
+if layers:
+    layer_exists = True
+
+# 레이어가 없는 경우에만 추가
+if not layer_exists:
+    iface.addVectorLayer(shp_path, layer_name, 'ogr')
+else:
+    print(f"레이어 '{layer_name}'이(가) 이미 존재합니다.")
+
+#레이어 필드 확인
+vlayer = QgsVectorLayer(shp_path, layer_name, 'ogr')
+fields = vlayer.fields()
+for field in fields:
+    field_name = field.name()
+    field_type = field.typeName()
+    print(field_name, field_type)
+    
+df = pd.DataFrame([feat.attributes() for feat in vlayer.getFeatures()],
+                  columns=[field.name() for field in vlayer.fields()])
+
+#print([feat.attributes() for feat in vlayer.getFeatures()])
+df['gid'] = pd.to_numeric(df['gid'], errors='coerce')
+df['lbl'] = pd.to_numeric(df['lbl'], errors='coerce')
+df['val'] = pd.to_numeric(df['val'], errors='coerce')
+print(df)
+print(df.dtypes)
+df['val'] = df['val'].fillna(0)
+df['lbl'] = df['lbl'].fillna(0)
+print(df.isna().sum())
+print(df)
+
+```
+
+gid는 행정동 코드로 되어있다. 우리가 사용하기에는 코드번호보다는 문자열로된 행정동 이름이 더 편리하다. 따라서 gid를 행정동 이름으로 변환해야 한다. 이때, 행정동 코드와 행정동 이름이 매칭된 데이터를 사용하면 된다.
+## 행정동 코드를 행정동 이름 변환
