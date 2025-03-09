@@ -1336,7 +1336,126 @@ print(dW)
 
 
 ### Implementing Learning Algorithms
+
+**전제**
+- 신경망은 적응 가능한 가중치와 편향이 있고, 이 가중치와 편향을 훈련 데이터에 적응하도록 조정하는 과정을 '학습'이라 한다.
+
+**1단계 - 미니배치**
+- 훈련 데이터 중 일부를 무작위로 가져온다. 이렇게 선별한 데이터를 미니배치라 하며, 그 미니배치의 손실 함수 값을 줄이는 것이 목표이다.
+
+**2단계 - 기울기 산출**
+- 미니배치의 손실 함수 값을 줄이기 위해 각 가중치 매개변수의 기울기를 구한다. 기울기는 손실 함수의 값을 가장 작게 하는 방향을 제시한다.
+
+**3단계 - 매개변수 갱신**
+- 가중치 매개변수를 기울기 방향으로 아주 조금 갱신한다.
+
+**4단계 - 반복**
+- 1~3단계를 반복한다.
+
+이것이 신경망 학습이 이뤄지는 순서이다. 이때 데이터를 미니배치로 무작위로 선정하기 때문에 이를 **확률적 경사 하강법(Stochastic Gradient Descent, SGD)**라고 한다.
+
+```python
+import tensorflow as tf
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras.utils import to_categorical
+
+# MNIST 데이터 불러오기
+(x_train, t_train), (x_test, t_test) = mnist.load_data()
+
+print("훈련 데이터 크기:", x_train.shape)  # (60000, 28, 28)
+print("훈련 라벨 크기:", t_train.shape)  # (60000,)
+print("테스트 데이터 크기:", x_test.shape)  # (10000, 28, 28)
+print("테스트 라벨 크기:", t_test.shape)  # (10000,)
+
+x_train = x_train.reshape(-1, 28*28)  # (60000, 784)
+x_test = x_test.reshape(-1, 28*28)    # (10000, 784)
+print("Flatten 후 훈련 데이터 크기:", x_train.shape)  # (60000, 784)
+
+t_train = to_categorical(t_train, num_classes=10)
+t_test = to_categorical(t_test, num_classes=10)
+print("One-hot 변환 후 레이블 크기:", t_train.shape)  # (60000, 10)
+```
+
+```python
+import numpy as np
+
+class TwoLayerNet:
+    def __init__(self, input_size, hidden_size, output_size, weight_init_std=0.01):
+        self.params = {}
+        self.params['W1'] = weight_init_std * np.random.randn(input_size, hidden_size)
+        self.params['b1'] = np.zeros(hidden_size)
+        self.params['W2'] = weight_init_std * np.random.randn(hidden_size, output_size)
+        self.params['b2'] = np.zeros(output_size)
+
+    def predict(self, x):
+        W1, W2 = self.params['W1'], self.params['W2']
+        b1, b2 = self.params['b1'], self.params['b2']
+        
+        a1 = np.dot(x, W1) + b1
+        z1 = sigmoid(a1)
+        a2 = np.dot(z1, W2) + b2
+        y = softmax(a2)
+        
+        return y
+
+    def _cross_entropy_error(self, y, t):
+        if y.ndim == 1:
+            t = t.reshape(1, t.size)
+            y = y.reshape(1, y.size)
+        
+        # If t is one-hot encoded
+        if t.size == y.size:
+            return -np.sum(t * np.log(y + 1e-7)) / y.shape[0]
+        # If t is label encoded
+        else:
+            return -np.sum(np.log(y[np.arange(y.shape[0]), t] + 1e-7)) / y.shape[0]
+
+    def loss(self, x, t):
+        y = self.predict(x)
+        
+        return _cross_entropy_error(y, t)
+
+    def _numerical_gradient(self, f, x):
+        h = 1e-4
+        grad = np.zeros_like(x)
+        
+        for idx in range(x.size):
+            tmp_val = x[idx]
+            
+            # f(x+h) 계산
+            x[idx] = tmp_val + h
+            fxh1 = f(x)
+            
+            # f(x-h) 계산
+            x[idx] = tmp_val - h
+            fxh2 = f(x)
+            
+            grad[idx] = (fxh1 - fxh2) / (2*h)
+            x[idx] = tmp_val
+        
+        return grad
+
+    def accuracy(self, x, t):
+        y = self.predict(x)
+        y = np.argmax(y, axis=1)
+        t = np.argmax(t, axis=1)
+        
+        accuracy = np.sum(y == t) / float(x.shape[0])
+        return accuracy
+
+    def numerical_gradient(self, x, t):
+        loss_W = lambda W: self.loss(x, t)
+        
+        grads = {}
+        grads['W1'] = numerical_gradient(loss_W, self.params['W1'])
+        grads['b1'] = numerical_gradient(loss_W, self.params['b1'])
+        grads['W2'] = numerical_gradient(loss_W, self.params['W2'])
+        grads['b2'] = numerical_gradient(loss_W, self.params['b2'])
+        
+        return grads
+```
 - Implementing a Two-Layer Neural Network Class
+
 - Implementing Mini-Batch Learning
 - Evaluating with Test Data
 
