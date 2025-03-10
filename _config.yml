@@ -2,6 +2,13 @@
 doks:
     baseurl:
     color_theme: blue # Available themes: blue (default), green, purple, red and yellow
+    # SEO settings
+    title: InchanBaek Note - AI, Architecture & Technology
+    description: Inchan Baek's blog on AI, architecture, and technology research and projects.
+    author: Inchan Baek
+    twitter:
+        username: 
+        card: summary
     header:
         logo:
             text: InchanBaek Note
@@ -27,7 +34,9 @@ doks:
             - network_name: youtube
               profile_url: 'https://www.youtube.com/@icb6048'
     google_analytics:
-        tracking_code: # Add your Google Analytics tracking code to activate Google Analytics
+        tracking_code: GTM-MM5MVC48 # Google Tag Manager ID
+    # SEO Plugin settings
+    url: https://inchanbaek.com # Replace with your actual domain
     comments:
         disqus_forum_shortname: inchanbaeknote # Add your disqus forum shortname to activate comments
 
@@ -41,6 +50,11 @@ layouts_dir: ./doks-theme/_layouts
 includes_dir: ./doks-theme/_includes
 exclude: [ 'README.md', 'CHANGELOG.md' ]
 permalink: /:title/
+
+# Plugins
+plugins:
+  - jekyll-sitemap
+  - jekyll-seo-tag
 
 # Markdown processing
 markdown: kramdown

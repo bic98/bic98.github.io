@@ -1,7 +1,7 @@
 ---
 # Page settings
 layout: default
-keywords:
+keywords: QGIS, GIS, 지리정보시스템, 지도, 공간정보, 인찬백, InchanBaek, 지오데이터, 지리공간정보, 공간분석
 comments: true
 
 # Hero section

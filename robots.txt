@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://inchanbaek.com/sitemap.xml

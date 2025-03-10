@@ -1,7 +1,7 @@
 ---
 # Page settings
 layout: homepage
-keywords: AI, Architecture, Technology, Research
+keywords: 인찬백, InchanBaek, 딥러닝, 머신러닝, AI 블로그, 기술 블로그, 인공지능, 강화학습, QGIS, 3D 프린팅
 comments: true
 
 # Hero section

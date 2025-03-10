@@ -1,12 +1,12 @@
 ---
 # Page settings
 layout: default
-keywords:
+keywords: 딥러닝, 머신러닝, 인공신경망, 퍼셉트론, 시그모이드, ReLU, 경사하강법, 손실함수, 인찬백, 딥러닝 기초
 comments: true
 
 # Hero section
 title: Deep Learning Basics
-description: A collection of deep learning basics.
+description: 퍼셉트론부터 경사하강법까지, 딥러닝의 핵심 개념을 처음부터 차근차근 배우는 딥러닝 기초 튜토리얼입니다. 인공신경망의 기본 구조와 학습 과정을 이해하기 쉽게 설명합니다.
 
 # # Author box
 # author:
@@ -1354,33 +1354,20 @@ print(dW)
 
 이것이 신경망 학습이 이뤄지는 순서이다. 이때 데이터를 미니배치로 무작위로 선정하기 때문에 이를 **확률적 경사 하강법(Stochastic Gradient Descent, SGD)**라고 한다.
 
-```python
-import tensorflow as tf
-from tensorflow.keras.datasets import mnist
-from tensorflow.keras.utils import to_categorical
-
-# MNIST 데이터 불러오기
-(x_train, t_train), (x_test, t_test) = mnist.load_data()
-
-print("훈련 데이터 크기:", x_train.shape)  # (60000, 28, 28)
-print("훈련 라벨 크기:", t_train.shape)  # (60000,)
-print("테스트 데이터 크기:", x_test.shape)  # (10000, 28, 28)
-print("테스트 라벨 크기:", t_test.shape)  # (10000,)
-
-x_train = x_train.reshape(-1, 28*28)  # (60000, 784)
-x_test = x_test.reshape(-1, 28*28)    # (10000, 784)
-print("Flatten 후 훈련 데이터 크기:", x_train.shape)  # (60000, 784)
-
-t_train = to_categorical(t_train, num_classes=10)
-t_test = to_categorical(t_test, num_classes=10)
-print("One-hot 변환 후 레이블 크기:", t_train.shape)  # (60000, 10)
-```
 
 ```python
 import numpy as np
 
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+def softmax(x):
+    x = x - np.max(x, axis=-1, keepdims=True)  # Prevent overflow
+    return np.exp(x) / np.sum(np.exp(x), axis=-1, keepdims=True)
+
 class TwoLayerNet:
     def __init__(self, input_size, hidden_size, output_size, weight_init_std=0.01):
+        # Initialize weights and biases
         self.params = {}
         self.params['W1'] = weight_init_std * np.random.randn(input_size, hidden_size)
         self.params['b1'] = np.zeros(hidden_size)
@@ -1403,60 +1390,127 @@ class TwoLayerNet:
             t = t.reshape(1, t.size)
             y = y.reshape(1, y.size)
         
-        # If t is one-hot encoded
-        if t.size == y.size:
-            return -np.sum(t * np.log(y + 1e-7)) / y.shape[0]
-        # If t is label encoded
-        else:
-            return -np.sum(np.log(y[np.arange(y.shape[0]), t] + 1e-7)) / y.shape[0]
+        batch_size = y.shape[0]
+        
+        # Add small value to prevent log(0)
+        delta = 1e-7
+        
+        # Handle both one-hot and label encoded targets
+        if t.size == y.size:  # one-hot
+            return -np.sum(t * np.log(y + delta)) / batch_size
+        else:  # label encoded
+            return -np.sum(np.log(y[np.arange(batch_size), t] + delta)) / batch_size
 
     def loss(self, x, t):
         y = self.predict(x)
-        
-        return _cross_entropy_error(y, t)
+        return self._cross_entropy_error(y, t)
 
     def _numerical_gradient(self, f, x):
-        h = 1e-4
+        h = 1e-4  # Small value for numerical differentiation
         grad = np.zeros_like(x)
         
-        for idx in range(x.size):
-            tmp_val = x[idx]
+        # Vectorized operations where possible
+        it = np.nditer(x, flags=['multi_index'], op_flags=['readwrite'])
+        while not it.finished:
+            idx = it.multi_index
+            orig_val = x[idx]
             
-            # f(x+h) 계산
-            x[idx] = tmp_val + h
+            # Calculate f(x+h)
+            x[idx] = orig_val + h
             fxh1 = f(x)
             
-            # f(x-h) 계산
-            x[idx] = tmp_val - h
+            # Calculate f(x-h)
+            x[idx] = orig_val - h
             fxh2 = f(x)
             
+            # Gradient at this point
             grad[idx] = (fxh1 - fxh2) / (2*h)
-            x[idx] = tmp_val
+            
+            # Restore original value
+            x[idx] = orig_val
+            it.iternext()
         
         return grad
 
     def accuracy(self, x, t):
         y = self.predict(x)
         y = np.argmax(y, axis=1)
-        t = np.argmax(t, axis=1)
+        t = np.argmax(t, axis=1) if t.ndim != 1 else t
         
-        accuracy = np.sum(y == t) / float(x.shape[0])
-        return accuracy
+        return np.sum(y == t) / float(x.shape[0])
 
     def numerical_gradient(self, x, t):
         loss_W = lambda W: self.loss(x, t)
         
         grads = {}
-        grads['W1'] = numerical_gradient(loss_W, self.params['W1'])
-        grads['b1'] = numerical_gradient(loss_W, self.params['b1'])
-        grads['W2'] = numerical_gradient(loss_W, self.params['W2'])
-        grads['b2'] = numerical_gradient(loss_W, self.params['b2'])
+        grads['W1'] = self._numerical_gradient(loss_W, self.params['W1'])
+        grads['b1'] = self._numerical_gradient(loss_W, self.params['b1'])
+        grads['W2'] = self._numerical_gradient(loss_W, self.params['W2'])
+        grads['b2'] = self._numerical_gradient(loss_W, self.params['b2'])
         
         return grads
 ```
-- Implementing a Two-Layer Neural Network Class
 
-- Implementing Mini-Batch Learning
-- Evaluating with Test Data
+지금까지 배운 내용을 이용해 신경망을 학습시켜보자.
+
 
 ---
+```python
+import tensorflow as tf
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras.utils import to_categorical
+from tqdm import tqdm  # tqdm 임포트
+
+# MNIST 데이터 불러오기
+(x_train, t_train), (x_test, t_test) = mnist.load_data()
+
+print("훈련 데이터 크기:", x_train.shape)  # (60000, 28, 28)
+print("훈련 라벨 크기:", t_train.shape)  # (60000,)
+print("테스트 데이터 크기:", x_test.shape)  # (10000, 28, 28)
+print("테스트 라벨 크기:", t_test.shape)  # (10000,)
+
+x_train = x_train.reshape(-1, 28*28)  # (60000, 784)
+x_test = x_test.reshape(-1, 28*28)    # (10000, 784)
+print("Flatten 후 훈련 데이터 크기:", x_train.shape)  # (60000, 784)
+
+t_train = to_categorical(t_train, num_classes=10)
+t_test = to_categorical(t_test, num_classes=10)
+print("One-hot 변환 후 레이블 크기:", t_train.shape)  # (60000, 10)
+
+import numpy as np
+
+iters_num = 1e4
+train_size = x_train.shape[0]
+batch_size = 100
+learning_rate = 0.1
+
+network = TwoLayerNet(input_size=784, hidden_size=50, output_size=10)
+
+train_loss_list = []
+train_acc_list = []
+test_acc_list = []
+
+iter_per_epoch = max(train_size / batch_size, 1)
+
+for i in tqdm(range(int(iters_num)), ncols=80, mininterval=1.0):  # tqdm 설정
+    batch_mask = np.random.choice(train_size, batch_size)
+    x_batch = x_train[batch_mask]
+    t_batch = t_train[batch_mask]
+    
+    grad = network.numerical_gradient(x_batch, t_batch)
+    
+    for key in ('W1', 'b1', 'W2', 'b2'):
+        network.params[key] -= learning_rate * grad[key]
+    
+    loss = network.loss(x_batch, t_batch)
+    train_loss_list.append(loss)
+    
+    if i % iter_per_epoch == 0:
+        train_acc = network.accuracy(x_train, t_train)
+        test_acc = network.accuracy(x_test, t_test)
+        train_acc_list.append(train_acc)
+        test_acc_list.append(test_acc)
+        print(f"train acc, test acc | {train_acc}, {test_acc}")
+```
+
+

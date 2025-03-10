@@ -1,7 +1,7 @@
 ---
 # Page settings
 layout: default
-keywords:
+keywords: 3D 프린팅, 최적화, 빌드 플레이트, 인찬백, InchanBaek, 제조 최적화, 적층 제조, 3D 모델링, 3D 프린터, 프로토타이핑
 comments: true
 
 # Hero section
