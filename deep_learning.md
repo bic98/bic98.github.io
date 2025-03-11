@@ -1410,7 +1410,7 @@ class TwoLayerNet:
         grad = np.zeros_like(x)
         
         # Vectorized operations where possible
-        it = np.nditer(x, flags=['multi_index'], op_flags=['readwrite'])
+        it = np.nditer(x, flags=['multi_index'], op_flags=[['readwrite']])
         while not it.finished:
             idx = it.multi_index
             orig_val = x[idx]
