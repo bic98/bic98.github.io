@@ -1729,7 +1729,6 @@ $$
 
 
 ## Backpropagation
----
 ### Backpropagation of Addition Nodes
 
 덧셈노드의 역전파는 1을 곱하기만 할 뿐이다.
@@ -1755,7 +1754,7 @@ $$
 $$
 
 <div align="center">
-    <img src="/images/propagate3.png" alt="multiply_node" width="400">
+    <img src="/images/propagate3.png" alt="multiply_node" width="800">
 </div>
 
 
