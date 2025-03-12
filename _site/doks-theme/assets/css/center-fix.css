@@ -1,0 +1,114 @@
+/* 그리드 카드 강제 중앙 정렬 - 겹침 수정 */
+.category-section, 
+#machine-learning-section,
+#gis-mapping-section, 
+#3d-printing-section {
+  display: flex \!important;
+  flex-direction: column \!important;
+  align-items: center \!important;
+  width: 100% \!important;
+  text-align: center \!important;
+  margin-bottom: 50px \!important;
+}
+
+.category-grid {
+  display: flex \!important;
+  flex-direction: column \!important;
+  align-items: center \!important;
+  width: 100% \!important;
+}
+
+.centered-row,
+.category-grid .row {
+  display: flex \!important;
+  flex-direction: row \!important;
+  flex-wrap: wrap \!important;
+  justify-content: center \!important;
+  width: 100% \!important;
+  text-align: center \!important;
+  box-sizing: border-box \!important;
+  padding: 0 \!important;
+  margin: 0 auto \!important;
+}
+
+.card-column-fix,
+.card-column,
+.category-grid .col-md-4,
+.category-grid .col-sm-6 {
+  float: none \!important;
+  width: 350px \!important;
+  min-width: 350px \!important;
+  max-width: 350px \!important;
+  flex: 0 0 350px \!important;
+  margin: 0 10px 30px \!important;
+  padding: 0 \!important;
+  box-sizing: border-box \!important;
+}
+
+.category-item {
+  width: 100% \!important;
+  margin: 0 \!important;
+  height: 300px \!important;
+}
+
+/* 반응형 조정 */
+@media (max-width: 1199px) {
+  .card-column-fix,
+  .card-column,
+  .category-grid .col-md-4,
+  .category-grid .col-sm-6 {
+    width: 320px \!important;
+    min-width: 320px \!important;
+    max-width: 320px \!important;
+    flex: 0 0 320px \!important;
+  }
+}
+
+@media (max-width: 767px) {
+  .card-column-fix,
+  .card-column,
+  .category-grid .col-md-4,
+  .category-grid .col-sm-6 {
+    width: 300px \!important;
+    min-width: 300px \!important;
+    max-width: 300px \!important;
+    flex: 0 0 300px \!important;
+    margin: 0 5px 20px \!important;
+  }
+  
+  .category-item {
+    height: 280px \!important;
+  }
+}
+
+/* 컨테이너 정렬 */
+.section--darker-theme-color-bg > .container {
+  max-width: 100% \!important;
+  width: 100% \!important;
+  display: flex \!important;
+  justify-content: center \!important;
+  padding: 0 15px \!important;
+  box-sizing: border-box \!important;
+}
+
+.section--darker-theme-color-bg > .container > .row {
+  width: 100% \!important;
+  max-width: 1400px \!important;
+  display: flex \!important;
+  justify-content: center \!important;
+  margin: 0 auto \!important;
+}
+
+.section--darker-theme-color-bg > .container > .row > .col-md-12 {
+  display: flex \!important;
+  justify-content: center \!important;
+  width: 100% \!important;
+  max-width: 100% \!important;
+  padding: 0 \!important;
+}
+
+.section .category-container {
+  max-width: 1400px \!important;
+  width: 100% \!important;
+  padding: 0 \!important;
+}

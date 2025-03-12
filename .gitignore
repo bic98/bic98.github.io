@@ -14,9 +14,8 @@ Thumbs.db
 # -----------------------
 /node_modules
 /npm-debug.log
-
+wandb/
 # ---------------
 # Compiled assets
 # ---------------
-.sass-cache
-_site
+
