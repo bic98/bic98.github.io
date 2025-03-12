@@ -1,3 +1,0 @@
-/home/inchanbaek/miniconda3/lib/python3.12/site-packages/keras/src/layers/reshaping/flatten.py:37: UserWarning: Do not pass an `input_shape`/`input_dim` argument to a layer. When using Sequential models, prefer using an `Input(shape)` object as the first layer in the model instead.
-  super().__init__(**kwargs)
-[1m1875/1875[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m3s[0m 1ms/step - accuracy: 0.2993 - loss: 2.0559 - val_accuracy: 0.4132 - val_loss: 2.2948
