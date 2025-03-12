@@ -1,0 +1,7 @@
+{"time":"2025-03-12T00:56:44.530783842+09:00","level":"INFO","msg":"stream: starting","core version":"0.19.8","symlink path":"/home/inchanbaek/ai_blog/wandb/run-20250312_005644-al2dijpu/logs/debug-core.log"}
+{"time":"2025-03-12T00:56:44.733536745+09:00","level":"INFO","msg":"created new stream","id":"al2dijpu"}
+{"time":"2025-03-12T00:56:44.733597715+09:00","level":"INFO","msg":"stream: started","id":"al2dijpu"}
+{"time":"2025-03-12T00:56:44.733625904+09:00","level":"INFO","msg":"writer: Do: started","stream_id":"al2dijpu"}
+{"time":"2025-03-12T00:56:44.733663624+09:00","level":"INFO","msg":"sender: started","stream_id":"al2dijpu"}
+{"time":"2025-03-12T00:56:44.733728813+09:00","level":"INFO","msg":"handler: started","stream_id":"al2dijpu"}
+{"time":"2025-03-12T00:56:45.198532014+09:00","level":"INFO","msg":"Starting system monitor"}

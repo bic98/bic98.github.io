@@ -1512,5 +1512,271 @@ for i in tqdm(range(int(iters_num)), ncols=80, mininterval=1.0):  # tqdm 설정
         test_acc_list.append(test_acc)
         print(f"train acc, test acc | {train_acc}, {test_acc}")
 ```
+---
 
+위와 같이 클래스로 구현하여 학습을 시키면 학습시간이 대략 9시간 정도 걸린다. 케라스 모델을 사용하면 더 빠르게 학습시킬 수 있다. 
+
+```python
+import wandb
+from wandb.integration.keras import WandbMetricsLogger, WandbModelCheckpoint
+import keras
+
+# Initialize Wandb
+wandb.init(name = 'workshop_1', project="mnist_project-sgd")
+
+# 데이터 생성
+(x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
+x_train, x_test = x_train / 255.0, x_test / 255.0
+
+# 모델 생성
+model = keras.models.Sequential([
+    keras.layers.Flatten(input_shape=(28, 28)),
+    keras.layers.Dense(128, activation="sigmoid"),
+    keras.layers.Dense(10, activation="softmax"),
+])
+
+# 컴파일 및 학습
+model.compile(optimizer="sgd", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
+
+# Define the checkpoint callback
+checkpoint_callback = WandbModelCheckpoint(filepath="models/mnins_sgd.keras", save_freq='epoch')
+
+model.fit(
+    x_train,
+    y_train,
+    epochs=128,
+    validation_data=(x_test, y_test),
+    callbacks=[
+        WandbMetricsLogger(),
+        checkpoint_callback,
+    ],
+)
+``` 
+
+위와 같이 케라스 모델을 사용하면 더 빠르게 학습시킬 수 있다.
+손실함수 그래프와 정확도 그래프를 확인해보자. 128번의 에폭을 돌린 결과이다.
+
+<div align="center">
+    <img src="/images/mnist_sgd (2).png" alt="loss_accuracy" width="600">
+    <img src="/images/mnist_sgd (3).png" alt="loss_accuracy" width="600">
+</div>
+<br>
+에폭이 증가할수록 손실함수는 감소하고 정확도는 증가하는 것을 확인할 수 있다.
+
+---
+
+### Summary
+
+- 손실함수는 신경망 학습에서 사용하는 지표이다. 이 손실함수를 최소화하는 것이 신경망 학습의 목표이다.
+- 평균 제곱 오차와 교차 엔트로피 오차를 사용한다.
+- 미니배치 학습을 사용하면 훈련 데이터의 일부를 사용해 학습을 수행할 수 있다.
+- 수치 미분을 사용해 가중치 매개변수의 기울기를 구할 수 있다.
+- 경사하강법을 사용해 가중치 매개변수를 갱신할 수 있다.
+- 신경망 학습은 미니배치로 데이터를 무작위로 선정하고, 기울기를 구해 가중치 매개변수를 갱신하는 과정을 반복한다.
+- 이를 확률적 경사 하강법(SGD)이라고 한다.
+
+---
+
+# Backpropagation
+
+## Computational Graph
+
+- 계산 그래프는 계산 과정을 그래프로 나타낸 것이다.
+- 계산 그래프의 노드는 연산을, 에지는 데이터를 나타낸다.
+- 계산 그래프를 이용하면 계산 과정을 시각적으로 파악할 수 있다.
+
+### Solving with a Computational Graph
+
+간단한 문제를 계산 그래프로 풀어보자.
+
+현빈군은 슈퍼에서 사과를 2개 샀습니다. 사과 한 개는 100원이고, 소비세가 10% 부과됩니다. 이때 현빈군이 지불하는 금액을 구해보자.
+
+<div style="text-align: center;">
+    <div class = 'mermaid'>
+        graph LR
+        A[apple] --> |100| B[x2]
+        B -->|200| C[x1.1]
+        C -->|220| D[mission complete]
+    </div>
+</div>
+
+원안에 있는 노드 **x** 만을 **multiply** 연산으로 생각할 수 있다. 
+
+<div style="text-align: center;">
+    <div class = 'mermaid'>
+        graph LR
+        A[apple] --> |100| B[x]
+        B -->|200| C[x]
+        F[apple count] --> |2| B
+        E[tax] --> |1.1| C
+        C -->|220| D[mission complete]
+    </div>
+</div>
+
+
+### Local Computation
+
+계산그래프의 특징은 **국소적 계산**을 전파함으로써 최종 결과를 얻는다는 것이다. 이를 **순전파**라고 한다.
+
+### Why Use a Computational Graph?
+
+그렇다면, 계산그래프의 이점은 무엇일까? 계산그래프의 이점은 **국소적 계산**을 통해 최종 결과를 얻을 수 있다는 것이다. 전체가 아무리 복잡해도 각 노드에서는 단순한 계산에 집중하여 문제를 단순화할 수 있다. 또한 역전파를 통해 각 노드의 미분을 효율적으로 구할 수 있다. 
+
+역전파는 순전파와는 반대로 노드의 미분을 효율적으로 구하는 방법이다. 이를 통해 각 노드의 미분을 효율적으로 구할 수 있다.
+
+<div style="text-align: center;">
+    <div class = 'mermaid'>
+    graph LR
+        A[apple] -->|100| B[x]
+        B -->|200| C[x]
+        C -->|220| D[mission complete]
+        D -->|1| C
+        C -->|1.1| B
+        B -->|2.2| A
+    </div>
+</div>
+
+사과 1원이 오른다면 최종금액은 2.2원이 오른다는 것을 알 수 있다.
+
+
+## Chain Rule
+
+계산 그래프의 순전파의 방향은 왼쪽에서 오른쪽으로, 역전파의 방향은 오른쪽에서 왼쪽으로 진행된다. 이 '국소적미분'을 전달하는 원리는 연쇄법칙에 따른다.
+
+$$
+y = f(x)
+$$
+
+<div style="text-align: center;">
+    <div class = 'mermaid'>
+    graph LR
+        A[.] -->|x| B[f]
+        B -->|y| C[.]
+        C -->|E| B
+        B -->|E ∂y/∂x| A
+        
+        style A opacity:0
+        style C opacity:0
+    </div>
+</div>
+
+위의 그림과 같이 **역전파**는 **국소적 미분**을 곱하여 전달한다. 신호 (E)에 노드의 국소적 미분 (E ∂y/∂x)을 곱한 후 다음 노드로 전달한다.
+
+$$
+y = f(x) = x^2
+$$
+
+이라면 미분은 다음과 같다.
+
+$$
+\frac{\partial y}{\partial x} = 2x
+$$
+
+상류에서 계산된 값에 국소적 미분을 곱하여 하류로 전달한다.
+
+
+
+### What is the Chain Rule?
+
+연쇄법칙을 설명하기 전에 합성함수에 대해 알아보자. 합성함수란 여러함수로 구성된 함수이다. 
+
+$$
+z = t^2
+$$
+
+$$
+t = x + y
+$$
+
+**합성함수의 미분은 합성함수를 구성하는 각 함수의 미분의 곱으로 나타낼 수 있다.**
+
+
+x에 대한 z의 미분
+
+$$
+\frac{\partial z}{\partial x} = 2t
+$$
+
+t에 대한 z의 미분
+
+$$
+\frac{\partial z}{\partial t} = 1
+$$
+
+x에 대한 t의 미분
+
+$$
+\frac{\partial t}{\partial x} = 1
+$$
+
+따라서 x에 대한 z의 미분은 다음과 같다.
+
+<div align="center">
+    <img src="/images/propagate2.png" alt="chain_rule" width="400">
+</div>
+
+$$
+\frac{\partial z}{\partial x} = \frac{\partial z}{\partial t} \frac{\partial t}{\partial x}
+$$
+
+<div align="center">
+    <img src="/images/propagate1.png" alt="chain_rule_example" width="400">
+</div>
+
+$$
+\frac{\partial z}{\partial x} = \frac{\partial z}{\partial t} \frac{\partial t}{\partial x} = 2t * 1 = 2t = 2(x + y)
+$$
+
+
+## Backpropagation
+---
+### Backpropagation of Addition Nodes
+
+덧셈노드의 역전파는 1을 곱하기만 할 뿐이다.
+즉 덧셈노드의 역전파는 입력된 값을 그대로 다음 노드로 전달한다.
+
+### Backpropagation of Multiplication Nodes
+곱셈노드의 역전파는 상류의 값에 순전파 때의 입력 신호들을 '서로 바꾼 값'을 곱해서 하류로 전달한다.
+
+$$
+z = xy
+$$
+
+x에 대한 z의 미분
+
+$$
+\frac{\partial z}{\partial x} = y
+$$
+
+y에 대한 z의 미분
+
+$$
+\frac{\partial z}{\partial y} = x
+$$
+
+<div align="center">
+    <img src="/images/propagate3.png" alt="multiply_node" width="400">
+</div>
+
+
+## Implementing Simple Layers
+### Multiplication Layer
+### Addition Layer
+
+## Implementing Activation Function Layers
+### ReLU Layer
+### Sigmoid Layer
+
+## Implementing Affine/Softmax Layers
+### Affine Layer
+### Batch Affine Layer
+### Softmax-with-Loss Layer
+
+## Implementing Backpropagation
+### Overview of Neural Network Learning
+### Implementing a Neural Network with Backpropagation
+### Verifying Gradients with Backpropagation
+### Implementing Training with Backpropagation
+
+## Summary
 
