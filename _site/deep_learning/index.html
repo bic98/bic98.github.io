@@ -1920,7 +1920,11 @@ N으로 나누어 정규화한다. N으로 나눔으로써 “평균 손실함�
 
 <p>를 하류노드로 전파한다.</p>
 
-\[\frac{\partial L}{\partial y} y^2 \exp(-x) = \frac{\partial L}{\partial y} \frac{1}{1 + \exp(-x)} (1 - \frac{1}{1 + \exp(-x)}) = \frac{\partial L}{\partial y} y (1 - y)\]
+\[\frac{\partial L}{\partial y} y^2 \exp(-x) =\]
+
+\[\frac{\partial L}{\partial y} \frac{1}{1 + \exp(-x)} (1 - \frac{1}{1 + \exp(-x)}) =\]
+
+\[\frac{\partial L}{\partial y} y (1 - y)\]
 
 <p>시그 모이드 계층의 역전파는 순전파의 출력만으로 계산할 수 있다.</p>
 

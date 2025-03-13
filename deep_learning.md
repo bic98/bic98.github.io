@@ -1877,7 +1877,15 @@ $$
 
 
 $$
-\frac{\partial L}{\partial y} y^2 \exp(-x) = \frac{\partial L}{\partial y} \frac{1}{1 + \exp(-x)} (1 - \frac{1}{1 + \exp(-x)}) = \frac{\partial L}{\partial y} y (1 - y)
+\frac{\partial L}{\partial y} y^2 \exp(-x) = 
+$$
+
+$$
+\frac{\partial L}{\partial y} \frac{1}{1 + \exp(-x)} (1 - \frac{1}{1 + \exp(-x)}) = 
+$$
+
+$$
+\frac{\partial L}{\partial y} y (1 - y)
 $$
 
 시그 모이드 계층의 역전파는 순전파의 출력만으로 계산할 수 있다.
