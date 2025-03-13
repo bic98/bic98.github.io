@@ -1758,18 +1758,285 @@ $$
 </div>
 
 
-## Implementing Simple Layers
-### Multiplication Layer
-### Addition Layer
-
 ## Implementing Activation Function Layers
 ### ReLU Layer
+
+Relu 함수의 수식은 다음과 같다.
+
+$$
+y = \begin{cases} x & (x > 0) \\ 0 & (x \leq 0) \end{cases}
+$$
+
+x에 대한 y의 미분은 다음과 같다.
+
+$$
+\frac{\partial y}{\partial x} = \begin{cases} 1 & (x > 0) \\ 0 & (x \leq 0) \end{cases}
+$$
+
+x가 0보다 크면 역전파는 상류의 값을 그대로 하류로 흘린다. x가 0이하면 신호를 하류로 보내지 않는다. 
+
+<div align="center">
+    <img src="/images/ReLu.png" alt="relu" width="800">
+</div>
+
+ReLU 클래스를 구현하면 다음과 같다. 
+
+
+```python
+class Relu:
+    def __init__(self):
+        self.mask = None
+
+    def forward(self, x):
+        self.mask = (x <= 0)
+        out = x.copy()
+        out[self.mask] = 0
+
+        return out
+
+    def backward(self, dout):
+        dout[self.mask] = 0
+        dx = dout
+
+        return dx
+```
+
+
 ### Sigmoid Layer
 
-## Implementing Affine/Softmax Layers
+시그모이드 함수식은 다음과 같다. 
+
+$$
+y = \frac{1}{1 + \exp(-x)}
+$$
+
+**이를 계산그래프로 나타내면 다음과 같다.**
+
+<div align="center">
+    <img src="/images/sigmoid0.png" alt="sigmoid" width="600">
+</div>
+<br>
+**'/' 노드, 즉 y = 1 / x 의 역전파는 다음과 같다.**
+
+<br>
+
+$$
+\frac{\partial y}{\partial x} = - \frac{1}{x^2} = -y^2
+$$
+
+<br>
+
+
+<div align="center">
+    <img src="/images/sigmoid1.png" alt="sigmoid" width="600">
+</div>
+
+<br>
+**'+' 노드의 역전파는 1을 곱하기만 한다.**
+
+<br>
+<div align="center">
+    <img src="/images/sigmoid2.png" alt="sigmoid" width="600">
+</div>
+
+<br>
+
+**'exp' 노드의 역전파는 순전파 때의 출력을 곱한다.**
+
+$$
+\frac{\partial y}{\partial y} = \exp(x) = y
+$$
+
+<br>
+<div align="center">
+    <img src="/images/sigmoid3.png" alt="sigmoid" width="600">
+</div>
+
+<br>
+
+'X' 노드의 역전파는 순전파 때의 값을 서로 바꿔 곱한다.
+
+$$
+\frac{\partial y}{\partial x} = 1
+$$
+
+<br>
+<div align="center">
+    <img src="/images/sigmoid4.png" alt="sigmoid" width="600">
+</div>
+
+<br>
+
+따라서 시그모이드 역전파의 최종 출력인
+
+$$
+\frac{\partial L}{\partial y} y^2 \exp(-x)
+$$
+
+를 하류노드로 전파한다. 
+
+
+$$
+\frac{\partial L}{\partial y} y^2 \exp(-x) = \frac{\partial L}{\partial y} \frac{1}{1 + \exp(-x)} (1 - \frac{1}{1 + \exp(-x)}) = \frac{\partial L}{\partial y} y (1 - y)
+$$
+
+시그 모이드 계층의 역전파는 순전파의 출력만으로 계산할 수 있다.
+
+```python
+class Sigmoid:
+    def __init__(self):
+        self.out = None
+
+    def forward(self, x):
+        out = 1 / (1 + np.exp(-x))
+        self.out = out
+
+        return out
+
+    def backward(self, dout):
+        dx = dout * self.out * (1.0 - self.out)
+
+        return dx
+```
+
+
 ### Affine Layer
-### Batch Affine Layer
+
+신경망의 순전파 때 수행하는 행렬의 곱은 기하학에서 어파인 변환이라고 한다. 이는 입력 데이터에 가중치를 곱하고 편향을 더하는 것을 의미한다. (**affine transformation**)
+
+$$
+Y = XW + B
+$$
+
+- **$$X$$**: 입력 데이터 (batch size, 입력 차원)
+- **$$W$$**: 가중치 행렬 (입력 차원, 출력 차원)
+- **$$B$$**: 편향 벡터 (출력 차원,)
+- **$$Y$$**: 출력 데이터 (batch size, 출력 차원)
+
+
+Affine Layer의 역전파는 다음과 같이 계산할 수 있다.
+
+#### **역전파 시 미분값**
+
+- **입력에 대한 미분**:
+  $$
+  \frac{\partial Y}{\partial X} = W^T \quad \text{(Shape: (n, k) → (k, n))}
+  $$
+- **가중치에 대한 미분**:
+  $$
+  \frac{\partial Y}{\partial W} = X^T \quad \text{(Shape: (m, n) → (n, m))}
+  $$
+- **편향에 대한 미분**:
+  $$
+  \frac{\partial Y}{\partial B} = 1
+  $$
+
+역전파를 손실함수 L에 대해 미분하면 다음과 같다.
+
+- **입력x에 대한 L의 미분**:
+
+$$
+\frac{\partial L}{\partial X} = \frac{\partial L}{\partial Y} W^T
+$$
+
+- **가중치w에 대한 L의 미분**:
+
+$$
+\frac{\partial L}{\partial W} = X^T \frac{\partial L}{\partial Y}
+$$
+
+- **편향B에 대한 L의 미분**:
+
+$$
+\frac{\partial L}{\partial B} = \frac{\partial L}{\partial Y}
+$$
+
+<br>
+<div align="center">
+    <img src="/images/affine1.png" alt="affine" width="600">
+</div>
+
+
+```python
+class Affine:
+    def __init__(self, W, b):
+        self.W = W
+        self.b = b
+        self.x = None
+        self.dW = None
+        self.db = None
+
+    def forward(self, x):
+        self.x = x
+        out = np.dot(x, self.W) + self.b
+
+        return out
+
+    def backward(self, dout):
+        dx = np.dot(dout, self.W.T)
+        self.dW = np.dot(self.x.T, dout)
+        self.db = np.sum(dout, axis=0)
+
+        return dx
+```
+
+
 ### Softmax-with-Loss Layer
+
+Softmax-with-Loss Layer는 **소프트맥스(Softmax) 함수**와 **손실(Loss) 함수**를 합친 계층
+
+ **1. Softmax 변환**
+
+Softmax 함수는 입력 값을 확률 분포로 변환하는 역할을 한다. 왜 $${\sum x}$$ 대신 $${\sum e^x}$$를 사용할까? 이는 지수 함수를 사용함으로써 음수를 양수로 변환하고, 지수 함수의 특성으로 인해 큰 값을 더 크게, 작은 값을 더 작게 만들기 위함이다.
+
+
+$$
+S(y_i) = \frac{e^{y_i}}{\sum_{j} e^{y_j}}
+$$
+
+이를 통해 각 클래스의 확률 값을 얻을 수 있다.
+
+ **2. Cross-Entropy Loss (교차 엔트로피 손실)**
+
+손실 함수는 예측된 확률과 실제 정답 간의 차이를 측정하는 역할을 한다. 
+
+$$
+L = - \sum t_i \log p_i
+$$
+
+여기서:
+
+- $$t_i$$ : 실제 정답 레이블 (one-hot encoding)
+- $$p_i$$ : softmax를 거친 확률값
+
+역전파에서 Softmax의 미분값은 다음과 같이 계산된다.
+
+$$
+\frac{\partial L}{\partial Y} = Y - T
+$$
+
+즉, softmax의 출력$$Y$$에서 실제 정답 $$T$$을 빼면 그래디언트가 계산된다.
+
+```python
+class SoftmaxWithLoss:
+    def __init__(self):
+        self.loss = None
+        self.y = None
+        self.t = None
+
+    def forward(self, x, t):
+        self.t = t
+        self.y = softmax(x)
+        self.loss = cross_entropy_error(self.y, self.t)
+
+        return self.loss
+
+    def backward(self, dout=1):
+        batch_size = self.t.shape[0]
+        dx = (self.y - self.t) / batch_size
+
+        return dx
+```
 
 ## Implementing Backpropagation
 ### Overview of Neural Network Learning

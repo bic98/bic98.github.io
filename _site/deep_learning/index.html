@@ -1821,18 +1821,248 @@ N으로 나누어 정규화한다. N으로 나눔으로써 “평균 손실함�
     <img src="/images/propagate3.png" alt="multiply_node" width="800" />
 </div>
 
-<h2 id="implementing-simple-layers">Implementing Simple Layers</h2>
-<h3 id="multiplication-layer">Multiplication Layer</h3>
-<h3 id="addition-layer">Addition Layer</h3>
-
 <h2 id="implementing-activation-function-layers">Implementing Activation Function Layers</h2>
 <h3 id="relu-layer">ReLU Layer</h3>
+
+<p>Relu 함수의 수식은 다음과 같다.</p>
+
+\[y = \begin{cases} x &amp; (x &gt; 0) \\ 0 &amp; (x \leq 0) \end{cases}\]
+
+<p>x에 대한 y의 미분은 다음과 같다.</p>
+
+\[\frac{\partial y}{\partial x} = \begin{cases} 1 &amp; (x &gt; 0) \\ 0 &amp; (x \leq 0) \end{cases}\]
+
+<p>x가 0보다 크면 역전파는 상류의 값을 그대로 하류로 흘린다. x가 0이하면 신호를 하류로 보내지 않는다.</p>
+
+<div align="center">
+    <img src="/images/ReLu.png" alt="relu" width="800" />
+</div>
+
+<p>ReLU 클래스를 구현하면 다음과 같다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">Relu</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">mask</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">x</span><span class="p">.</span><span class="nf">copy</span><span class="p">()</span>
+        <span class="n">out</span><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">return</span> <span class="n">out</span>
+
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">dout</span><span class="p">):</span>
+        <span class="n">dout</span><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">dout</span>
+
+        <span class="k">return</span> <span class="n">dx</span>
+</code></pre></div></div>
+
 <h3 id="sigmoid-layer">Sigmoid Layer</h3>
 
-<h2 id="implementing-affinesoftmax-layers">Implementing Affine/Softmax Layers</h2>
+<p>시그모이드 함수식은 다음과 같다.</p>
+
+\[y = \frac{1}{1 + \exp(-x)}\]
+
+<p><strong>이를 계산그래프로 나타내면 다음과 같다.</strong></p>
+
+<div align="center">
+    <img src="/images/sigmoid0.png" alt="sigmoid" width="600" />
+</div>
+<p><br />
+<strong>’/’ 노드, 즉 y = 1 / x 의 역전파는 다음과 같다.</strong></p>
+
+<p><br /></p>
+
+\[\frac{\partial y}{\partial x} = - \frac{1}{x^2} = -y^2\]
+
+<p><br /></p>
+
+<div align="center">
+    <img src="/images/sigmoid1.png" alt="sigmoid" width="600" />
+</div>
+
+<p><br />
+<strong>’+’ 노드의 역전파는 1을 곱하기만 한다.</strong></p>
+
+<p><br /></p>
+<div align="center">
+    <img src="/images/sigmoid2.png" alt="sigmoid" width="600" />
+</div>
+
+<p><br /></p>
+
+<p><strong>‘exp’ 노드의 역전파는 순전파 때의 출력을 곱한다.</strong></p>
+
+\[\frac{\partial y}{\partial y} = \exp(x) = y\]
+
+<p><br /></p>
+<div align="center">
+    <img src="/images/sigmoid3.png" alt="sigmoid" width="600" />
+</div>
+
+<p><br /></p>
+
+<p>‘X’ 노드의 역전파는 순전파 때의 값을 서로 바꿔 곱한다.</p>
+
+\[\frac{\partial y}{\partial x} = 1\]
+
+<p><br /></p>
+<div align="center">
+    <img src="/images/sigmoid4.png" alt="sigmoid" width="600" />
+</div>
+
+<p><br /></p>
+
+<p>따라서 시그모이드 역전파의 최종 출력인</p>
+
+\[\frac{\partial L}{\partial y} y^2 \exp(-x)\]
+
+<p>를 하류노드로 전파한다.</p>
+
+\[\frac{\partial L}{\partial y} y^2 \exp(-x) = \frac{\partial L}{\partial y} \frac{1}{1 + \exp(-x)} (1 - \frac{1}{1 + \exp(-x)}) = \frac{\partial L}{\partial y} y (1 - y)\]
+
+<p>시그 모이드 계층의 역전파는 순전파의 출력만으로 계산할 수 있다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">Sigmoid</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">out</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="p">.</span><span class="nf">exp</span><span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="p">))</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">out</span> <span class="o">=</span> <span class="n">out</span>
+
+        <span class="k">return</span> <span class="n">out</span>
+
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">dout</span><span class="p">):</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">dout</span> <span class="o">*</span> <span class="n">self</span><span class="p">.</span><span class="n">out</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">self</span><span class="p">.</span><span class="n">out</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">dx</span>
+</code></pre></div></div>
+
 <h3 id="affine-layer">Affine Layer</h3>
-<h3 id="batch-affine-layer">Batch Affine Layer</h3>
+
+<p>신경망의 순전파 때 수행하는 행렬의 곱은 기하학에서 어파인 변환이라고 한다. 이는 입력 데이터에 가중치를 곱하고 편향을 더하는 것을 의미한다. (<strong>affine transformation</strong>)</p>
+
+\[Y = XW + B\]
+
+<ul>
+  <li><strong>\(X\)</strong>: 입력 데이터 (batch size, 입력 차원)</li>
+  <li><strong>\(W\)</strong>: 가중치 행렬 (입력 차원, 출력 차원)</li>
+  <li><strong>\(B\)</strong>: 편향 벡터 (출력 차원,)</li>
+  <li><strong>\(Y\)</strong>: 출력 데이터 (batch size, 출력 차원)</li>
+</ul>
+
+<p>Affine Layer의 역전파는 다음과 같이 계산할 수 있다.</p>
+
+<h4 id="역전파-시-미분값"><strong>역전파 시 미분값</strong></h4>
+
+<ul>
+  <li><strong>입력에 대한 미분</strong>:
+\(\frac{\partial Y}{\partial X} = W^T \quad \text{(Shape: (n, k) → (k, n))}\)</li>
+  <li><strong>가중치에 대한 미분</strong>:
+\(\frac{\partial Y}{\partial W} = X^T \quad \text{(Shape: (m, n) → (n, m))}\)</li>
+  <li><strong>편향에 대한 미분</strong>:
+\(\frac{\partial Y}{\partial B} = 1\)</li>
+</ul>
+
+<p>역전파를 손실함수 L에 대해 미분하면 다음과 같다.</p>
+
+<ul>
+  <li><strong>입력x에 대한 L의 미분</strong>:</li>
+</ul>
+
+\[\frac{\partial L}{\partial X} = \frac{\partial L}{\partial Y} W^T\]
+
+<ul>
+  <li><strong>가중치w에 대한 L의 미분</strong>:</li>
+</ul>
+
+\[\frac{\partial L}{\partial W} = X^T \frac{\partial L}{\partial Y}\]
+
+<ul>
+  <li><strong>편향B에 대한 L의 미분</strong>:</li>
+</ul>
+
+\[\frac{\partial L}{\partial B} = \frac{\partial L}{\partial Y}\]
+
+<p><br /></p>
+<div align="center">
+    <img src="/images/affine1.png" alt="affine" width="600" />
+</div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">Affine</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">W</span> <span class="o">=</span> <span class="n">W</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">b</span> <span class="o">=</span> <span class="n">b</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">x</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">dW</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">db</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">dot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">W</span><span class="p">)</span> <span class="o">+</span> <span class="n">self</span><span class="p">.</span><span class="n">b</span>
+
+        <span class="k">return</span> <span class="n">out</span>
+
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">dout</span><span class="p">):</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">dot</span><span class="p">(</span><span class="n">dout</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">W</span><span class="p">.</span><span class="n">T</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">dW</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">dot</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">x</span><span class="p">.</span><span class="n">T</span><span class="p">,</span> <span class="n">dout</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">db</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">sum</span><span class="p">(</span><span class="n">dout</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">dx</span>
+</code></pre></div></div>
+
 <h3 id="softmax-with-loss-layer">Softmax-with-Loss Layer</h3>
+
+<p>Softmax-with-Loss Layer는 <strong>소프트맥스(Softmax) 함수</strong>와 <strong>손실(Loss) 함수</strong>를 합친 계층</p>
+
+<p><strong>1. Softmax 변환</strong></p>
+
+<p>Softmax 함수는 입력 값을 확률 분포로 변환하는 역할을 한다. 왜 \({\sum x}\) 대신 \({\sum e^x}\)를 사용할까? 이는 지수 함수를 사용함으로써 음수를 양수로 변환하고, 지수 함수의 특성으로 인해 큰 값을 더 크게, 작은 값을 더 작게 만들기 위함이다.</p>
+
+\[S(y_i) = \frac{e^{y_i}}{\sum_{j} e^{y_j}}\]
+
+<p>이를 통해 각 클래스의 확률 값을 얻을 수 있다.</p>
+
+<p><strong>2. Cross-Entropy Loss (교차 엔트로피 손실)</strong></p>
+
+<p>손실 함수는 예측된 확률과 실제 정답 간의 차이를 측정하는 역할을 한다.</p>
+
+\[L = - \sum t_i \log p_i\]
+
+<p>여기서:</p>
+
+<ul>
+  <li>\(t_i\) : 실제 정답 레이블 (one-hot encoding)</li>
+  <li>\(p_i\) : softmax를 거친 확률값</li>
+</ul>
+
+<p>역전파에서 Softmax의 미분값은 다음과 같이 계산된다.</p>
+
+\[\frac{\partial L}{\partial Y} = Y - T\]
+
+<p>즉, softmax의 출력\(Y\)에서 실제 정답 \(T\)을 빼면 그래디언트가 계산된다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">SoftmaxWithLoss</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">loss</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">y</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">t</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">t</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">y</span> <span class="o">=</span> <span class="nf">softmax</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">loss</span> <span class="o">=</span> <span class="nf">cross_entropy_error</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">y</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">t</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">loss</span>
+
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">dout</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">t</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">self</span><span class="p">.</span><span class="n">t</span><span class="p">)</span> <span class="o">/</span> <span class="n">batch_size</span>
+
+        <span class="k">return</span> <span class="n">dx</span>
+</code></pre></div></div>
 
 <h2 id="implementing-backpropagation">Implementing Backpropagation</h2>
 <h3 id="overview-of-neural-network-learning">Overview of Neural Network Learning</h3>
