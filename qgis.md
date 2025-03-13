@@ -388,6 +388,332 @@ print(df.isna().sum())
 print(df)
 
 ```
+## qgis push, pull 방법
+shp파일을 불러오고, 엑셀이나 csv파일로 만들수 있지 않을까? 그 반대로 엑셀이나 csv파일을 불러와서 shp파일로 만들수 있지 않을까? 이때, qgis에서는 push, pull 방법을 사용한다.
+
+정식적인 명칭은 아니고, git에서 사용하는 push, pull 방법을 사용하여 데이터를 불러오고, 저장하는 방법이다. 이 방법을 비슷하게 가지고와서 만들어보았다. 
+
+코드는 다음과 같다. 
+
+```python
+import pandas as pd
+import os
+from functools import singledispatch
+from typing import Optional, Union, List
+from qgis.core import (
+    QgsProject, QgsVectorLayer, QgsField, QgsFeature, 
+    QgsGeometry, QgsCoordinateReferenceSystem, QgsVectorFileWriter
+)
+from qgis.PyQt.QtCore import QVariant
+
+
+
+# 모든 사용자에게 적용 가능한 경로 설정
+base_path = os.path.join(os.path.expanduser("~"), "AppData", "Roaming", "QGIS")
+
+# 폴더가 없으면 자동 생성
+os.makedirs(base_path, exist_ok=True)
+# Default coordinate reference system
+GLOBAL_CRS = "EPSG:5179"  # Korean coordinate system
+
+@singledispatch
+def push(data, layer_name: str) -> None:
+    """Base function for pushing data to QGIS layers."""
+    raise NotImplementedError("지원하지 않는 데이터 타입입니다.")
+
+
+@push.register(str)
+def _(shp_path: str, layer_name: str) -> Optional[QgsVectorLayer]:
+    """
+    Register a shapefile as a QGIS layer.
+    
+    Args:
+        shp_path: Path to the shapefile
+        layer_name: Name for the QGIS layer
+        
+    Returns:
+        QgsVectorLayer or None: The created/existing layer or None on failure
+    """
+    # Check if layer already exists
+    existing = QgsProject.instance().mapLayersByName(layer_name)
+    if existing:
+        print(f"레이어 '{layer_name}' 이미 존재 (재등록하지 않음)")
+        return existing[0]
+        
+    # Create new layer from shapefile
+    layer = QgsVectorLayer(shp_path, layer_name, 'ogr')
+    if not layer.isValid():
+        print("레이어 등록 실패: 경로 확인")
+        return None
+        
+    # Set coordinate system and add to project
+    layer.setCrs(QgsCoordinateReferenceSystem(GLOBAL_CRS))
+    QgsProject.instance().addMapLayer(layer)
+    print(f"Shapefile 레이어 '{layer_name}' 등록 완료")
+    return layer
+
+
+@push.register(pd.DataFrame)
+def _(df: pd.DataFrame, layer_name: str) -> Optional[QgsVectorLayer]:
+    """
+    Register a pandas DataFrame as a QGIS layer with geometry support.
+    If geometry column (WKT) exists, saves as shapefile, otherwise as CSV.
+    
+    Args:
+        df: DataFrame containing data and optional WKT geometry column
+        layer_name: Name for the QGIS layer
+        
+    Returns:
+        QgsVectorLayer or None: The created layer or None on failure
+    """
+    # Check if layer already exists
+    existing = QgsProject.instance().mapLayersByName(layer_name)
+    if existing:
+        print(f"레이어 '{layer_name}' 이미 존재 (재등록하지 않음)")
+        return existing[0]
+    
+    # Detect geometry column and type
+    geom_col = 'WKT' if 'WKT' in df.columns else None
+    geometry_type = "None"
+    
+    if geom_col:
+        # Get first valid geometry to determine type
+        valid_geoms = df.loc[df[geom_col].notnull(), geom_col]
+        if not valid_geoms.empty:
+            sample_geom = QgsGeometry.fromWkt(valid_geoms.iloc[0])
+            geometry_type = {
+                0: "Point",
+                1: "LineString",               2: "Polygon"
+            }.get(sample_geom.type(), "Unknown")
+    
+    # 공간 데이터가 있는 경우 Shapefile로 저장
+    if geom_col and geometry_type != "None" and geometry_type != "Unknown":
+        # Create memory layer with appropriate geometry type
+        uri = f"{geometry_type}?crs={GLOBAL_CRS}"
+        mem_layer = QgsVectorLayer(uri, layer_name, "memory")
+        mem_layer.setCrs(QgsCoordinateReferenceSystem(GLOBAL_CRS))
+        provider = mem_layer.dataProvider()
+
+        # Define fields (excluding geometry column)
+        fields = []
+        for col in df.columns:
+            if col != geom_col:
+                field_type = QVariant.Double if pd.api.types.is_numeric_dtype(df[col]) else QVariant.String
+                fields.append(QgsField(col, field_type))
+
+        provider.addAttributes(fields)
+        mem_layer.updateFields()
+
+        # Prepare features in batch (more efficient than one by one)
+        features = []
+        df_fields = [col for col in df.columns if col != geom_col]
+
+        # Pre-compute indices for performance
+        has_geom_mask = df[geom_col].notnull()
+
+        for i, row in enumerate(df[df_fields].values):
+            feat = QgsFeature()
+            feat.setFields(mem_layer.fields())
+            feat.setAttributes(row.tolist())
+
+            # Set geometry if available and valid
+            if has_geom_mask.iloc[i]:
+                wkt = df[geom_col].iloc[i]
+                feat.setGeometry(QgsGeometry.fromWkt(wkt))
+
+            features.append(feat)
+
+        # Add features in batch
+        provider.addFeatures(features)
+        mem_layer.updateExtents()
+
+        save_path = os.path.join(base_path, f"{layer_name}.shp")
+        error = QgsVectorFileWriter.writeAsVectorFormat(
+            mem_layer, save_path, "UTF-8", mem_layer.crs(), "ESRI Shapefile"
+        )
+        if error[0] != QgsVectorFileWriter.NoError:
+            print("파일 저장 중 오류 발생:", error)
+            return None
+        print(f"레이어가 '{save_path}'에 저장되었습니다.")
+
+        # 저장된 파일을 다시 불러오기
+        saved_layer = QgsVectorLayer(save_path, layer_name, "ogr")
+        QgsProject.instance().addMapLayer(saved_layer)
+        print(f"레이어 '{layer_name}'이(가) 공간 데이터로 등록됨. 피처 수: {saved_layer.featureCount()}")
+        return saved_layer
+
+    else:
+        # 공간 데이터가 없는 경우 CSV로 저장
+        csv_path = os.path.join(base_path, f"{layer_name}.csv")
+        df.to_csv(csv_path, index=False, encoding='utf-8')
+        print(f"데이터가 '{csv_path}'에 CSV로 저장되었습니다.")
+
+        # 경로 슬래시 방향 통일 (Windows 백슬래시 문제 해결)
+        csv_path_uri = csv_path.replace('\\', '/')
+
+        # CSV 파일을 레이어로 불러오기 - URI 형식 수정
+        uri = f"file:///{csv_path_uri}?delimiter=,&encoding=UTF-8&type=csv&detectTypes=yes"
+
+        # 디버깅 정보 출력
+        print(f"CSV 레이어 URI: {uri}")
+
+        csv_layer = QgsVectorLayer(uri, layer_name, "delimitedtext")
+
+        if not csv_layer.isValid():
+            print("CSV 레이어를 생성할 수 없습니다. 오류 메시지:")
+            try:
+                print(csv_layer.error().summary())
+            except:
+                print("상세 오류 정보를 가져올 수 없습니다.")
+                
+            # 대안: 테이블 레이어로 직접 생성 시도
+            print("대안 방법으로 데이터프레임을 메모리 테이블로 직접 등록합니다.")
+            uri = "none"
+            table_layer = QgsVectorLayer(uri, layer_name, "memory")
+            provider = table_layer.dataProvider()
+
+            # 필드 정의
+            fields = []
+            for col in df.columns:
+                field_type = QVariant.Double if pd.api.types.is_numeric_dtype(df[col]) else QVariant.String
+                fields.append(QgsField(col, field_type))
+
+            provider.addAttributes(fields)
+            table_layer.updateFields()
+
+            # 데이터 추가
+            features = []
+            for idx, row in df.iterrows():
+                feat = QgsFeature()
+                feat.setFields(table_layer.fields())
+                feat.setAttributes(row.tolist())
+                features.append(feat)
+
+            provider.addFeatures(features)
+            QgsProject.instance().addMapLayer(table_layer)
+            print(f"레이어 '{layer_name}'이(가) 메모리 테이블로 등록됨. 행 수: {table_layer.featureCount()}")
+            return table_layer
+        else:
+            QgsProject.instance().addMapLayer(csv_layer)
+            print(f"레이어 '{layer_name}'이(가) CSV 테이블 데이터로 등록됨. 행 수: {csv_layer.featureCount()}")
+            return csv_layer
+
+def pull(layer_name):
+    existing = QgsProject.instance().mapLayersByName(layer_name)
+    if not existing:
+        print(f"레이어 '{layer_name}'가 존재하지 않습니다.")
+        return None
+    layer = existing[0]
+    fields = layer.fields()
+    print("필드 정보:", " | ".join([f"{f.name()} ({f.typeName()})" for f in fields]))
+    
+    data = []
+    for feat in layer.getFeatures():
+        attrs = feat.attributes()
+        wkt = feat.geometry().asWkt() if feat.geometry() else None
+        attrs.append(wkt)
+        data.append(attrs)
+    
+    col_names = [f.name() for f in fields] + ['WKT']
+    df = pd.DataFrame(data, columns=col_names)
+    return df
+
+def change_color(layer_name, color):
+    """
+    레이어 이름을 받아 QGIS 프로젝트에서 해당 레이어를 찾아 심볼 색상을 변경합니다.
+    레이어 패널의 심볼 캐시도 함께 업데이트합니다.
+    
+    Args:
+        layer_name (str): 변경할 레이어의 이름.
+        color (str or QColor): 새 색상. 예: "#FF0000" 또는 QColor 객체.
+    """
+    from qgis.PyQt.QtGui import QColor
+    from qgis.core import QgsProject
+    from qgis.utils import iface
+    
+    # color가 문자열이면 QColor로 변환
+    if isinstance(color, str):
+        color = QColor(color)
+    
+    # QgsProject에서 레이어 검색
+    layers = QgsProject.instance().mapLayersByName(layer_name)
+    if not layers:
+        print(f"레이어 '{layer_name}'을(를) 찾을 수 없습니다.")
+        return
+    layer = layers[0]
+    
+    renderer = layer.renderer()
+    if renderer is None:
+        print("레이어에 렌더러가 없습니다.")
+        return
+    
+    symbol = renderer.symbol()
+    symbol.setColor(color)
+    
+    # 레이어 다시 그리기
+    layer.triggerRepaint()
+    
+    # 레이어 패널의 심볼 캐시 업데이트
+    iface.layerTreeView().refreshLayerSymbology(layer.id())
+    
+    # 레이어 범례 업데이트
+    if hasattr(iface, 'legendInterface'):
+        iface.legendInterface().refreshLayerSymbology(layer)
+    
+    print(f"레이어 '{layer.name()}'의 색상이 {color.name()}(으)로 변경되었습니다.")
+
+def remove(layer_name: str) -> None:
+    """
+    QGIS 프로젝트에서 지정한 이름의 레이어를 모두 제거합니다.
+    
+    Args:
+        layer_name (str): 제거할 레이어의 이름.
+    """
+    layers = QgsProject.instance().mapLayersByName(layer_name)
+    if not layers:
+        print(f"레이어 '{layer_name}'가 존재하지 않습니다.")
+        return
+
+    for layer in layers:
+        QgsProject.instance().removeMapLayer(layer.id())
+    print(f"레이어 '{layer_name}'가 제거되었습니다.")
+
+```
+
+
+사용하는 방법은 다음과 같다.
+
+C:\Users\XXXXXXXXXX\AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins
+
+위의 경로에 코드를 저장하고, qgis를 실행하면, push, pull, remove, change_color 함수를 사용할 수 있다.
+
+필자는 본인의 이름을 따서 inchan.py로 저장하였다. 
+
+그럼 qgis 파이썬 플로그인에서 
+
+```python
+import inchan
+#inchan.GLOBAL_CRS = "EPSG:5179"(기본값) -> 한국 좌표계(필요에 따라 변경 가능)
+#inchan.push("data/TL_SCCO_SIG.shp", "layer_name")
+#inchan.push(df, "layer_name")
+#inchan.pull("layer_name")
+#inchan.remove("layer_name")
+#inchan.change_color("layer_name", "#FF0000")
+```
+push 함수는 shp파일을 불러오거나, 데이터프레임을 레이어로 만들어준다.
+shp파일과 엑셀, csv파일의 차이점은 wkt라는 컬럼이 있는지 없는지이다. wkt라는 컬럼이 있으면 shp파일로 저장하고, 없으면 csv파일로 저장한다.
+
+pull 함수는 레이어의 정보를 데이터프레임으로 변환한다.
+판다스 데이터프레임으로 변환하면, 데이터를 분석하거나, 시각화할 수 있기 때문이다. 즉, shp파일의 정보를 판다스 데이터 프레임으로 변환하여 데이터를 정제, 분석, 조인등을 쉽게 하여 다시 푸쉬하면 일을 정말 쉽게 할 수 있다.
+
+remove 함수는 레이어를 제거한다.
+
+change_color 함수는 레이어의 색상을 변경한다.
+
+이렇게 사용하면 된다.
+
+
+
+## 행정동 코드를 행정동 이름 변환
 
 gid는 행정동 코드로 되어있다. 우리가 사용하기에는 코드번호보다는 문자열로된 행정동 이름이 더 편리하다. 따라서 gid를 행정동 이름으로 변환해야 한다. 이때, 행정동 코드와 행정동 이름이 매칭된 데이터를 사용하면 된다.
-## 행정동 코드를 행정동 이름 변환
