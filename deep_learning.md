@@ -2238,6 +2238,14 @@ with open(model_path, 'wb') as f:
     
 print(f"모델이 {model_path}에 저장되었습니다.")
 ```
+
+학습이 잘 완료된 것을 볼 수 있다. 테스트 정확도는 98% 정도이다. 
+
+<div align = "center">
+    <img src="/images/mnist_res.png" alt="mnist_result" width="800">
+</div>
+
+<br>
 오차역전법의 시간 복잡도를 계산해보면 수치 미분보다 훨씬 빠르다. 오차 역전파는 순전파와 역전파를 함께 수행하여 모든 매개변수에 대한 미분을 한번에 구한다. 
 
 **O(F(순전파 + 역전파))**

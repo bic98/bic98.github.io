@@ -2268,7 +2268,15 @@ N으로 나누어 정규화한다. N으로 나눔으로써 “평균 손실함�
     
 <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">모델이 </span><span class="si">{</span><span class="n">model_path</span><span class="si">}</span><span class="s">에 저장되었습니다.</span><span class="sh">"</span><span class="p">)</span>
 </code></pre></div></div>
-<p>오차역전법의 시간 복잡도를 계산해보면 수치 미분보다 훨씬 빠르다. 오차 역전파는 순전파와 역전파를 함께 수행하여 모든 매개변수에 대한 미분을 한번에 구한다.</p>
+
+<p>학습이 잘 완료된 것을 볼 수 있다. 테스트 정확도는 98% 정도이다.</p>
+
+<div align="center">
+    <img src="/images/mnist_res.png" alt="mnist_result" width="800" />
+</div>
+
+<p><br />
+오차역전법의 시간 복잡도를 계산해보면 수치 미분보다 훨씬 빠르다. 오차 역전파는 순전파와 역전파를 함께 수행하여 모든 매개변수에 대한 미분을 한번에 구한다.</p>
 
 <p><strong>O(F(순전파 + 역전파))</strong></p>
 
