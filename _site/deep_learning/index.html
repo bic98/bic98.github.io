@@ -1141,6 +1141,9 @@ N으로 나누어 정규화한다. N으로 나눔으로써 “평균 손실함�
 <span class="kn">from</span> <span class="n">tensorflow.keras.datasets</span> <span class="kn">import</span> <span class="n">mnist</span>
 <span class="kn">from</span> <span class="n">tensorflow.keras.utils</span> <span class="kn">import</span> <span class="n">to_categorical</span>
 
+<span class="n">x_train</span> <span class="o">=</span> <span class="n">x_train</span><span class="p">.</span><span class="nf">astype</span><span class="p">(</span><span class="sh">'</span><span class="s">float32</span><span class="sh">'</span><span class="p">)</span> <span class="o">/</span> <span class="mi">255</span>
+<span class="n">x_test</span> <span class="o">=</span> <span class="n">x_test</span><span class="p">.</span><span class="nf">astype</span><span class="p">(</span><span class="sh">'</span><span class="s">float32</span><span class="sh">'</span><span class="p">)</span> <span class="o">/</span> <span class="mi">255</span>
+
 <span class="c1"># MNIST 데이터 불러오기
 </span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span> <span class="n">t_train</span><span class="p">),</span> <span class="p">(</span><span class="n">x_test</span><span class="p">,</span> <span class="n">t_test</span><span class="p">)</span> <span class="o">=</span> <span class="n">mnist</span><span class="p">.</span><span class="nf">load_data</span><span class="p">()</span>
 
@@ -1557,6 +1560,9 @@ N으로 나누어 정규화한다. N으로 나눔으로써 “평균 손실함�
 <span class="c1"># MNIST 데이터 불러오기
 </span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span> <span class="n">t_train</span><span class="p">),</span> <span class="p">(</span><span class="n">x_test</span><span class="p">,</span> <span class="n">t_test</span><span class="p">)</span> <span class="o">=</span> <span class="n">mnist</span><span class="p">.</span><span class="nf">load_data</span><span class="p">()</span>
 
+<span class="n">x_train</span> <span class="o">=</span> <span class="n">x_train</span><span class="p">.</span><span class="nf">astype</span><span class="p">(</span><span class="sh">'</span><span class="s">float32</span><span class="sh">'</span><span class="p">)</span> <span class="o">/</span> <span class="mi">255</span>
+<span class="n">x_test</span> <span class="o">=</span> <span class="n">x_test</span><span class="p">.</span><span class="nf">astype</span><span class="p">(</span><span class="sh">'</span><span class="s">float32</span><span class="sh">'</span><span class="p">)</span> <span class="o">/</span> <span class="mi">255</span>
+
 <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">훈련 데이터 크기:</span><span class="sh">"</span><span class="p">,</span> <span class="n">x_train</span><span class="p">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># (60000, 28, 28)
 </span><span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">훈련 라벨 크기:</span><span class="sh">"</span><span class="p">,</span> <span class="n">t_train</span><span class="p">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># (60000,)
 </span><span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">테스트 데이터 크기:</span><span class="sh">"</span><span class="p">,</span> <span class="n">x_test</span><span class="p">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># (10000, 28, 28)
@@ -1607,53 +1613,15 @@ N으로 나누어 정규화한다. N으로 나눔으로써 “평균 손실함�
 </code></pre></div></div>
 <hr />
 
-<p>위와 같이 클래스로 구현하여 학습을 시키면 학습시간이 대략 9시간 정도 걸린다. 케라스 모델을 사용하면 더 빠르게 학습시킬 수 있다.</p>
+<p>위와 같이 클래스로 구현하여 학습을 시키면 학습시간이 대략 9시간 정도 걸린다. 수치 미분이 쉽지만 연산과정이 너무나 많기 때문에 대용량의 데이터를 학습시키기에는 무리가 있다.</p>
 
-<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">wandb</span>
-<span class="kn">from</span> <span class="n">wandb.integration.keras</span> <span class="kn">import</span> <span class="n">WandbMetricsLogger</span><span class="p">,</span> <span class="n">WandbModelCheckpoint</span>
-<span class="kn">import</span> <span class="n">keras</span>
+<p>우리는 수치 미분을 위해 중앙차분 방식을 사용했다. 딥러닝에서는 매개변수에 대한 미분을 계산해야하므로, 각 매개변수마다 독립적으로 수치미분을 계산해야한다.</p>
 
-<span class="c1"># Initialize Wandb
-</span><span class="n">wandb</span><span class="p">.</span><span class="nf">init</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="sh">'</span><span class="s">workshop_1</span><span class="sh">'</span><span class="p">,</span> <span class="n">project</span><span class="o">=</span><span class="sh">"</span><span class="s">mnist_project-sgd</span><span class="sh">"</span><span class="p">)</span>
+<p>만약 네트워크 구조가 (784, 50, 10)이라면, 총 784 * 50 + 50 * 10 = 39700개의 매개변수에 대해 미분을 계산해야한다. 이는 너무 많은 계산량을 요구한다.</p>
 
-<span class="c1"># 데이터 생성
-</span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">),</span> <span class="p">(</span><span class="n">x_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span> <span class="o">=</span> <span class="n">keras</span><span class="p">.</span><span class="n">datasets</span><span class="p">.</span><span class="n">mnist</span><span class="p">.</span><span class="nf">load_data</span><span class="p">()</span>
-<span class="n">x_train</span><span class="p">,</span> <span class="n">x_test</span> <span class="o">=</span> <span class="n">x_train</span> <span class="o">/</span> <span class="mf">255.0</span><span class="p">,</span> <span class="n">x_test</span> <span class="o">/</span> <span class="mf">255.0</span>
+<p>총 학습에 걸리는 시간을 계산해보면, 순전파 연산량 * 수치미분 연산량 * 미니배치 크기 * 에폭 수 만큼의 연산량이 필요하다. 이는 너무 많은 연산량을 요구한다.</p>
 
-<span class="c1"># 모델 생성
-</span><span class="n">model</span> <span class="o">=</span> <span class="n">keras</span><span class="p">.</span><span class="n">models</span><span class="p">.</span><span class="nc">Sequential</span><span class="p">([</span>
-    <span class="n">keras</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="nc">Flatten</span><span class="p">(</span><span class="n">input_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">28</span><span class="p">,</span> <span class="mi">28</span><span class="p">)),</span>
-    <span class="n">keras</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="nc">Dense</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="sh">"</span><span class="s">sigmoid</span><span class="sh">"</span><span class="p">),</span>
-    <span class="n">keras</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="nc">Dense</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="sh">"</span><span class="s">softmax</span><span class="sh">"</span><span class="p">),</span>
-<span class="p">])</span>
-
-<span class="c1"># 컴파일 및 학습
-</span><span class="n">model</span><span class="p">.</span><span class="nf">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="sh">"</span><span class="s">sgd</span><span class="sh">"</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="sh">"</span><span class="s">sparse_categorical_crossentropy</span><span class="sh">"</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">accuracy</span><span class="sh">"</span><span class="p">])</span>
-
-<span class="c1"># Define the checkpoint callback
-</span><span class="n">checkpoint_callback</span> <span class="o">=</span> <span class="nc">WandbModelCheckpoint</span><span class="p">(</span><span class="n">filepath</span><span class="o">=</span><span class="sh">"</span><span class="s">models/mnins_sgd.keras</span><span class="sh">"</span><span class="p">,</span> <span class="n">save_freq</span><span class="o">=</span><span class="sh">'</span><span class="s">epoch</span><span class="sh">'</span><span class="p">)</span>
-
-<span class="n">model</span><span class="p">.</span><span class="nf">fit</span><span class="p">(</span>
-    <span class="n">x_train</span><span class="p">,</span>
-    <span class="n">y_train</span><span class="p">,</span>
-    <span class="n">epochs</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
-    <span class="n">validation_data</span><span class="o">=</span><span class="p">(</span><span class="n">x_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">),</span>
-    <span class="n">callbacks</span><span class="o">=</span><span class="p">[</span>
-        <span class="nc">WandbMetricsLogger</span><span class="p">(),</span>
-        <span class="n">checkpoint_callback</span><span class="p">,</span>
-    <span class="p">],</span>
-<span class="p">)</span>
-</code></pre></div></div>
-
-<p>위와 같이 케라스 모델을 사용하면 더 빠르게 학습시킬 수 있다.
-손실함수 그래프와 정확도 그래프를 확인해보자. 128번의 에폭을 돌린 결과이다.</p>
-
-<div align="center">
-    <img src="/images/mnist_sgd (2).png" alt="loss_accuracy" width="600" />
-    <img src="/images/mnist_sgd (3).png" alt="loss_accuracy" width="600" />
-</div>
-<p><br />
-에폭이 증가할수록 손실함수는 감소하고 정확도는 증가하는 것을 확인할 수 있다.</p>
+<p>따라서 우리는 <strong>오차역전파법</strong>을 사용한다. 이는 기울기를 효율적으로 계산할 수 있다.</p>
 
 <hr />
 
@@ -2069,13 +2037,300 @@ N으로 나누어 정규화한다. N으로 나눔으로써 “평균 손실함�
 </code></pre></div></div>
 
 <h2 id="implementing-backpropagation">Implementing Backpropagation</h2>
-<h3 id="overview-of-neural-network-learning">Overview of Neural Network Learning</h3>
-<h3 id="implementing-a-neural-network-with-backpropagation">Implementing a Neural Network with Backpropagation</h3>
-<h3 id="verifying-gradients-with-backpropagation">Verifying Gradients with Backpropagation</h3>
-<h3 id="implementing-training-with-backpropagation">Implementing Training with Backpropagation</h3>
 
-<h2 id="summary-1">Summary</h2>
+<p><strong>전제</strong></p>
+<ul>
+  <li>신경망은 적응 가능한 가중치와 편향이 있고, 이 가중치와 편향을 훈련 데이터에 적응하도록 조정하는 과정을 ‘학습’이라 한다.</li>
+</ul>
 
+<p><strong>1단계 - 미니배치</strong></p>
+<ul>
+  <li>훈련 데이터 중 일부를 무작위로 가져온다. 이렇게 선별한 데이터를 미니배치라 하며, 그 미니배치의 손실 함수 값을 줄이는 것이 목표이다.</li>
+</ul>
+
+<p><strong>2단계 - 기울기 산출</strong></p>
+<ul>
+  <li>미니배치의 손실 함수 값을 줄이기 위해 각 가중치 매개변수의 기울기를 구한다. 기울기는 손실 함수의 값을 가장 작게 하는 방향을 제시한다.</li>
+</ul>
+
+<p><strong>3단계 - 매개변수 갱신</strong></p>
+<ul>
+  <li>가중치 매개변수를 기울기 방향으로 아주 조금 갱신한다.</li>
+</ul>
+
+<p><strong>4단계 - 반복</strong></p>
+<ul>
+  <li>1~3단계를 반복한다.</li>
+</ul>
+
+<p>수치 미분을 사용하여 기울기를 구하는 방법은 간단하지만 계산이 오래 걸린다. 따라서 역전파를 사용하여 기울기를 효율적으로 구할 수 있다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="n">keras.src.ops</span> <span class="kn">import</span> <span class="n">normalize</span><span class="p">,</span> <span class="n">one_hot</span>
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">from</span> <span class="n">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+
+<span class="k">class</span> <span class="nc">Affine</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">W</span> <span class="o">=</span> <span class="n">W</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">b</span> <span class="o">=</span> <span class="n">b</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">x</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">dW</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">db</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">dot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">W</span><span class="p">)</span> <span class="o">+</span> <span class="n">self</span><span class="p">.</span><span class="n">b</span>
+        <span class="k">return</span> <span class="n">out</span>
+
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">dout</span><span class="p">):</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">dot</span><span class="p">(</span><span class="n">dout</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">W</span><span class="p">.</span><span class="n">T</span><span class="p">)</span>  <span class="c1"># W.T is correct, but need to ensure W is not None
+</span>        <span class="n">self</span><span class="p">.</span><span class="n">dW</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">dot</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">x</span><span class="p">.</span><span class="n">T</span><span class="p">,</span> <span class="n">dout</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">db</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">sum</span><span class="p">(</span><span class="n">dout</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dx</span>
+
+<span class="k">class</span> <span class="nc">Relu</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">mask</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">x</span><span class="p">.</span><span class="nf">copy</span><span class="p">()</span>
+        <span class="n">out</span><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">out</span>
+
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">dout</span><span class="p">):</span>
+        <span class="n">dout</span><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">dout</span>
+        <span class="k">return</span> <span class="n">dx</span>
+
+<span class="k">def</span> <span class="nf">softmax</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">x</span><span class="p">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">.</span><span class="n">T</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">np</span><span class="p">.</span><span class="nf">max</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">exp</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="p">.</span><span class="nf">sum</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">exp</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">y</span><span class="p">.</span><span class="n">T</span> 
+
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">np</span><span class="p">.</span><span class="nf">max</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="p">.</span><span class="nf">exp</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="p">.</span><span class="nf">sum</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">exp</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">cross_entropy_error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">y</span><span class="p">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="p">.</span><span class="nf">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">t</span><span class="p">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">.</span><span class="nf">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">.</span><span class="n">size</span><span class="p">)</span>
+    
+    <span class="c1"># If t is one-hot encoded
+</span>    <span class="k">if</span> <span class="n">t</span><span class="p">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">y</span><span class="p">.</span><span class="n">size</span><span class="p">:</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">np</span><span class="p">.</span><span class="nf">sum</span><span class="p">(</span><span class="n">t</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="nf">log</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="mf">1e-7</span><span class="p">))</span> <span class="o">/</span> <span class="n">y</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># If t is label encoded
+</span>    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">np</span><span class="p">.</span><span class="nf">sum</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">log</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">np</span><span class="p">.</span><span class="nf">arange</span><span class="p">(</span><span class="n">y</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">t</span><span class="p">]</span> <span class="o">+</span> <span class="mf">1e-7</span><span class="p">))</span> <span class="o">/</span> <span class="n">y</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="k">class</span> <span class="nc">SoftmaxWithLoss</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">loss</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">y</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">t</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">t</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">y</span> <span class="o">=</span> <span class="nf">softmax</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">loss</span> <span class="o">=</span> <span class="nf">cross_entropy_error</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">y</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">t</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">loss</span>
+
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">dout</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">t</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">batch_size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sh">"</span><span class="s">Batch size cannot be zero</span><span class="sh">"</span><span class="p">)</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">self</span><span class="p">.</span><span class="n">t</span><span class="p">)</span> <span class="o">/</span> <span class="n">batch_size</span>
+        <span class="k">return</span> <span class="n">dx</span>
+
+<span class="k">class</span> <span class="nc">TwoLayerNet</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">input_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">output_size</span><span class="p">,</span> <span class="n">weight_init_std</span><span class="o">=</span><span class="mf">0.01</span><span class="p">):</span>
+        <span class="c1"># Initialize weights and biases
+</span>        <span class="n">self</span><span class="p">.</span><span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">params</span><span class="p">[</span><span class="sh">'</span><span class="s">W1</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">weight_init_std</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">randn</span><span class="p">(</span><span class="n">input_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">params</span><span class="p">[</span><span class="sh">'</span><span class="s">b1</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">params</span><span class="p">[</span><span class="sh">'</span><span class="s">W2</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">weight_init_std</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">randn</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">output_size</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">params</span><span class="p">[</span><span class="sh">'</span><span class="s">b2</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="n">output_size</span><span class="p">)</span>
+
+        <span class="c1"># Create layers
+</span>        <span class="n">self</span><span class="p">.</span><span class="n">layers</span> <span class="o">=</span> <span class="nc">OrderedDict</span><span class="p">()</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">layers</span><span class="p">[</span><span class="sh">'</span><span class="s">Affine1</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="nc">Affine</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">params</span><span class="p">[</span><span class="sh">'</span><span class="s">W1</span><span class="sh">'</span><span class="p">],</span> <span class="n">self</span><span class="p">.</span><span class="n">params</span><span class="p">[</span><span class="sh">'</span><span class="s">b1</span><span class="sh">'</span><span class="p">])</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">layers</span><span class="p">[</span><span class="sh">'</span><span class="s">Relu1</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="nc">Relu</span><span class="p">()</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">layers</span><span class="p">[</span><span class="sh">'</span><span class="s">Affine2</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="nc">Affine</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">params</span><span class="p">[</span><span class="sh">'</span><span class="s">W2</span><span class="sh">'</span><span class="p">],</span> <span class="n">self</span><span class="p">.</span><span class="n">params</span><span class="p">[</span><span class="sh">'</span><span class="s">b2</span><span class="sh">'</span><span class="p">])</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">lastLayer</span> <span class="o">=</span> <span class="nc">SoftmaxWithLoss</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">self</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="nf">values</span><span class="p">():</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">layer</span><span class="p">.</span><span class="nf">forward</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x</span>
+
+    <span class="k">def</span> <span class="nf">loss</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="nf">predict</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">lastLayer</span><span class="p">.</span><span class="nf">forward</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">accuracy</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="nf">predict</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">argmax</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">t</span><span class="p">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">argmax</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">accuracy</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">sum</span><span class="p">(</span><span class="n">y</span> <span class="o">==</span> <span class="n">t</span><span class="p">)</span> <span class="o">/</span> <span class="nf">float</span><span class="p">(</span><span class="n">x</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">accuracy</span>
+
+    <span class="k">def</span> <span class="nf">gradient</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="c1"># Forward
+</span>        <span class="n">self</span><span class="p">.</span><span class="nf">loss</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+
+        <span class="c1"># Backward
+</span>        <span class="n">dout</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">dout</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">lastLayer</span><span class="p">.</span><span class="nf">backward</span><span class="p">(</span><span class="n">dout</span><span class="p">)</span>
+
+        <span class="n">layers</span> <span class="o">=</span> <span class="nf">list</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="nf">values</span><span class="p">())</span>
+        <span class="n">layers</span><span class="p">.</span><span class="nf">reverse</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">:</span>
+            <span class="n">dout</span> <span class="o">=</span> <span class="n">layer</span><span class="p">.</span><span class="nf">backward</span><span class="p">(</span><span class="n">dout</span><span class="p">)</span>
+
+        <span class="c1"># Set gradients
+</span>        <span class="n">grads</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">grads</span><span class="p">[</span><span class="sh">'</span><span class="s">W1</span><span class="sh">'</span><span class="p">],</span> <span class="n">grads</span><span class="p">[</span><span class="sh">'</span><span class="s">b1</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">layers</span><span class="p">[</span><span class="sh">'</span><span class="s">Affine1</span><span class="sh">'</span><span class="p">].</span><span class="n">dW</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">layers</span><span class="p">[</span><span class="sh">'</span><span class="s">Affine1</span><span class="sh">'</span><span class="p">].</span><span class="n">db</span>
+        <span class="n">grads</span><span class="p">[</span><span class="sh">'</span><span class="s">W2</span><span class="sh">'</span><span class="p">],</span> <span class="n">grads</span><span class="p">[</span><span class="sh">'</span><span class="s">b2</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">layers</span><span class="p">[</span><span class="sh">'</span><span class="s">Affine2</span><span class="sh">'</span><span class="p">].</span><span class="n">dW</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">layers</span><span class="p">[</span><span class="sh">'</span><span class="s">Affine2</span><span class="sh">'</span><span class="p">].</span><span class="n">db</span>
+
+        <span class="k">return</span> <span class="n">grads</span>
+
+<span class="kn">import</span> <span class="n">tensorflow</span> <span class="k">as</span> <span class="n">tf</span>
+<span class="kn">import</span> <span class="n">keras</span>
+<span class="kn">from</span> <span class="n">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>  <span class="c1"># tqdm 임포트
+</span>
+<span class="c1"># MNIST 데이터 불러오기
+</span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span> <span class="n">t_train</span><span class="p">),</span> <span class="p">(</span><span class="n">x_test</span><span class="p">,</span> <span class="n">t_test</span><span class="p">)</span> <span class="o">=</span> <span class="n">keras</span><span class="p">.</span><span class="n">datasets</span><span class="p">.</span><span class="n">mnist</span><span class="p">.</span><span class="nf">load_data</span><span class="p">()</span>
+
+<span class="c1"># Normalize the data
+</span><span class="n">x_train</span> <span class="o">=</span> <span class="n">x_train</span><span class="p">.</span><span class="nf">astype</span><span class="p">(</span><span class="sh">'</span><span class="s">float32</span><span class="sh">'</span><span class="p">)</span> <span class="o">/</span> <span class="mi">255</span>
+<span class="n">x_test</span> <span class="o">=</span> <span class="n">x_test</span><span class="p">.</span><span class="nf">astype</span><span class="p">(</span><span class="sh">'</span><span class="s">float32</span><span class="sh">'</span><span class="p">)</span> <span class="o">/</span> <span class="mi">255</span>
+
+<span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">훈련 데이터 크기:</span><span class="sh">"</span><span class="p">,</span> <span class="n">x_train</span><span class="p">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># (60000, 28, 28)
+</span><span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">훈련 라벨 크기:</span><span class="sh">"</span><span class="p">,</span> <span class="n">t_train</span><span class="p">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># (60000,)
+</span><span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">테스트 데이터 크기:</span><span class="sh">"</span><span class="p">,</span> <span class="n">x_test</span><span class="p">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># (10000, 28, 28)
+</span><span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">테스트 라벨 크기:</span><span class="sh">"</span><span class="p">,</span> <span class="n">t_test</span><span class="p">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># (10000,)
+</span>
+<span class="n">x_train</span> <span class="o">=</span> <span class="n">x_train</span><span class="p">.</span><span class="nf">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">28</span><span class="o">*</span><span class="mi">28</span><span class="p">)</span>  <span class="c1"># (60000, 784)
+</span><span class="n">x_test</span> <span class="o">=</span> <span class="n">x_test</span><span class="p">.</span><span class="nf">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">28</span><span class="o">*</span><span class="mi">28</span><span class="p">)</span>    <span class="c1"># (10000, 784)
+</span><span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">Flatten 후 훈련 데이터 크기:</span><span class="sh">"</span><span class="p">,</span> <span class="n">x_train</span><span class="p">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># (60000, 784)
+</span>
+<span class="c1"># One-hot encode the labels
+</span><span class="n">t_train</span> <span class="o">=</span> <span class="n">keras</span><span class="p">.</span><span class="n">utils</span><span class="p">.</span><span class="nf">to_categorical</span><span class="p">(</span><span class="n">t_train</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">t_test</span> <span class="o">=</span> <span class="n">keras</span><span class="p">.</span><span class="n">utils</span><span class="p">.</span><span class="nf">to_categorical</span><span class="p">(</span><span class="n">t_test</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">One-hot 변환 후 레이블 크기:</span><span class="sh">"</span><span class="p">,</span> <span class="n">t_train</span><span class="p">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># (60000, 10)
+</span>
+
+<span class="n">iters_num</span> <span class="o">=</span> <span class="mf">1e5</span>
+<span class="n">train_size</span> <span class="o">=</span> <span class="n">x_train</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">batch_size</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">learning_rate</span> <span class="o">=</span> <span class="mf">0.1</span>
+
+<span class="n">network</span> <span class="o">=</span> <span class="nc">TwoLayerNet</span><span class="p">(</span><span class="n">input_size</span><span class="o">=</span><span class="mi">784</span><span class="p">,</span> <span class="n">hidden_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">output_size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="n">train_loss_list</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">train_acc_list</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">test_acc_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="n">iter_per_epoch</span> <span class="o">=</span> <span class="nf">max</span><span class="p">(</span><span class="n">train_size</span> <span class="o">/</span> <span class="n">batch_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">tqdm</span><span class="p">(</span><span class="nf">range</span><span class="p">(</span><span class="nf">int</span><span class="p">(</span><span class="n">iters_num</span><span class="p">)),</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">80</span><span class="p">,</span> <span class="n">mininterval</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+    <span class="n">batch_mask</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">choice</span><span class="p">(</span><span class="n">train_size</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">)</span>
+    <span class="n">x_batch</span> <span class="o">=</span> <span class="n">x_train</span><span class="p">[</span><span class="n">batch_mask</span><span class="p">]</span>
+    <span class="n">t_batch</span> <span class="o">=</span> <span class="n">t_train</span><span class="p">[</span><span class="n">batch_mask</span><span class="p">]</span>
+    
+    <span class="n">grad</span> <span class="o">=</span> <span class="n">network</span><span class="p">.</span><span class="nf">gradient</span><span class="p">(</span><span class="n">x_batch</span><span class="p">,</span> <span class="n">t_batch</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="sh">'</span><span class="s">W1</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">b1</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">W2</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">b2</span><span class="sh">'</span><span class="p">):</span>
+        <span class="n">network</span><span class="p">.</span><span class="n">params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">-=</span> <span class="n">learning_rate</span> <span class="o">*</span> <span class="n">grad</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+    
+    <span class="n">loss</span> <span class="o">=</span> <span class="n">network</span><span class="p">.</span><span class="nf">loss</span><span class="p">(</span><span class="n">x_batch</span><span class="p">,</span> <span class="n">t_batch</span><span class="p">)</span>
+    <span class="n">train_loss_list</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="n">iter_per_epoch</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">train_acc</span> <span class="o">=</span> <span class="n">network</span><span class="p">.</span><span class="nf">accuracy</span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span> <span class="n">t_train</span><span class="p">)</span>
+        <span class="n">test_acc</span> <span class="o">=</span> <span class="n">network</span><span class="p">.</span><span class="nf">accuracy</span><span class="p">(</span><span class="n">x_test</span><span class="p">,</span> <span class="n">t_test</span><span class="p">)</span>
+        <span class="n">train_acc_list</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">train_acc</span><span class="p">)</span>
+        <span class="n">test_acc_list</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">test_acc</span><span class="p">)</span>
+        <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">train acc, test acc | </span><span class="si">{</span><span class="n">train_acc</span><span class="si">}</span><span class="s">, </span><span class="si">{</span><span class="n">test_acc</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="n">pickle</span>
+
+<span class="c1"># 모델 저장 경로 설정
+</span><span class="n">model_path</span> <span class="o">=</span> <span class="sh">'</span><span class="s">mnist_model.pkl</span><span class="sh">'</span>
+
+<span class="c1"># 모델 저장
+</span><span class="k">with</span> <span class="nf">open</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="sh">'</span><span class="s">wb</span><span class="sh">'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">pickle</span><span class="p">.</span><span class="nf">dump</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+    
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">모델이 </span><span class="si">{</span><span class="n">model_path</span><span class="si">}</span><span class="s">에 저장되었습니다.</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+<p>오차역전법의 시간 복잡도를 계산해보면 수치 미분보다 훨씬 빠르다. 오차 역전파는 순전파와 역전파를 함께 수행하여 모든 매개변수에 대한 미분을 한번에 구한다.</p>
+
+<p><strong>O(F(순전파 + 역전파))</strong></p>
+
+<p>하지만 수치 미분은 모든 매개변수에 대해 미분을 계산해야하므로 <strong>O(F(순전파) * N(네트워크의 매개변수의 개수))</strong> 이다.</p>
+
+<p>만약, 네트워크가 <strong>(784, 128, 10)</strong> 의 구조를 가진다면, 수치 미분은 <strong>784 * 128 + 128 * 10 = 10160</strong> 개의 매개변수에 대해 미분을 계산해야한다.</p>
+
+<p>따라서 오차 역전법이 수치미분보다 약 <strong>N(총 매개변수)배</strong> 빠르다.</p>
+
+<hr />
+<h3 id="keras-model-mninst">keras model mninst</h3>
+<ul>
+  <li>케라스 모델을 사용하면 더 빠르게 학습시킬 수 있다.</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="sb">``</span><span class="err">`</span><span class="n">python</span>
+<span class="kn">import</span> <span class="n">wandb</span>
+<span class="kn">from</span> <span class="n">wandb.integration.keras</span> <span class="kn">import</span> <span class="n">WandbMetricsLogger</span><span class="p">,</span> <span class="n">WandbModelCheckpoint</span>
+<span class="kn">import</span> <span class="n">keras</span>
+
+<span class="c1"># Initialize Wandb
+</span><span class="n">wandb</span><span class="p">.</span><span class="nf">init</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="sh">'</span><span class="s">workshop_1</span><span class="sh">'</span><span class="p">,</span> <span class="n">project</span><span class="o">=</span><span class="sh">"</span><span class="s">mnist_project-sgd</span><span class="sh">"</span><span class="p">)</span>
+
+<span class="c1"># 데이터 생성
+</span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">),</span> <span class="p">(</span><span class="n">x_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span> <span class="o">=</span> <span class="n">keras</span><span class="p">.</span><span class="n">datasets</span><span class="p">.</span><span class="n">mnist</span><span class="p">.</span><span class="nf">load_data</span><span class="p">()</span>
+<span class="n">x_train</span><span class="p">,</span> <span class="n">x_test</span> <span class="o">=</span> <span class="n">x_train</span> <span class="o">/</span> <span class="mf">255.0</span><span class="p">,</span> <span class="n">x_test</span> <span class="o">/</span> <span class="mf">255.0</span>
+
+<span class="c1"># 모델 생성
+</span><span class="n">model</span> <span class="o">=</span> <span class="n">keras</span><span class="p">.</span><span class="n">models</span><span class="p">.</span><span class="nc">Sequential</span><span class="p">([</span>
+    <span class="n">keras</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="nc">Flatten</span><span class="p">(</span><span class="n">input_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">28</span><span class="p">,</span> <span class="mi">28</span><span class="p">)),</span>
+    <span class="n">keras</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="nc">Dense</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="sh">"</span><span class="s">sigmoid</span><span class="sh">"</span><span class="p">),</span>
+    <span class="n">keras</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="nc">Dense</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="sh">"</span><span class="s">softmax</span><span class="sh">"</span><span class="p">),</span>
+<span class="p">])</span>
+
+<span class="c1"># 컴파일 및 학습
+</span><span class="n">model</span><span class="p">.</span><span class="nf">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="sh">"</span><span class="s">sgd</span><span class="sh">"</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="sh">"</span><span class="s">sparse_categorical_crossentropy</span><span class="sh">"</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">accuracy</span><span class="sh">"</span><span class="p">])</span>
+
+<span class="c1"># Define the checkpoint callback
+</span><span class="n">checkpoint_callback</span> <span class="o">=</span> <span class="nc">WandbModelCheckpoint</span><span class="p">(</span><span class="n">filepath</span><span class="o">=</span><span class="sh">"</span><span class="s">models/mnins_sgd.keras</span><span class="sh">"</span><span class="p">,</span> <span class="n">save_freq</span><span class="o">=</span><span class="sh">'</span><span class="s">epoch</span><span class="sh">'</span><span class="p">)</span>
+
+<span class="n">model</span><span class="p">.</span><span class="nf">fit</span><span class="p">(</span>
+    <span class="n">x_train</span><span class="p">,</span>
+    <span class="n">y_train</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+    <span class="n">validation_data</span><span class="o">=</span><span class="p">(</span><span class="n">x_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">),</span>
+    <span class="n">callbacks</span><span class="o">=</span><span class="p">[</span>
+        <span class="nc">WandbMetricsLogger</span><span class="p">(),</span>
+        <span class="n">checkpoint_callback</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p>위와 같이 케라스 모델을 사용하면 더 빠르게 학습시킬 수 있다.
+손실함수 그래프와 정확도 그래프를 확인해보자. 128번의 에폭을 돌린 결과이다.</p>
+
+<div align="center">
+    <img src="/images/mnist_sgd (2).png" alt="loss_accuracy" width="600" />
+    <img src="/images/mnist_sgd (3).png" alt="loss_accuracy" width="600" />
+</div>
+<p><br />
+에폭이 증가할수록 손실함수는 감소하고 정확도는 증가하는 것을 확인할 수 있다.</p>
 
 						</div><!-- /.content -->
 					</div><!-- /.col -->

@@ -1018,6 +1018,9 @@ import tensorflow as tf
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.utils import to_categorical
 
+x_train = x_train.astype('float32') / 255
+x_test = x_test.astype('float32') / 255
+
 # MNIST 데이터 불러오기
 (x_train, t_train), (x_test, t_test) = mnist.load_data()
 
@@ -1464,6 +1467,9 @@ from tqdm import tqdm  # tqdm 임포트
 # MNIST 데이터 불러오기
 (x_train, t_train), (x_test, t_test) = mnist.load_data()
 
+x_train = x_train.astype('float32') / 255
+x_test = x_test.astype('float32') / 255
+
 print("훈련 데이터 크기:", x_train.shape)  # (60000, 28, 28)
 print("훈련 라벨 크기:", t_train.shape)  # (60000,)
 print("테스트 데이터 크기:", x_test.shape)  # (10000, 28, 28)
@@ -1514,54 +1520,16 @@ for i in tqdm(range(int(iters_num)), ncols=80, mininterval=1.0):  # tqdm 설정
 ```
 ---
 
-위와 같이 클래스로 구현하여 학습을 시키면 학습시간이 대략 9시간 정도 걸린다. 케라스 모델을 사용하면 더 빠르게 학습시킬 수 있다. 
+위와 같이 클래스로 구현하여 학습을 시키면 학습시간이 대략 9시간 정도 걸린다. 수치 미분이 쉽지만 연산과정이 너무나 많기 때문에 대용량의 데이터를 학습시키기에는 무리가 있다. 
 
-```python
-import wandb
-from wandb.integration.keras import WandbMetricsLogger, WandbModelCheckpoint
-import keras
+우리는 수치 미분을 위해 중앙차분 방식을 사용했다. 딥러닝에서는 매개변수에 대한 미분을 계산해야하므로, 각 매개변수마다 독립적으로 수치미분을 계산해야한다. 
 
-# Initialize Wandb
-wandb.init(name = 'workshop_1', project="mnist_project-sgd")
+만약 네트워크 구조가 (784, 50, 10)이라면, 총 784 * 50 + 50 * 10 = 39700개의 매개변수에 대해 미분을 계산해야한다. 이는 너무 많은 계산량을 요구한다.
 
-# 데이터 생성
-(x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
-x_train, x_test = x_train / 255.0, x_test / 255.0
+총 학습에 걸리는 시간을 계산해보면, 순전파 연산량 * 수치미분 연산량 * 미니배치 크기 * 에폭 수 만큼의 연산량이 필요하다. 이는 너무 많은 연산량을 요구한다.
 
-# 모델 생성
-model = keras.models.Sequential([
-    keras.layers.Flatten(input_shape=(28, 28)),
-    keras.layers.Dense(128, activation="sigmoid"),
-    keras.layers.Dense(10, activation="softmax"),
-])
+따라서 우리는 **오차역전파법**을 사용한다. 이는 기울기를 효율적으로 계산할 수 있다.
 
-# 컴파일 및 학습
-model.compile(optimizer="sgd", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
-
-# Define the checkpoint callback
-checkpoint_callback = WandbModelCheckpoint(filepath="models/mnins_sgd.keras", save_freq='epoch')
-
-model.fit(
-    x_train,
-    y_train,
-    epochs=128,
-    validation_data=(x_test, y_test),
-    callbacks=[
-        WandbMetricsLogger(),
-        checkpoint_callback,
-    ],
-)
-``` 
-
-위와 같이 케라스 모델을 사용하면 더 빠르게 학습시킬 수 있다.
-손실함수 그래프와 정확도 그래프를 확인해보자. 128번의 에폭을 돌린 결과이다.
-
-<div align="center">
-    <img src="/images/mnist_sgd (2).png" alt="loss_accuracy" width="600">
-    <img src="/images/mnist_sgd (3).png" alt="loss_accuracy" width="600">
-</div>
-<br>
-에폭이 증가할수록 손실함수는 감소하고 정확도는 증가하는 것을 확인할 수 있다.
 
 ---
 
@@ -2047,10 +2015,289 @@ class SoftmaxWithLoss:
 ```
 
 ## Implementing Backpropagation
-### Overview of Neural Network Learning
-### Implementing a Neural Network with Backpropagation
-### Verifying Gradients with Backpropagation
-### Implementing Training with Backpropagation
 
-## Summary
+**전제**
+- 신경망은 적응 가능한 가중치와 편향이 있고, 이 가중치와 편향을 훈련 데이터에 적응하도록 조정하는 과정을 '학습'이라 한다.
 
+**1단계 - 미니배치**
+- 훈련 데이터 중 일부를 무작위로 가져온다. 이렇게 선별한 데이터를 미니배치라 하며, 그 미니배치의 손실 함수 값을 줄이는 것이 목표이다.
+
+**2단계 - 기울기 산출**
+- 미니배치의 손실 함수 값을 줄이기 위해 각 가중치 매개변수의 기울기를 구한다. 기울기는 손실 함수의 값을 가장 작게 하는 방향을 제시한다.
+
+**3단계 - 매개변수 갱신**
+- 가중치 매개변수를 기울기 방향으로 아주 조금 갱신한다.
+
+**4단계 - 반복**
+- 1~3단계를 반복한다.
+
+수치 미분을 사용하여 기울기를 구하는 방법은 간단하지만 계산이 오래 걸린다. 따라서 역전파를 사용하여 기울기를 효율적으로 구할 수 있다.
+
+
+```python
+from keras.src.ops import normalize, one_hot
+import numpy as np
+from collections import OrderedDict
+
+class Affine:
+    def __init__(self, W, b):
+        self.W = W
+        self.b = b
+        self.x = None
+        self.dW = None
+        self.db = None
+
+    def forward(self, x):
+        self.x = x
+        out = np.dot(x, self.W) + self.b
+        return out
+
+    def backward(self, dout):
+        dx = np.dot(dout, self.W.T)  # W.T is correct, but need to ensure W is not None
+        self.dW = np.dot(self.x.T, dout)
+        self.db = np.sum(dout, axis=0)
+        return dx
+
+class Relu:
+    def __init__(self):
+        self.mask = None
+
+    def forward(self, x):
+        self.mask = (x <= 0)
+        out = x.copy()
+        out[self.mask] = 0
+        return out
+
+    def backward(self, dout):
+        dout[self.mask] = 0
+        dx = dout
+        return dx
+
+def softmax(x):
+    if x.ndim == 2:
+        x = x.T
+        x = x - np.max(x, axis=0)
+        y = np.exp(x) / np.sum(np.exp(x), axis=0)
+        return y.T 
+
+    x = x - np.max(x)
+    return np.exp(x) / np.sum(np.exp(x))
+
+def cross_entropy_error(y, t):
+    if y.ndim == 1:
+        t = t.reshape(1, t.size)
+        y = y.reshape(1, y.size)
+    
+    # If t is one-hot encoded
+    if t.size == y.size:
+        return -np.sum(t * np.log(y + 1e-7)) / y.shape[0]
+    # If t is label encoded
+    else:
+        return -np.sum(np.log(y[np.arange(y.shape[0]), t] + 1e-7)) / y.shape[0]
+
+class SoftmaxWithLoss:
+    def __init__(self):
+        self.loss = None
+        self.y = None
+        self.t = None
+
+    def forward(self, x, t):
+        self.t = t
+        self.y = softmax(x)
+        self.loss = cross_entropy_error(self.y, self.t)
+        return self.loss
+
+    def backward(self, dout=1):
+        batch_size = self.t.shape[0]
+        if batch_size == 0:
+            raise ValueError("Batch size cannot be zero")
+        dx = (self.y - self.t) / batch_size
+        return dx
+
+class TwoLayerNet:
+    def __init__(self, input_size, hidden_size, output_size, weight_init_std=0.01):
+        # Initialize weights and biases
+        self.params = {}
+        self.params['W1'] = weight_init_std * np.random.randn(input_size, hidden_size)
+        self.params['b1'] = np.zeros(hidden_size)
+        self.params['W2'] = weight_init_std * np.random.randn(hidden_size, output_size)
+        self.params['b2'] = np.zeros(output_size)
+
+        # Create layers
+        self.layers = OrderedDict()
+        self.layers['Affine1'] = Affine(self.params['W1'], self.params['b1'])
+        self.layers['Relu1'] = Relu()
+        self.layers['Affine2'] = Affine(self.params['W2'], self.params['b2'])
+        self.lastLayer = SoftmaxWithLoss()
+
+    def predict(self, x):
+        for layer in self.layers.values():
+            x = layer.forward(x)
+        return x
+
+    def loss(self, x, t):
+        y = self.predict(x)
+        return self.lastLayer.forward(y, t)
+
+    def accuracy(self, x, t):
+        y = self.predict(x)
+        y = np.argmax(y, axis=1)
+        if t.ndim != 1:
+            t = np.argmax(t, axis=1)
+
+        accuracy = np.sum(y == t) / float(x.shape[0])
+        return accuracy
+
+    def gradient(self, x, t):
+        # Forward
+        self.loss(x, t)
+
+        # Backward
+        dout = 1
+        dout = self.lastLayer.backward(dout)
+
+        layers = list(self.layers.values())
+        layers.reverse()
+        for layer in layers:
+            dout = layer.backward(dout)
+
+        # Set gradients
+        grads = {}
+        grads['W1'], grads['b1'] = self.layers['Affine1'].dW, self.layers['Affine1'].db
+        grads['W2'], grads['b2'] = self.layers['Affine2'].dW, self.layers['Affine2'].db
+
+        return grads
+
+import tensorflow as tf
+import keras
+from tqdm import tqdm  # tqdm 임포트
+
+# MNIST 데이터 불러오기
+(x_train, t_train), (x_test, t_test) = keras.datasets.mnist.load_data()
+
+# Normalize the data
+x_train = x_train.astype('float32') / 255
+x_test = x_test.astype('float32') / 255
+
+print("훈련 데이터 크기:", x_train.shape)  # (60000, 28, 28)
+print("훈련 라벨 크기:", t_train.shape)  # (60000,)
+print("테스트 데이터 크기:", x_test.shape)  # (10000, 28, 28)
+print("테스트 라벨 크기:", t_test.shape)  # (10000,)
+
+x_train = x_train.reshape(-1, 28*28)  # (60000, 784)
+x_test = x_test.reshape(-1, 28*28)    # (10000, 784)
+print("Flatten 후 훈련 데이터 크기:", x_train.shape)  # (60000, 784)
+
+# One-hot encode the labels
+t_train = keras.utils.to_categorical(t_train, num_classes=10)
+t_test = keras.utils.to_categorical(t_test, num_classes=10)
+print("One-hot 변환 후 레이블 크기:", t_train.shape)  # (60000, 10)
+
+
+iters_num = 1e5
+train_size = x_train.shape[0]
+batch_size = 100
+learning_rate = 0.1
+
+network = TwoLayerNet(input_size=784, hidden_size=128, output_size=10)
+
+train_loss_list = []
+train_acc_list = []
+test_acc_list = []
+
+iter_per_epoch = max(train_size / batch_size, 1)
+
+for i in tqdm(range(int(iters_num)), ncols=80, mininterval=1.0):
+    batch_mask = np.random.choice(train_size, batch_size)
+    x_batch = x_train[batch_mask]
+    t_batch = t_train[batch_mask]
+    
+    grad = network.gradient(x_batch, t_batch)
+    
+    for key in ('W1', 'b1', 'W2', 'b2'):
+        network.params[key] -= learning_rate * grad[key]
+    
+    loss = network.loss(x_batch, t_batch)
+    train_loss_list.append(loss)
+    
+    if i % iter_per_epoch == 0:
+        train_acc = network.accuracy(x_train, t_train)
+        test_acc = network.accuracy(x_test, t_test)
+        train_acc_list.append(train_acc)
+        test_acc_list.append(test_acc)
+        print(f"train acc, test acc | {train_acc}, {test_acc}")
+
+import pickle
+
+# 모델 저장 경로 설정
+model_path = 'mnist_model.pkl'
+
+# 모델 저장
+with open(model_path, 'wb') as f:
+    pickle.dump(network, f)
+    
+print(f"모델이 {model_path}에 저장되었습니다.")
+```
+오차역전법의 시간 복잡도를 계산해보면 수치 미분보다 훨씬 빠르다. 오차 역전파는 순전파와 역전파를 함께 수행하여 모든 매개변수에 대한 미분을 한번에 구한다. 
+
+**O(F(순전파 + 역전파))**
+
+하지만 수치 미분은 모든 매개변수에 대해 미분을 계산해야하므로 **O(F(순전파) * N(네트워크의 매개변수의 개수))** 이다.
+
+만약, 네트워크가 **(784, 128, 10)** 의 구조를 가진다면, 수치 미분은 **784 * 128 + 128 * 10 = 10160** 개의 매개변수에 대해 미분을 계산해야한다.
+
+따라서 오차 역전법이 수치미분보다 약 **N(총 매개변수)배** 빠르다.
+
+
+---
+### keras model mninst
+- 케라스 모델을 사용하면 더 빠르게 학습시킬 수 있다.
+
+```python
+
+```python
+import wandb
+from wandb.integration.keras import WandbMetricsLogger, WandbModelCheckpoint
+import keras
+
+# Initialize Wandb
+wandb.init(name = 'workshop_1', project="mnist_project-sgd")
+
+# 데이터 생성
+(x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
+x_train, x_test = x_train / 255.0, x_test / 255.0
+
+# 모델 생성
+model = keras.models.Sequential([
+    keras.layers.Flatten(input_shape=(28, 28)),
+    keras.layers.Dense(128, activation="sigmoid"),
+    keras.layers.Dense(10, activation="softmax"),
+])
+
+# 컴파일 및 학습
+model.compile(optimizer="sgd", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
+
+# Define the checkpoint callback
+checkpoint_callback = WandbModelCheckpoint(filepath="models/mnins_sgd.keras", save_freq='epoch')
+
+model.fit(
+    x_train,
+    y_train,
+    epochs=128,
+    validation_data=(x_test, y_test),
+    callbacks=[
+        WandbMetricsLogger(),
+        checkpoint_callback,
+    ],
+)
+``` 
+
+위와 같이 케라스 모델을 사용하면 더 빠르게 학습시킬 수 있다.
+손실함수 그래프와 정확도 그래프를 확인해보자. 128번의 에폭을 돌린 결과이다.
+
+<div align="center">
+    <img src="/images/mnist_sgd (2).png" alt="loss_accuracy" width="600">
+    <img src="/images/mnist_sgd (3).png" alt="loss_accuracy" width="600">
+</div>
+<br>
+에폭이 증가할수록 손실함수는 감소하고 정확도는 증가하는 것을 확인할 수 있다.
