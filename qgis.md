@@ -1,12 +1,17 @@
 ---
 # Page settings
 layout: default
-keywords: QGIS, GIS, 지리정보시스템, 지도, 공간정보, 인찬백, InchanBaek, 지오데이터, 지리공간정보, 공간분석
+keywords: QGIS, GIS, 지리정보시스템, 지도, 공간정보, 인찬백, InchanBaek, 지오데이터, 지리공간정보, 공간분석, geographic information system, spatial analysis, geospatial data, mapping software, open source GIS, QGIS tutorial, QGIS beginners
 comments: true
+seo:
+  title: QGIS Tutorial for Beginners - Complete Guide to GIS | InchanBaek Note
+  description: 초보자를 위한 QGIS 완벽 가이드. 기본 인터페이스부터 공간 분석, 지도 제작까지 단계별 설명으로 지리정보시스템의 핵심 기능을 쉽게 배울 수 있습니다.
+  canonical: https://bic98.github.io/qgis/
+  image: https://bic98.github.io/images/qgis_avl.png
 
 # Hero section
-title: QGIS tutorial
-description: QGIS tutorial for beginners
+title: QGIS Tutorial for Beginners
+description: 지리정보시스템의 기초부터 고급 분석 기법까지, 무료 오픈소스 GIS 소프트웨어인 QGIS를 활용하는 초보자를 위한 완벽 가이드입니다.
 
 # # Author box
 # author:

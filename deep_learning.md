@@ -1,8 +1,13 @@
 ---
 # Page settings
 layout: default
-keywords: 딥러닝, 머신러닝, 인공신경망, 퍼셉트론, 시그모이드, ReLU, 경사하강법, 손실함수, 인찬백, 딥러닝 기초
+keywords: 딥러닝, 머신러닝, 인공신경망, 퍼셉트론, 시그모이드, ReLU, 경사하강법, 손실함수, 인찬백, 딥러닝 기초, deep learning, machine learning, neural network, perceptron, sigmoid, gradient descent, loss function, backpropagation, activation function
 comments: true
+seo:
+  title: Deep Learning Basics - From Perceptron to Gradient Descent | InchanBaek Note
+  description: 인공신경망의 기본 구조와 학습 원리를 이해하는 완벽 가이드. 퍼셉트론, 활성화 함수, 경사하강법, 역전파 알고리즘까지 딥러닝의 핵심 개념을 단계별로 설명합니다.
+  canonical: https://bic98.github.io/deep_learning/
+  image: https://bic98.github.io/images/sigmoid_function.png
 
 # Hero section
 title: Deep Learning Basics

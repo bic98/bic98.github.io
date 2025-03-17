@@ -1,12 +1,17 @@
 ---
 # Page settings
 layout: default
-keywords: 3D 프린팅, 최적화, 빌드 플레이트, 인찬백, InchanBaek, 제조 최적화, 적층 제조, 3D 모델링, 3D 프린터, 프로토타이핑
+keywords: 3D 프린팅, 최적화, 빌드 플레이트, 인찬백, InchanBaek, 제조 최적화, 적층 제조, 3D 모델링, 3D 프린터, 프로토타이핑, 3D printing, optimization, build plate, additive manufacturing, 3D modeling, prototyping, O3P, Optimized 3D Printing
 comments: true
+seo:
+  title: O3P - Optimized 3D Printing Build Plate Tool | InchanBaek Note
+  description: O3P는 3D 프린팅 모델의 자동 배치 최적화 툴입니다. 출력 시간과 재료 사용을 최소화하면서 빌드 플레이트 활용을 극대화하는 무료 소프트웨어입니다.
+  canonical: https://bic98.github.io/o3p/
+  image: https://bic98.github.io/images/layout/logo.png
 
 # Hero section
-title: Optimized 3D Printing
-description: Optimized 3D Printing build plate for enhanced performance and efficiency
+title: Optimized 3D Printing (O3P)
+description: 3D 프린팅 모델의 배치를 자동으로 최적화하여 출력 시간과 재료 사용을 최소화하는 무료 오픈소스 소프트웨어입니다.
 
 # # Author box
 # author:

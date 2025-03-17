@@ -1,12 +1,17 @@
 ---
 # Page settings
 layout: homepage
-keywords: 인찬백, InchanBaek, 딥러닝, 머신러닝, AI 블로그, 기술 블로그, 인공지능, 강화학습, QGIS, 3D 프린팅
+keywords: 인찬백, InchanBaek, 딥러닝, 머신러닝, AI 블로그, 기술 블로그, 인공지능, 강화학습, QGIS, 3D 프린팅, artificial intelligence, deep learning, machine learning, reinforcement learning, GIS, 3D printing
 comments: true
+seo:
+  title: InchanBaek Note - AI, Architecture & Technology Blog
+  description: 인찬백의 인공지능, 건축, 기술 블로그. 딥러닝, 강화학습, GIS와 3D 프린팅에 관한 경험과 지식을 공유합니다. 프로젝트, 튜토리얼 및 최신 기술 트렌드 정보를 제공합니다.
+  canonical: https://bic98.github.io/
+  image: https://bic98.github.io/images/layout/logo.png
 
 # Hero section
 title: InchanBaek Note
-description: Hi, I'm Inchan Baek. I'm interested in the intersection of AI, architecture, and technology. I'm currently working on projects and research in this area. I share my thoughts and findings on this blog.
+description: Hi, I'm Inchan Baek. I'm interested in the intersection of AI, architecture, and technology. I'm currently working on projects and research in these areas, sharing practical tutorials and insights on AI, GIS, and technology.
 
 buttons:
     # - content: Button
