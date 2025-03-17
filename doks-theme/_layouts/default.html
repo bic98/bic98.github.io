@@ -2,8 +2,15 @@
 <html {% if page.lang %}lang="{{ page.lang }}"{% endif %}>
 	<head>
 		{% include site-head.html %}
+		{% include google-analytics.html %}
 	</head>
 	<body class="{{ site.doks.color_theme }}" data-spy="scroll" data-target=".js-scrollspy">
+		{% if jekyll.environment == "production" and site.doks.google_analytics.tracking_code %}
+		<!-- Google Tag Manager (noscript) -->
+		<noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ site.doks.google_analytics.tracking_code }}"
+		height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+		<!-- End Google Tag Manager (noscript) -->
+		{% endif %}
 		{% include site-header.html %}
 		<div class="hero-subheader">
 			<div class="container">

@@ -1,8 +1,9 @@
 # Theme settings
 doks:
     baseurl:
-    color_theme: blue # Available themes: blue (default), green, purple, red and yellow
+    color_theme: green # Available themes: blue (default), green, purple, red and yellow
     # SEO settings
+    #
     title: InchanBaek Note - AI, Architecture & Technology
     description: Inchan Baek's blog on AI, architecture, and technology research and projects.
     author: Inchan Baek
