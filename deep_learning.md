@@ -2309,3 +2309,262 @@ model.fit(
 </div>
 <br>
 에폭이 증가할수록 손실함수는 감소하고 정확도는 증가하는 것을 확인할 수 있다.
+
+# Parameter Update
+
+### Limitations of SGD
+- SGD는 비등방성 함수(방향에 따라 기울기가 달라지는 함수)에서는 비효율적으로 움직인다.
+- SGD는 비등방성 함수에서는 지그재그로 움직이면서 수렴하는 데 시간이 오래 걸린다.
+
+예를 들어 다음과 같은 함수를 생각해보자.
+
+$$
+f(x, y) = \frac{1}{20}x^2 + y^2
+$$
+
+이 함수에서 SGD는 다음과 같이 움직인다.
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define the function
+def f(x, y):
+    return (1/20) * x**2 + y**2
+
+# Gradient of the function
+def grad_f(x, y):
+    df_dx = (1/10) * x
+    df_dy = 2 * y
+    return np.array([df_dx, df_dy])
+
+# Stochastic Gradient Descent (SGD) parameters
+learning_rate = 0.9
+num_iterations = 100
+
+# Initial point
+x, y = -5.0, 5.0
+
+# Store the path
+path = [(x, y)]
+
+# Perform SGD
+for _ in range(num_iterations):
+    grad = grad_f(x, y)
+    x -= learning_rate * grad[0]
+    y -= learning_rate * grad[1]
+    path.append((x, y))
+
+# Convert path to numpy array for plotting
+path = np.array(path)
+
+# Plot the function and the path taken by SGD
+Z = f(X, Y)
+plt.figure(figsize=(8, 6))
+plt.contour(X, Y, Z, levels=30, cmap='viridis')
+plt.plot(path[:, 0], path[:, 1], 'r.-', markersize=10)  # Increase markersize
+plt.xlim(-6, 6)  # Set x-axis limits to zoom in
+plt.ylim(-6, 6)  # Set y-axis limits to zoom in
+plt.title('SGD Path on f(x, y)')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.show()
+```
+
+
+<div align="center">
+    <img src="/images/sgd_path.png" alt="sgd" width="800">
+</div>
+
+이러한 SGD의 단점을 개선해주는 Momentum, AdaGrad, Adam이라는 세가지 방법이 있다. 
+
+
+### Momentum
+
+모멘텀은 SGD의 단점을 개선한 방법이다. 모멘텀은 '운동량'을 의미하며, SGD에 관성을 더해준다.
+
+### AdaGrad
+
+신경망 학습에서 학습률이 너무 작으면 학습시간이 길어지고, 반대로 크면 발산하여 제데로 이루어지지 않는다. 
+학습률을 정하는 **학습률 감소** 방법이 있다. 이 방법은 학습을 진행하면서 학습률을 점차 줄여가는 방법이다.
+
+**AdagGrad**는 각각의 매개변수에 맞춤형 값을 만들어준다. 개별 매개변수에 적응적으로 학습률을 조정한다.
+
+$$
+h \leftarrow h + \frac{\partial L}{\partial W} \odot \frac{\partial L}{\partial W}
+$$
+
+$$
+W \leftarrow W - \eta \frac{1}{\sqrt{h}} \frac{\partial L}{\partial W}
+$$
+
+**h** 는 기존 기울기 값을 제곱하여 계속 더해준다. 그리고 매개변수를 갱신할 때 $$1/sqrt(h)$$ 를 곱해 학습률을 조정한다.
+
+매겨변수의 원소 중에서 많이 움직인 원소는 학습률이 낮아진다. 따라서 학습률 감소가 매개변수의 원소마다 다르게 적용된다.
+
+```python
+class AdaGrad:
+    def __init__(self, lr=0.01):
+        self.lr = lr
+        self.h = None
+
+    def update(self, params, grads):
+        if self.h is None:
+            self.h = {}
+            for key, val in params.items():
+                self.h[key] = np.zeros_like(val)
+
+        for key in params.keys():
+            self.h[key] += grads[key] * grads[key]
+            params[key] -= self.lr * grads[key] / (np.sqrt(self.h[key]) + 1e-7)
+```
+
+
+### Adam
+
+Adam은 모멘텀과 AdaGrad를 융합한 방법이다. Adam은 하이퍼파라미터의 '편향 보정'이 진행된다.
+
+### Which Update Method Should Be Used?
+
+SGD, 모멘텀, AdaGrad, Adam 중 어떤 것을 사용해야 할까? 그 정답은 없다. 각자의 데이터에 맞게 실험을 통해 최적의 방법을 찾아야 한다.
+
+<div align="center">
+    <img src="/images/adam.png" alt="sgd_adampng" width="600">
+</div>
+
+
+## Weight Initialization
+
+가중치의 초깃값을 적절히 설정하면 학습이 원활하게 이루어진다. 가중치의 초깃값에 따라 학습이 잘 되거나 잘 되지 않는 경우가 있다.
+
+### What If the Initial Weights Are Set to Zero?
+
+가중치의 값을 모두 0으로 설정하면 학습이 잘 이루어지지 않는다. 이는 오차역전파법에서 모든 가중치의 값이 똑같이 갱신되기 때문이다.
+
+예를 들어, 2층 신경망에서 가중치를 0으로 초기화하고 학습을 진행하면 다음과 같은 문제가 발생한다. 
+
+$$
+W = \begin{pmatrix} 0 & 0 \\ 0 & 0 \end{pmatrix}
+$$
+
+$$
+\frac{\partial L}{\partial W} = \begin{pmatrix} 0 & 0 \\ 0 & 0 \end{pmatrix}
+$$
+
+$$
+W = W - \eta \frac{\partial L}{\partial W} = \begin{pmatrix} 0 & 0 \\ 0 & 0 \end{pmatrix}
+$$
+
+가중치의 표준편차가 너무 크면 각 층의 활성화값 분포가 너무 넓어져서 학습이 잘 이루어지지 않는다. 반대로 표준편차가 너무 작으면 각 층의 활성화값 분포가 너무 좁아져서 학습이 잘 이루어지지 않는다. 따라서 적절한 표준편차를 찾아야 한다.
+
+예들들어 표준편차가 크면, 활성화값이 0과 1에 치우쳐져 있어 기울기 소실이 발생할 수 있다.sigmoid 함수와 relu함수를 생각해보면 0과 1에 치우쳐져 있으면 sigmoid 함수는 기울기 소실이 발생할 수 있고, 너무 큰 초깃값을 사용하게 되면 ReLU일 경우에는 음수의 가중합이 계속 증가하게 되어 뉴런이 죽을 수 있다.(dying ReLU) 반대로 표준편차가 작으면 활성화값이 0.5 부근에 집중되어 (모든 뉴런이 비슷한 출력을 내는) 표현력을 제한할 수 있다.
+
+
+
+
+
+
+---
+그렇다면 초깃값을 어떻게 설정해야할까? 
+
+### Xavier 초기값
+
+Xavier 초기값은 Glorot & Bengio(2010)가 제안한 방법으로, 각 층의 활성화값들이 적절히 분포되도록 하는 초기화 방식이다. 시그모이드나 tanh같은 활성화 함수의 중심 영역(0 부근)에서는 근사적으로 선형 특성을 보이는 점을 활용한다.
+
+- **적용 대상**: 시그모이드, tanh 같은 대칭적인 활성화 함수에 적합
+- **수식**:
+  - 균등 분포의 경우: $$W \sim U\left[-\frac{\sqrt{6}}{\sqrt{n_{in} + n_{out}}}, \frac{\sqrt{6}}{\sqrt{n_{in} + n_{out}}}\right]$$
+  - 정규 분포의 경우: $$W \sim N\left(0, \frac{2}{n_{in} + n_{out}}\right)$$
+  - 여기서 $$n_{in}$$은 입력 뉴런 수, $$n_{out}$$은 출력 뉴런 수
+- **특징**: 순전파와 역전파 과정에서 신호의 분산을 유지하여 기울기 소실/폭발 문제 완화
+
+### He 초기값
+
+He 초기값은 Kaiming He 등이 제안한 방법으로, ReLU 활성화 함수를 위해 특별히 설계되었다.
+
+- **적용 대상**: ReLU, Leaky ReLU 등의 비선형 활성화 함수에 최적화
+- **수식**:
+  - 균등 분포의 경우: $$W \sim U\left[-\sqrt{\frac{6}{n_{in}}}, \sqrt{\frac{6}{n_{in}}}\right]$$
+  - 정규 분포의 경우: $$W \sim N\left(0, \frac{2}{n_{in}}\right)$$
+- **특징**: ReLU는 음수 입력을 0으로 만들어(입력의 약 절반) 활성화된 뉴런의 수가 감소하므로, 
+  Xavier보다 더 큰 초기값을 사용하여 분산을 유지한다. 적절한 크기로 초기화하지 않으면 
+  많은 뉴런이 입력값으로 음수를 받아 0을 출력하게 되는 "죽은 ReLU" 문제가 발생할 수 있다.
+
+```python
+import numpy as np
+
+def xavier_init(n_inputs, n_outputs, uniform=True):
+    """
+    Xavier(Glorot) 초기화
+    
+    Parameters:
+    - n_inputs: 입력 뉴런 수
+    - n_outputs: 출력 뉴런 수
+    - uniform: 균등 분포 사용 여부 (False면 정규 분포)
+    
+    Returns:
+    - 초기화된 가중치 행렬
+    """
+    if uniform:
+        # 균등 분포
+        limit = np.sqrt(6. / (n_inputs + n_outputs))
+        return np.random.uniform(-limit, limit, size=(n_inputs, n_outputs))
+    else:
+        # 정규 분포
+        stddev = np.sqrt(2. / (n_inputs + n_outputs))
+        return np.random.normal(0.0, stddev, size=(n_inputs, n_outputs))
+
+def he_init(n_inputs, n_outputs, uniform=True):
+    """
+    He 초기화
+    
+    Parameters:
+    - n_inputs: 입력 뉴런 수
+    - n_outputs: 출력 뉴런 수
+    - uniform: 균등 분포 사용 여부 (False면 정규 분포)
+    
+    Returns:
+    - 초기화된 가중치 행렬
+    """
+    if uniform:
+        # 균등 분포
+        limit = np.sqrt(6. / n_inputs)
+        return np.random.uniform(-limit, limit, size=(n_inputs, n_outputs))
+    else:
+        # 정규 분포
+        stddev = np.sqrt(2. / n_inputs)
+        return np.random.normal(0.0, stddev, size=(n_inputs, n_outputs))
+
+# 사용 예시
+input_size = 784   # 28x28 이미지
+hidden_size = 50   # 은닉층 뉴런 수
+
+# Xavier 초기화 (시그모이드, tanh 활성화 함수에 적합)
+W1_xavier = xavier_init(input_size, hidden_size)
+print(f"Xavier 초기화 가중치 범위: {W1_xavier.min():.4f} ~ {W1_xavier.max():.4f}")
+
+# He 초기화 (ReLU 활성화 함수에 적합)
+W1_he = he_init(input_size, hidden_size)
+print(f"He 초기화 가중치 범위: {W1_he.min():.4f} ~ {W1_he.max():.4f}")
+
+```
+
+
+대부분의 딥러닝 프레임 워크에서는 정규 분포를 사용하여 초기화한다. 
+
+## Batch Normalization
+### Batch Normalization Algorithm
+### Effects of Batch Normalization
+
+## For Proper Learning
+### Overfitting
+### Weight Decay
+### Dropout
+
+## Finding the Optimal Hyperparameter Values
+### Validation Data
+### Hyperparameter Optimization
+### Implementing Hyperparameter Optimization
+
+## Summary
+
