@@ -37,7 +37,7 @@ doks:
     google_analytics:
         tracking_code: GTM-MM5MVC48 # Google Tag Manager ID
     # SEO Plugin settings
-    url: https://inchanbaek.com # Replace with your actual domain
+    url: https://bic98.github.io # Replace with your actual domain
     comments:
         disqus_forum_shortname: inchanbaeknote # Add your disqus forum shortname to activate comments
 
