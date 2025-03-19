@@ -2561,12 +2561,24 @@ print(f"He 초기화 가중치 범위: {W1_he.min():.4f} ~ {W1_he.max():.4f}")
 
 배치 정규화에 대해서 알아보자. 배치 정규화는 각 층의 활성화값이 적당히 분포되도록 조정하는 방법이다.
 
-
 ### Batch Normalization Algorithm
-### Effects of Batch Normalization
 
-## For Proper Learning
+ - **배치 정규화**는 각 층의 활성화값이 적당히 분포되도록 조정하는 것이다. 배치 정규화는 학습을 빨리 진행할 수 있으며, 초깃값에 크게 의존하지 않는다. 또한 오버피팅을 억제한다. 배치 정규화의 장점은 다음과 같다.
+    - 학습 속도 개선
+    - 초깃값에 크게 의존하지 않는다
+    - 오버피팅 억제
+    - Gradient Vanishing/Exploding 문제 완화
+
+
+
 ### Overfitting
+
+오버피팅은 다음의 두경우에 일어난다. 
+
+- 매개변수가 많고 표현력이 높은 모델
+- 훈련데이터가 작을 때
+
+
 ### Weight Decay
 ### Dropout
 
