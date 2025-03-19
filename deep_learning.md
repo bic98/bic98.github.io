@@ -2558,6 +2558,10 @@ print(f"He 초기화 가중치 범위: {W1_he.min():.4f} ~ {W1_he.max():.4f}")
 대부분의 딥러닝 프레임 워크에서는 정규 분포를 사용하여 초기화한다. 
 
 ## Batch Normalization
+
+배치 정규화에 대해서 알아보자. 배치 정규화는 각 층의 활성화값이 적당히 분포되도록 조정하는 방법이다.
+
+
 ### Batch Normalization Algorithm
 ### Effects of Batch Normalization
 
