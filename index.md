@@ -51,6 +51,11 @@ grid_navigation:
       cta: Read more
       url: 'o3p'
       category: APP
+    - title: Fullstack study
+      excerpt: Fullstack Development from scratch
+      cta: Read more
+      url: 'fullstack'
+      category: APP
 
 # Categories for navigation
 categories:
