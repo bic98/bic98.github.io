@@ -688,7 +688,10 @@ def remove(layer_name: str) -> None:
 
 사용하는 방법은 다음과 같다.
 
-C:\Users\XXXXXXXXXX\AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins
+C:\Users\XXXXXXXXXX\
+AppData\Roaming\QGIS\
+QGIS3\profiles\default\
+python\plugins
 
 위의 경로에 코드를 저장하고, qgis를 실행하면, push, pull, remove, change_color 함수를 사용할 수 있다.
 
