@@ -277,4 +277,146 @@ plt.show()
 
 
 
+먼저 정상 문제에서는 다음과 같은 식으로 행동가치 추정치를 업데이트 했다.
+
+$$
+Q_n = Q_{n - 1} + \frac{1}{n} (R_n - Q_{n - 1})
+$$
+
+하지만 비정상 문제에서는 다음과 같은 식으로 행동가치 추정치를 업데이트 한다.
+
+$$
+Q_n = Q_{n - 1} + \alpha (R_n - Q_{n - 1})
+$$
+
+오래전에 얻은 보상에 대한 가중치를 줄이고, 최근에 얻은 보상에 대한 가중치를 높이는 방법이다. 이때 $$\alpha$$는 학습률이라고 한다.
+
+$$
+= Q_{n - 1} + \alpha (R_n - Q_{n - 1})
+$$
+$$
+= (1 - \alpha) Q_{n - 1} + \alpha R_n
+$$
+$$
+= \alpha R_n + (1 - \alpha) {(\alpha R_{n - 1} + (1 - \alpha) Q_{n - 2})}
+$$
+$$
+= \alpha R_n + (1 - \alpha) \alpha R_{n - 1} + (1 - \alpha)^2 Q_{n - 2}
+$$
+$$
+= \alpha R_n + (1 - \alpha) \alpha R_{n - 1} + (1 - \alpha)^2 \alpha R_{n - 2} + (1 - \alpha)^3 Q_{n - 3}
+$$
+$$
+= \alpha R_n + (1 - \alpha) \alpha R_{n - 1} + (1 - \alpha)^2 \alpha R_{n - 2} +
+$$
+$$
+(1 - \alpha)^3 \alpha R_{n - 3} + ... + (1 - \alpha)^{n - 1} \alpha R_1 + (1 - \alpha)^n Q_0
+$$
+
+$$Q_0$$는 초기값이다. 우리가 설정한 값에 따라서  학습결과에 편향이 생긴다. 하지만 표본 평균을 사용하면 편향이 사라진다.
+
+
+위의 방식을 지수이동평균, 지수가중이동평균이라고 한다.
+
+
+- **지수 가중 이동 평균 (Exponential Weighted Moving Average)** : 최근에 얻은 보상에 더 많은 가중치를 주고, 오래전에 얻은 보상에는 적은 가중치를 주는 방법
+
+
+python 코드로 구현해보자.
+
+```python
+import numpy as np
+
+class Bandit:
+    def __init__(self, arms = 10):
+        self.rates = [0.38991635, 0.7837864,  0.55356798, 0.46228943, 0.48251845, 0.47595196, 0.53560295, 0.43374032, 0.55913105, 0.57484477]
+
+    def play(self, arm):
+        rate = self.rates[arm]
+        self.rates += 0.1 * np.random.randn(len(self.rates))
+        if rate > np.random.rand():
+            return 1
+        else : 
+            return 0
+
+class Agent:
+    def __init__(self, epslion, action_size = 10):
+        self.epslion = epslion
+        self.Qs = np.zeros(action_size)
+
+    def update(self, action, reward, alpha = 0.8):
+        self.Qs[action] += alpha * (reward - self.Qs[action])
+
+    def get_action(self):
+        if np.random.rand() < self.epslion:
+            return (np.random.randint(len(self.Qs)), 0)
+        return (np.argmax(self.Qs), 1) 
+
+steps = 50000
+agent = Agent(0.1)
+bandit = Bandit()
+
+total_reward = 0
+total_rewards = []
+rates = []
+actions = []
+
+for i in range(steps):
+    act = agent.get_action()
+    action = act[0]
+    reward = bandit.play(action)
+    agent.update(action, reward)
+    total_reward += reward
+    total_rewards.append(total_reward)
+    rates.append(total_reward / (i + 1))
+    if act[1] == 1:
+        actions.append(action)
+
+import matplotlib.pyplot as plt
+plt.figure(figsize=(12, 6))
+
+plt.subplot(3, 1, 1)
+plt.plot(total_rewards, label='Total Reward')
+plt.xlabel('Steps')
+plt.ylabel('Total Reward')
+plt.legend()
+
+plt.subplot(3, 1, 2)
+plt.plot(actions, label='Actions')
+plt.xlabel('Steps')
+plt.ylabel('Action')
+plt.ylim(0, 9)
+plt.legend()
+
+plt.subplot(3, 1, 3)
+plt.plot(rates, label='Average Reward')
+plt.xlabel('Steps')
+plt.ylabel('Average Reward')
+plt.ylim(0, 1)
+plt.legend()
+
+plt.tight_layout()
+plt.show()
+```
+
+<div align="center">
+  <img src="/images/bandit3.png" alt="bandit" width="100%">
+</div>
+
+고정값 $$\alpha$$ = 0.8로 설정하면 표본 평균을 사용한 경우보다 더 결과가 빨리 수렴하는 것을 볼 수 있다.
+
+### 정리
+
+- **밴디트 문제** : 강화학습의 기초 문제로, 여러 개의 슬롯머신 중에서 최대 보상을 얻는 방법을 찾는 문제
+- **행동가치** : 행동의 결과로 얻은 보상의 기대값
+- **정책** : 에이전트가 환경과 상호작용할 때, 에이전트가 선택하는 행동을 결정하는 전략
+- **엡실론-그리디 정책** : 탐험과 활용의 균형을 맞추기 위한 방법의 알고리즘 중 하나
+- **비정상 문제** : 보상의 확률 분포가 변하는 문제
+- **지수 가중 이동 평균** : 최근에 얻은 보상에 더 많은 가중치를 주고, 오래전에 얻은 보상에는 적은 가중치를 주는 방법
+
+## 마르코프 결정 과정 (Markov Decision Process)
+
+
+### 마르코프 결정 과정이란?
+
 

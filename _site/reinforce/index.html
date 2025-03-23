@@ -401,6 +401,129 @@ n - 1번째의 가치 추정치를 이용해서 n번째 가치 추정치를 계�
 
 <p>하지만 실제로는 보상의 확률 분포가 변하는 경우가 많다. 이런 경우를 비정상 문제라고 한다. 이런 경우에는 어떻게 해야할까?</p>
 
+<p>먼저 정상 문제에서는 다음과 같은 식으로 행동가치 추정치를 업데이트 했다.</p>
+
+\[Q_n = Q_{n - 1} + \frac{1}{n} (R_n - Q_{n - 1})\]
+
+<p>하지만 비정상 문제에서는 다음과 같은 식으로 행동가치 추정치를 업데이트 한다.</p>
+
+\[Q_n = Q_{n - 1} + \alpha (R_n - Q_{n - 1})\]
+
+<p>오래전에 얻은 보상에 대한 가중치를 줄이고, 최근에 얻은 보상에 대한 가중치를 높이는 방법이다. 이때 \(\alpha\)는 학습률이라고 한다.</p>
+
+<p>\(= Q_{n - 1} + \alpha (R_n - Q_{n - 1})\)
+\(= (1 - \alpha) Q_{n - 1} + \alpha R_n\)
+\(= \alpha R_n + (1 - \alpha) {(\alpha R_{n - 1} + (1 - \alpha) Q_{n - 2})}\)
+\(= \alpha R_n + (1 - \alpha) \alpha R_{n - 1} + (1 - \alpha)^2 Q_{n - 2}\)
+\(= \alpha R_n + (1 - \alpha) \alpha R_{n - 1} + (1 - \alpha)^2 \alpha R_{n - 2} + (1 - \alpha)^3 Q_{n - 3}\)
+\(= \alpha R_n + (1 - \alpha) \alpha R_{n - 1} + (1 - \alpha)^2 \alpha R_{n - 2} +\)
+\((1 - \alpha)^3 \alpha R_{n - 3} + ... + (1 - \alpha)^{n - 1} \alpha R_1 + (1 - \alpha)^n Q_0\)</p>
+
+<p>\(Q_0\)는 초기값이다. 우리가 설정한 값에 따라서  학습결과에 편향이 생긴다. 하지만 표본 평균을 사용하면 편향이 사라진다.</p>
+
+<p>위의 방식을 지수이동평균, 지수가중이동평균이라고 한다.</p>
+
+<ul>
+  <li><strong>지수 가중 이동 평균 (Exponential Weighted Moving Average)</strong> : 최근에 얻은 보상에 더 많은 가중치를 주고, 오래전에 얻은 보상에는 적은 가중치를 주는 방법</li>
+</ul>
+
+<p>python 코드로 구현해보자.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+
+<span class="k">class</span> <span class="nc">Bandit</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">arms</span> <span class="o">=</span> <span class="mi">10</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">rates</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.38991635</span><span class="p">,</span> <span class="mf">0.7837864</span><span class="p">,</span>  <span class="mf">0.55356798</span><span class="p">,</span> <span class="mf">0.46228943</span><span class="p">,</span> <span class="mf">0.48251845</span><span class="p">,</span> <span class="mf">0.47595196</span><span class="p">,</span> <span class="mf">0.53560295</span><span class="p">,</span> <span class="mf">0.43374032</span><span class="p">,</span> <span class="mf">0.55913105</span><span class="p">,</span> <span class="mf">0.57484477</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">play</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">arm</span><span class="p">):</span>
+        <span class="n">rate</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">rates</span><span class="p">[</span><span class="n">arm</span><span class="p">]</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">rates</span> <span class="o">+=</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">randn</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">rates</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">rate</span> <span class="o">&gt;</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">rand</span><span class="p">():</span>
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="k">else</span> <span class="p">:</span> 
+            <span class="k">return</span> <span class="mi">0</span>
+
+<span class="k">class</span> <span class="nc">Agent</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">epslion</span><span class="p">,</span> <span class="n">action_size</span> <span class="o">=</span> <span class="mi">10</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">epslion</span> <span class="o">=</span> <span class="n">epslion</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">Qs</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="n">action_size</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">alpha</span> <span class="o">=</span> <span class="mf">0.8</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">Qs</span><span class="p">[</span><span class="n">action</span><span class="p">]</span> <span class="o">+=</span> <span class="n">alpha</span> <span class="o">*</span> <span class="p">(</span><span class="n">reward</span> <span class="o">-</span> <span class="n">self</span><span class="p">.</span><span class="n">Qs</span><span class="p">[</span><span class="n">action</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">get_action</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">self</span><span class="p">.</span><span class="n">epslion</span><span class="p">:</span>
+            <span class="nf">return </span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">randint</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">Qs</span><span class="p">)),</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="nf">return </span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">argmax</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">Qs</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span> 
+
+<span class="n">steps</span> <span class="o">=</span> <span class="mi">50000</span>
+<span class="n">agent</span> <span class="o">=</span> <span class="nc">Agent</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="n">bandit</span> <span class="o">=</span> <span class="nc">Bandit</span><span class="p">()</span>
+
+<span class="n">total_reward</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">total_rewards</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">rates</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">actions</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
+    <span class="n">act</span> <span class="o">=</span> <span class="n">agent</span><span class="p">.</span><span class="nf">get_action</span><span class="p">()</span>
+    <span class="n">action</span> <span class="o">=</span> <span class="n">act</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">reward</span> <span class="o">=</span> <span class="n">bandit</span><span class="p">.</span><span class="nf">play</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+    <span class="n">agent</span><span class="p">.</span><span class="nf">update</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">reward</span><span class="p">)</span>
+    <span class="n">total_reward</span> <span class="o">+=</span> <span class="n">reward</span>
+    <span class="n">total_rewards</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">total_reward</span><span class="p">)</span>
+    <span class="n">rates</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">total_reward</span> <span class="o">/</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">act</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">actions</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="n">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+
+<span class="n">plt</span><span class="p">.</span><span class="nf">subplot</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">total_rewards</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sh">'</span><span class="s">Total Reward</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">xlabel</span><span class="p">(</span><span class="sh">'</span><span class="s">Steps</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">ylabel</span><span class="p">(</span><span class="sh">'</span><span class="s">Total Reward</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">legend</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="p">.</span><span class="nf">subplot</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">actions</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sh">'</span><span class="s">Actions</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">xlabel</span><span class="p">(</span><span class="sh">'</span><span class="s">Steps</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">ylabel</span><span class="p">(</span><span class="sh">'</span><span class="s">Action</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">9</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">legend</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="p">.</span><span class="nf">subplot</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">rates</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sh">'</span><span class="s">Average Reward</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">xlabel</span><span class="p">(</span><span class="sh">'</span><span class="s">Steps</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">ylabel</span><span class="p">(</span><span class="sh">'</span><span class="s">Average Reward</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">legend</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="p">.</span><span class="nf">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">show</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div align="center">
+  <img src="/images/bandit3.png" alt="bandit" width="100%" />
+</div>
+
+<p>고정값 \(\alpha\) = 0.8로 설정하면 표본 평균을 사용한 경우보다 더 결과가 빨리 수렴하는 것을 볼 수 있다.</p>
+
+<h3 id="정리">정리</h3>
+
+<ul>
+  <li><strong>밴디트 문제</strong> : 강화학습의 기초 문제로, 여러 개의 슬롯머신 중에서 최대 보상을 얻는 방법을 찾는 문제</li>
+  <li><strong>행동가치</strong> : 행동의 결과로 얻은 보상의 기대값</li>
+  <li><strong>정책</strong> : 에이전트가 환경과 상호작용할 때, 에이전트가 선택하는 행동을 결정하는 전략</li>
+  <li><strong>엡실론-그리디 정책</strong> : 탐험과 활용의 균형을 맞추기 위한 방법의 알고리즘 중 하나</li>
+  <li><strong>비정상 문제</strong> : 보상의 확률 분포가 변하는 문제</li>
+  <li><strong>지수 가중 이동 평균</strong> : 최근에 얻은 보상에 더 많은 가중치를 주고, 오래전에 얻은 보상에는 적은 가중치를 주는 방법</li>
+</ul>
+
+<h2 id="마르코프-결정-과정-markov-decision-process">마르코프 결정 과정 (Markov Decision Process)</h2>
+
+<h3 id="마르코프-결정-과정이란">마르코프 결정 과정이란?</h3>
+
 
 						</div><!-- /.content -->
 					</div><!-- /.col -->
