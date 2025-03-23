@@ -170,5 +170,111 @@ $$
 탐험과 활용의 균형을 맞추기 위한 방법의 알고리즘 중 하나이다. 
 예를 들어, $$\epsilon$$ = 0.1로 설정하면 10%의 확률로 무작위 행동을 선택하고, 90%의 확률로 가장 좋은 행동을 선택한다.
 
+### 밴디트 문제의 해결
+
+- **행동가치 추정** : 행동가치를 추정하고, 가장 좋은 행동을 선택한다.
+- **정책** : 엡실론-그리디 정책을 사용하여 탐험과 활용의 균형을 맞춘다.
+
+그럼 위의 내용을 코드로 구현해보자.
+
+```python
+
+import numpy as np
+
+class Bandit:
+    def __init__(self, arms = 10):
+        self.rates = [0.38991635, 0.5937864,  0.55356798, 0.46228943, 0.48251845, 0.47595196, 0.53560295, 0.43374032, 0.55913105, 0.57484477]
+
+    def play(self, arm):
+        rate = self.rates[arm]
+        if rate > np.random.rand():
+            return 1
+        else : 
+            return 0
+
+
+class Agent:
+    def __init__(self, epslion, action_size = 10):
+        self.epslion = epslion
+        self.Qs = np.zeros(action_size)
+        self.Ns = np.zeros(action_size)
+
+    def update(self, action, reward):
+        self.Ns[action] += 1
+        self.Qs[action] += (reward - self.Qs[action]) / self.Ns[action]
+
+    def get_action(self):
+        if np.random.rand() < self.epslion:
+            return (np.random.randint(len(self.Qs)), 0)
+        return (np.argmax(self.Qs), 1)
+
+steps = 10000
+agent = Agent(0.1)
+bandit = Bandit()
+
+total_reward = 0
+total_rewards = []
+rates = []
+actions = []
+
+for i in range(steps):
+    act = agent.get_action()
+    action = act[0]
+    reward = bandit.play(action)
+    agent.update(action, reward)
+    total_reward += reward
+    total_rewards.append(total_reward)
+    rates.append(total_reward / (i + 1))
+    if act[1] == 1:
+        actions.append(action)
+
+import matplotlib.pyplot as plt
+plt.figure(figsize=(12, 6))
+
+plt.subplot(3, 1, 1)
+plt.plot(total_rewards, label='Total Reward')
+plt.xlabel('Steps')
+plt.ylabel('Total Reward')
+plt.legend()
+
+plt.subplot(3, 1, 2)
+plt.plot(actions, label='Actions')
+plt.xlabel('Steps')
+plt.ylabel('Action')
+plt.legend()
+
+plt.subplot(3, 1, 3)
+plt.plot(rates, label='Average Reward')
+plt.xlabel('Steps')
+plt.ylabel('Average Reward')
+plt.legend()
+
+plt.tight_layout()
+plt.show()
+
+```
+
+<div align="center">
+  <img src="/images/bandit.png" alt="bandit" width="100%">
+</div>
+
+약 10000번의 플레이를 하면 인덱스 1번의 슬롯머신을 액션으로 선택하는 것이 최선임을 아직을 알지 못한다. 
+더 많은 스텝을 주어보자. 
+
+<div align="center">
+  <img src="/images/bandit2.png" alt="bandit" width="100%">
+</div>
+
+약 30000번의 플레이를 하면 인덱스 1번의 슬롯머신을 액션으로 선택하는 것이 최선임을 알게 된다.
+약 2%의 확률 차이를 인지하기 위해 20000번의 플레이가 더 필요했다. 
+
 
 ### 비정상 문제 (Non-stationary Problem)
+
+지금까지 다룬 밴디트 문제를 정상문제에 속한다. 정상문제란 보상의 확률 분포가 변하지 않는 문제이다. 위의 코드를 보면 rates라는 변수에 확률이 고정되어 있다.
+
+하지만 실제로는 보상의 확률 분포가 변하는 경우가 많다. 이런 경우를 비정상 문제라고 한다. 이런 경우에는 어떻게 해야할까?
+
+
+
+
