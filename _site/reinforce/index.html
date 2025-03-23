@@ -411,13 +411,31 @@ n - 1번째의 가치 추정치를 이용해서 n번째 가치 추정치를 계�
 
 <p>오래전에 얻은 보상에 대한 가중치를 줄이고, 최근에 얻은 보상에 대한 가중치를 높이는 방법이다. 이때 \(\alpha\)는 학습률이라고 한다.</p>
 
-<p>\(= Q_{n - 1} + \alpha (R_n - Q_{n - 1})\)
-\(= (1 - \alpha) Q_{n - 1} + \alpha R_n\)
-\(= \alpha R_n + (1 - \alpha) {(\alpha R_{n - 1} + (1 - \alpha) Q_{n - 2})}\)
-\(= \alpha R_n + (1 - \alpha) \alpha R_{n - 1} + (1 - \alpha)^2 Q_{n - 2}\)
-\(= \alpha R_n + (1 - \alpha) \alpha R_{n - 1} + (1 - \alpha)^2 \alpha R_{n - 2} + (1 - \alpha)^3 Q_{n - 3}\)
-\(= \alpha R_n + (1 - \alpha) \alpha R_{n - 1} + (1 - \alpha)^2 \alpha R_{n - 2} +\)
-\((1 - \alpha)^3 \alpha R_{n - 3} + ... + (1 - \alpha)^{n - 1} \alpha R_1 + (1 - \alpha)^n Q_0\)</p>
+<div style="overflow-x: auto;">
+
+$$
+= Q_{n - 1} + \alpha (R_n - Q_{n - 1})
+$$
+$$
+= (1 - \alpha) Q_{n - 1} + \alpha R_n
+$$
+$$
+= \alpha R_n + (1 - \alpha) {(\alpha R_{n - 1} + (1 - \alpha) Q_{n - 2})}
+$$
+$$
+= \alpha R_n + (1 - \alpha) \alpha R_{n - 1} + (1 - \alpha)^2 Q_{n - 2}
+$$
+$$
+= \alpha R_n + (1 - \alpha) \alpha R_{n - 1} + (1 - \alpha)^2 \alpha R_{n - 2} + (1 - \alpha)^3 Q_{n - 3}
+$$
+$$
+= \alpha R_n + (1 - \alpha) \alpha R_{n - 1} + (1 - \alpha)^2 \alpha R_{n - 2} +
+$$
+$$
+(1 - \alpha)^3 \alpha R_{n - 3} + ... + (1 - \alpha)^{n - 1} \alpha R_1 + (1 - \alpha)^n Q_0
+$$
+
+</div>
 
 <p>\(Q_0\)는 초기값이다. 우리가 설정한 값에 따라서  학습결과에 편향이 생긴다. 하지만 표본 평균을 사용하면 편향이 사라진다.</p>
 
