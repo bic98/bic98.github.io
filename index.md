@@ -56,9 +56,9 @@ grid_navigation:
       cta: Read more
       url: 'fullstack'
       category: APP
-    - title: GSAT
-      excerpt: GSAT Samsung
-      cta: Read more
+    - title: Security
+      excerpt: Comming soon...
+      cta: None Page
       url: 'gsat'
       category: APP
 
