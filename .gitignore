@@ -20,3 +20,9 @@ wandb/
 # ---------------
 
 wandb/
+
+# ---------------
+# Secret content
+# ---------------
+secret.md
+gsat.md

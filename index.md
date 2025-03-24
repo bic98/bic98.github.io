@@ -56,6 +56,11 @@ grid_navigation:
       cta: Read more
       url: 'fullstack'
       category: APP
+    - title: GSAT
+      excerpt: GSAT Samsung
+      cta: Read more
+      url: 'gsat'
+      category: APP
 
 # Categories for navigation
 categories:
