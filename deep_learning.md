@@ -2315,7 +2315,7 @@ model.fit(
 <br>
 에폭이 증가할수록 손실함수는 감소하고 정확도는 증가하는 것을 확인할 수 있다.
 
-# Parameter Update
+## Parameter Update
 
 ### Limitations of SGD
 - SGD는 비등방성 함수(방향에 따라 기울기가 달라지는 함수)에서는 비효율적으로 움직인다.
@@ -2717,7 +2717,7 @@ class Dropout:
 - 3단계: 1단계와 2단계를 특정 횟수(100회 등) 반복하고, 그 정확도의 결과를 보고 하이퍼파라미터의 범위를 좁힌다.
 
 
-## Convolutional Neural Networks (CNN)
+# Convolutional Neural Networks (CNN)
 
 합성곱 신경망에 대해 알아보자. CNN은 이미지 인식과 음성 인식 등 다양한 분야에서 사용되는 신경망이다. CNN은 이미지의 공간적 구조를 활용하여 이미지 처리를 수행한다.
 
