@@ -2698,9 +2698,93 @@ class Dropout:
 앙상블 학습은 여러 모델을 결합하여 성능과 일반화 능력을 향상시키는 강력한 기법이다. 배깅, 부스팅, 스태킹 등의 다양한 방법이 있으며, 각각의 방법은 특정 상황에서 유리하게 작용할 수 있다.
 
 ## Finding the Optimal Hyperparameter Values
-### Validation Data
-### Hyperparameter Optimization
+
+신경망에는 다양한 하이퍼파라미터가 존재한다. 이러한 하이퍼파라미터를 최적화하는 것은 매우 중요하다.
+예를 들어, 신경망의 은닉층 수, 은닉층의 뉴런 수, 학습률, 배치 크기, 가중치 초기화 방법, 최적화 방법, 드롭아웃 비율 등이 있다. 하이퍼 파라미터의 값을 최대한 효율적으로 찾는 것이 중요하다.
+
+
+
 ### Implementing Hyperparameter Optimization
 
-## Summary
+하이퍼 파라미터를 최적화할 때의 핵심은 하이퍼파라미터의 '최적값'이 존재하는 범위를 조금씩 줄여가면 됨. 
+우선 대략적인 범위를 설정하고 그 범위에서 무작위로 하이퍼파라미터 값을 골라낸 후,  그 값으로 정확도를 평가하면됨. 
+
+하이퍼파리미터의 범위는 대략적으로 지정하는 것이 효과적임. 10의 거듭제곱 범위로 범위를 지정하는 로그 스케일이 일반적이다. 
+
+- 0단계: 하이퍼파라미터 값의 범위 설정
+- 1단계: 설정된 범위에서 하이퍼파라미터 값 무작위로 추출
+- 2단계: 1단계에서 샘플링한 하이퍼파라미터 값을 사용하여 학습하고 검증 데이터로 정확도 평가
+- 3단계: 1단계와 2단계를 특정 횟수(100회 등) 반복하고, 그 정확도의 결과를 보고 하이퍼파라미터의 범위를 좁힌다.
+
+
+## Convolutional Neural Networks (CNN)
+
+합성곱 신경망에 대해 알아보자. CNN은 이미지 인식과 음성 인식 등 다양한 분야에서 사용되는 신경망이다. CNN은 이미지의 공간적 구조를 활용하여 이미지 처리를 수행한다.
+
+### Overall Structure
+
+합성곱 계층과 풀링 계층이 추가된다.
+
+`지금까지 배운 신경망`
+- 완전연결 계층: 인접하는 계층의 모든 뉴런과 결합되어 있음
+
+<div align="center">
+    <img src="/images/aff.png" alt="affine2" width="100%">
+</div>
+
+`CNN`
+- 합성곱 계층: 입력 데이터 전체에 가중치를 적용
+- 풀링 계층: 가로/세로 방향의 공간을 줄이는 연산
+
+<div align="center">
+    <img src="/images/cnn.png" alt="cnn" width="100%">
+</div>
+
+
+### Convolutional Layers
+
+CNN에서는 padding, stride, filter, channel 등의 개념이 사용된다. 각 계층 사이에는 3차원 데이터같이 입체적인 데이터가 흐른다는 점에서 완전연결 신경망과는 다르다. 
+
+- `Problems with Fully Connected Layers`
+<br>
+완전연결 계층의 문제점은 데이터의 형상이 무시된다는 것이다. 예를 들어, 이미지는 3차원 데이터인데 완전연결 계층에 입력할 때 1차원 데이터로 평탄화해야 한다. 이렇게 되면 데이터의 형상이 무시된다. 
+<br>
+<br>
+예를 들어 이미지는 가로, 세로, 채널로 구성된 3차원 데이터이다. 이를 완전연결 계층에 입력하려면 1차원 데이터로 평탄화해야 한다. (1, 28, 28) => (1, 784) 공간적으로 가까운 픽셀이나 색상이 비슷한 픽셀은 비슷한 값이 되어야 한다. 그러나 완전연결 계층은 이러한 공간적 정보를 무시한다.
+<br>
+<br>
+**합성곱 계층은 형상을 유지한다.**
+<br>
+<br>
+CNN에서는 합성곱 계층의 입출력 데이터를 특징 맵(feature map)이라고 한다. 합성곱 계층의 입력 데이터를 입력 특징 맵, 출력 데이터를 출력 특징 맵이라고 한다.
+
+
+- Convolution Operation  
+- Padding  
+- Stride  
+- Convolution with 3D Data  
+- Thinking in Blocks  
+- Batch Processing  
+
+### Pooling Layers
+- Characteristics of Pooling Layers  
+
+### Implementing Convolution/Pooling Layers
+- 4D Arrays  
+- Expanding Data with im2col  
+- Implementing Convolution Layers  
+- Implementing Pooling Layers  
+
+### Implementing a CNN
+
+### Visualizing CNNs
+- Visualizing Weights in the First Layer  
+- Information Change by Layer Depth  
+
+### Famous CNNs
+- LeNet  
+- AlexNet  
+
+### Summary
+
 
