@@ -2746,7 +2746,7 @@ class Dropout:
 CNN에서는 padding, stride, filter, channel 등의 개념이 사용된다. 각 계층 사이에는 3차원 데이터같이 입체적인 데이터가 흐른다는 점에서 완전연결 신경망과는 다르다. 
 
 - `Problems with Fully Connected Layers`
-<br>
+
 완전연결 계층의 문제점은 데이터의 형상이 무시된다는 것이다. 예를 들어, 이미지는 3차원 데이터인데 완전연결 계층에 입력할 때 1차원 데이터로 평탄화해야 한다. 이렇게 되면 데이터의 형상이 무시된다. 
 <br>
 <br>
@@ -2759,10 +2759,49 @@ CNN에서는 padding, stride, filter, channel 등의 개념이 사용된다. 각
 CNN에서는 합성곱 계층의 입출력 데이터를 특징 맵(feature map)이라고 한다. 합성곱 계층의 입력 데이터를 입력 특징 맵, 출력 데이터를 출력 특징 맵이라고 한다.
 
 
-- Convolution Operation  
-- Padding  
-- Stride  
-- Convolution with 3D Data  
+- `Convolution Operation`
+
+합성곱 연산은 이미지 처리에서 말하는 필터연산에 해당한다. 필터는 커널이라고도 하며, 이 필터를 이미지의 왼쪽 위부터 오른쪽 아래까지 차례대로 이동하면서 적용한다. 이때 필터의 윈도우가 이미지의 모서리 부분에 도달하면 윈도우를 한 칸 아래로 내리고 다시 왼쪽 끝으로 이동한다. 이러한 연산을 수행하면 이미지의 특징을 추출할 수 있다.
+
+<div align="center">
+    <img src="/images/conv.png" alt="conv" width="70%">
+</div>
+
+- `Padding`
+
+패딩이란 합성곱 연산을 수행하기 전에 입력데이터 주변을 특정값으로 채우는 것을 말한다. 패딩은 주로 출력 크기를 조정할 목적으로 사용된다. 
+
+<div align="center">
+    <img src="/images/pad.png" alt="padding" width="70%">
+</div>
+
+- `Stride`
+
+필터를 적용하는 위치의 간격을 스트라이드(stride)라고 한다. 스트라이드는 필터를 적용하는 간격을 말한다. 스트라이드가 1이면 필터를 한 칸씩 이동하고, 2이면 두 칸씩 이동한다.
+
+<div align="center">
+    <img src="/images/str.png" alt="stride" width="70%">
+</div>
+
+입력 크기를 (H, W), 필터 크기를 (FH, FW), 출력 크기를 (OH, OW), 패딩을 P, 스트라이드를 S라고 하면 출력 크기는 다음과 같이 계산된다.
+
+$$
+OH = \frac{H + 2P - FH}{S} + 1
+$$
+
+$$
+OW = \frac{W + 2P - FW}{S} + 1
+$$
+
+- `Convolution with 3D Data`
+
+3차원의 합성곱 연산에서 주의할 점은 입력 데이터의 채널 수와 필터의 채널 수가 같아야 한다는 것이다.
+
+<div align="center">
+    <img src="/images/thr.png" alt="conv3d" width="70%">
+</div>
+
+
 - Thinking in Blocks  
 - Batch Processing  
 
