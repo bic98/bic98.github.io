@@ -2802,15 +2802,61 @@ $$
 </div>
 
 
-- Thinking in Blocks  
-- Batch Processing  
+필터를 Fn개 적용하면 출력 맵도 Fn개 생성된다. 이 Fn개의 출력 맵을 모으면 (FN, OH, OW) 크기의 데이터가 된다.
+
+<div align="center">
+    <img src="/images/fno.png" alt="map" width="100%">
+</div>
+
+
 
 ### Pooling Layers
-- Characteristics of Pooling Layers  
+pooling은 세로 가로 방향의 공간을 줄이는 연산이다. 
+예를 들어 2x2 최대 풀링은 2x2 영역에서 가장 큰 원소 하나를 꺼내는 연산이다. 스트라이드 2로 처리하면 출력 크기는 입력의 절반으로 줄어든다.
+
+그리고 풀리의 윈도우크기와 스트라이드의 값은 같은 값으로 처리하는게 일반적이다.  3x3이면 스트라이트는 3으로 4x4이면 스트라이트는 4로 처리한다.
+
+- Characteristics of Pooling Layers 
+
+- 학습해야 할 매개변수가 없다.
+최댓값이나 평균을 취하는 연산이므로 학습해야 할 매개변수가 없다.
+- 채널 수가 변하지 않는다.
+입력 데이터의 채널 수 그대로 출력 데이터의 채널 수가 유지된다.
+- 입력의 변화에 영향을 적게 받는다.
+입력 데이터가 조금 변해도 풀링의 결과는 잘 변하지 않는다.
+
+
 
 ### Implementing Convolution/Pooling Layers
-- 4D Arrays  
+
+지금까지 합성곱 계층과 풀링계층에 대하 알아보았음. 파이썬으로 구현해보자. 
+
 - Expanding Data with im2col  
+
+im2col은 입력 데이터를 필터링하기 좋게 전개하는 함수이다. 
+아래 그림과 같이 필터를 적용하는 영역(3차원 블록)을 한 줄로 전개한다.
+
+
+im2col의 약자는 image to column이다. 입력이미지에서 커널이 움직이면서 보는 부분을 슬라이딩 윈도우하면서 잘라냄
+
+<div align="center">
+    <img src="/images/imgcol.png" alt="im2col2" width="70%">
+</div>
+
+배치크기가 1, 채널 3, 가로 7, 세로 7의 데이터일경우 im2col(직접구현하기 보다 torch패키지의 unfold모듈을 사용함)을 해보면 2차원 배열이 만들어 진다. (1, 75, 9)
+
+75 = 커널사이즈 * 커널사이즈 * 채널
+9 = 3 * 3(슬라이딩 윈도우)
+
+```python
+import torch
+
+
+x1 = torch.randn(1, 3, 7, 7)
+patches = torch.nn.functional.unfold(x1, kernel_size = 5, stride = 1, padding = 0)
+print(patches.shape) # torch.Size([1, 75, 9])
+```
+
 - Implementing Convolution Layers  
 - Implementing Pooling Layers  
 
