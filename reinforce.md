@@ -561,5 +561,75 @@ $$
 
 강화 학습의 목표는 이러한 최적 정책 또는 최적 가치 함수를 찾아내는 것이다.
 
-## 벨만 방정식
+## Bellman equation
 
+First, Summary of the Above. 
+
+- **❓ What is an MDP?**
+
+An MDP is a mathematical framework used to model decision-making in environments where outcomes are partly random and partly under the control of an agent. 
+
+It consisis of : 
+
+- A set of states (S)
+- A set of actions (A)
+- A transition Probablity function (P)
+- A reward function (R)
+- A discount factor (γ)
+
+So, MDP is the foundation of reinforcement learning, where an agent learns to choose actions that maximize cumulative reward over time. 
+
+
+- **❓Why is important Bellman equation in MDP?**
+
+The Bellman equation is important in Markov Decision Processes (MDPs) because it provides a recursive decomposition of the value function, which represents the expected return starting from a given state. It serves as the foundation for many reinforcement learning algorithms, enabling efficient computation of optimal policies by breaking down complex problems into smaller subproblems.
+
+🔑 Bellman Equation – Easy Explanation (with Keywords)
+- **The Bellman equation expresses**
+"What kind of future reward can I expect if I act well in this state?"
+
+- **It uses recursion to break down a complex problem into smaller subproblems.**
+
+- **This allows us to efficiently and systematically optimize the overall policy.**
+
+- **Many reinforcement learning algorithms like Q-learning and Value Iteration**
+are based on the Bellman equation.
+
+### Derivation of Bellman Equation. 
+
+First, let's define 'Return at time t' as the sum of rewards from time 't'
+
+<div style="overflow-x: auto;">
+$$
+G_t = R_t + \gamma R_{t+1} + \gamma^2 R_{t+2} + ... = \sum_{k=0}^{\infty} \gamma^k R_{t+k}
+$$
+</div>
+
+Second, What is 'Return at time t + 1'?
+<div style="overflow-x: auto;">
+$$
+G_{t+1} = R_{t+1} + \gamma R_{t+2} + \gamma^2 R_{t+3} + ... = \sum_{k=0}^{\infty} \gamma^k R_{t+k+1}
+$$
+</div>
+
+So, we can rearrange the equation as above two equatios. 
+
+<div style="overflow-x: auto;">
+$$
+G_t = R_t + \gamma G_{t+1}
+$$
+</div>
+
+We know the relation between $$G_t$$ and $$G_{t+1}$$.  
+
+Based on the state-vlaue function $$V_\pi(s)$$ we obtained earlier, we can derived the following conclusion. 
+
+<div style="overflow-x: auto;">
+$$
+V_\pi(s) = \mathbb{E}_\pi[G_t | S_t = s]
+    = \mathbb{E}_\pi[R_t + \gamma G_{t+1} | S_t = s]
+    = \mathbb{E}_\pi[R_t | S_t = s] + \gamma \mathbb{E}_\pi[G_{t+1} | S_t = s]
+$$
+</div>
+
+(Since Linearity of Expectation 👉 $$\mathbb{E}[X + Y] = \mathbb{E}[X] + \mathbb{E}[Y]$$)

@@ -672,8 +672,90 @@ $$
 
 <p>강화 학습의 목표는 이러한 최적 정책 또는 최적 가치 함수를 찾아내는 것이다.</p>
 
-<h2 id="벨만-방정식">벨만 방정식</h2>
+<h2 id="bellman-equation">Bellman equation</h2>
 
+<p>First, Summary of the Above.</p>
+
+<ul>
+  <li><strong>❓ What is an MDP?</strong></li>
+</ul>
+
+<p>An MDP is a mathematical framework used to model decision-making in environments where outcomes are partly random and partly under the control of an agent.</p>
+
+<p>It consisis of :</p>
+
+<ul>
+  <li>A set of states (S)</li>
+  <li>A set of actions (A)</li>
+  <li>A transition Probablity function (P)</li>
+  <li>A reward function (R)</li>
+  <li>A discount factor (γ)</li>
+</ul>
+
+<p>So, MDP is the foundation of reinforcement learning, where an agent learns to choose actions that maximize cumulative reward over time.</p>
+
+<ul>
+  <li><strong>❓Why is important Bellman equation in MDP?</strong></li>
+</ul>
+
+<p>The Bellman equation is important in Markov Decision Processes (MDPs) because it provides a recursive decomposition of the value function, which represents the expected return starting from a given state. It serves as the foundation for many reinforcement learning algorithms, enabling efficient computation of optimal policies by breaking down complex problems into smaller subproblems.</p>
+
+<p>🔑 Bellman Equation – Easy Explanation (with Keywords)</p>
+<ul>
+  <li>
+    <p><strong>The Bellman equation expresses</strong>
+“What kind of future reward can I expect if I act well in this state?”</p>
+  </li>
+  <li>
+    <p><strong>It uses recursion to break down a complex problem into smaller subproblems.</strong></p>
+  </li>
+  <li>
+    <p><strong>This allows us to efficiently and systematically optimize the overall policy.</strong></p>
+  </li>
+  <li>
+    <p><strong>Many reinforcement learning algorithms like Q-learning and Value Iteration</strong>
+are based on the Bellman equation.</p>
+  </li>
+</ul>
+
+<h3 id="derivation-of-bellman-equation">Derivation of Bellman Equation.</h3>
+
+<p>First, let’s define ‘Return at time t’ as the sum of rewards from time ‘t’</p>
+
+<div style="overflow-x: auto;">
+$$
+G_t = R_t + \gamma R_{t+1} + \gamma^2 R_{t+2} + ... = \sum_{k=0}^{\infty} \gamma^k R_{t+k}
+$$
+</div>
+
+<p>Second, What is ‘Return at time t + 1’?</p>
+<div style="overflow-x: auto;">
+$$
+G_{t+1} = R_{t+1} + \gamma R_{t+2} + \gamma^2 R_{t+3} + ... = \sum_{k=0}^{\infty} \gamma^k R_{t+k+1}
+$$
+</div>
+
+<p>So, we can rearrange the equation as above two equatios.</p>
+
+<div style="overflow-x: auto;">
+$$
+G_t = R_t + \gamma G_{t+1}
+$$
+</div>
+
+<p>We know the relation between \(G_t\) and \(G_{t+1}\).</p>
+
+<p>Based on the state-vlaue function \(V_\pi(s)\) we obtained earlier, we can derived the following conclusion.</p>
+
+<div style="overflow-x: auto;">
+$$
+V_\pi(s) = \mathbb{E}_\pi[G_t | S_t = s]
+    = \mathbb{E}_\pi[R_t + \gamma G_{t+1} | S_t = s]
+    = \mathbb{E}_\pi[R_t | S_t = s] + \gamma \mathbb{E}_\pi[G_{t+1} | S_t = s]
+$$
+</div>
+
+<p>(Since Linearity of Expectation 👉 \(\mathbb{E}[X + Y] = \mathbb{E}[X] + \mathbb{E}[Y]\))</p>
 
 						</div><!-- /.content -->
 					</div><!-- /.col -->
