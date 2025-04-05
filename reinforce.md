@@ -5,13 +5,13 @@ keywords: 강화학습, 머신러닝, 인공지능, 인찬백, InchanBaek, 리�
 comments: true
 seo:
   title: Reinforcement Learning from Scratch - Complete Guide | InchanBaek Note
-  description: 강화학습의 기초부터 고급 알고리즘까지 배우는 완벽 가이드. 마르코프 결정 과정, Q-러닝, 정책 경사법 등 핵심 개념과 실제 구현 방법을 단계별로 설명합니다.
+  description: A complete guide to learning reinforcement learning from basics to advanced algorithms. It explains key concepts such as Markov decision processes, Q-learning, and policy gradient methods, along with step-by-step implementation techniques.
   canonical: https://bic98.github.io/reinforce/
   image: https://bic98.github.io/images/layout/logo.png
 
 # Hero section
 title: Reinforcement Learning from Scratch
-description: 강화학습의 기본 개념부터 고급 알고리즘까지, 이론과 실습을 통해 처음부터 차근차근 배우는 강화학습 기초 가이드입니다.
+description: A complete guide to learning reinforcement learning from basics to advanced algorithms. It explains key concepts such as Markov decision processes, Q-learning, and policy gradient methods, along with step-by-step implementation techniques.
 
 # # Author box
 # author:
@@ -50,7 +50,7 @@ micro_nav: true
 - Unsupervised Learning : When the input data is given, it is a method of finding the characteristics of the input data. 
 
 
-- Reinforcement Learning : Agent is an entity that interacts with the environment and receives information about the environment to choose actions that maximize rewards.
+- **Reinforcement Learning** : **Agent** is an entity that interacts with the **environment** and receives information about the environment to choose **actions** that **maximize rewards**.
 
 ### What is Bandit problem?
 
@@ -75,17 +75,17 @@ The goal is to get as much reward as possible within a limited number of plays.
 
 **The agent as a player selects actions in a given environment, and the environment provides rewards to the agent.**
 
-Goal: **Select actions that maximize rewards** -> **Get as many coins as possible** -> **Find the best slot machine**
+**Goal**: **Select actions that maximize rewards** -> **Get as many coins as possible** -> **Find the best slot machine**
 
 ### Value and Action Value
 
-- Value: Expected reward that can be obtained in a specific state
+- **Value**: Expected reward that can be obtained in a specific state
 
 $$
 E[R_t] 
 $$
 
-- Action Value: Expected reward obtained as a result of an action
+- **Action Value**: Expected reward obtained as a result of an action
 
 $$
 Q(A) = E[R_t | A] 
@@ -115,7 +115,7 @@ The expected values for the two machines are:
 - Slot machine a: (0.7 * 0 + 0.15 * 1 + 0.12 * 5 + 0.03 * 10) = 1.05
 - Slot machine b: (0.5 * 0 + 0.4 * 1 + 0.09 * 5 + 0.01 * 10) = 0.95
 
-Slot machine a is better than slot machine b.
+**Slot machine a is better than slot machine b.**
 
 ### Value Estimation
 
@@ -158,14 +158,14 @@ $$
 
 If we completely trust uncertain estimates, we might miss the best action. Therefore, the agent needs to reduce uncertainty and increase the reliability of estimation.
 
-- Policy: The strategy that determines the actions an agent selects when interacting with the environment
+- **Policy**: The strategy that determines the actions an agent selects when interacting with the environment
 
 There are two policies that can be used to reduce uncertainty:
 
 1. **Exploration**: Selecting uncertain actions to gain information about the environment
 2. **Exploitation**: Selecting the best action based on information available so far
 
-Ultimately, reinforcement learning algorithms are about finding the right 'balance between exploitation and exploration'!!!!
+**Ultimately, reinforcement learning algorithms are about finding the right 'balance between exploitation and exploration'!!!!**
 
 ### Epsilon-Greedy Policy
 This is one of the algorithms used to balance exploration and exploitation.
@@ -174,7 +174,7 @@ For example, if $$\epsilon$$ = 0.1, it selects a random action with 10% probabil
 ### Solving the Bandit Problem
 
 - **Action Value Estimation**: Estimate the action value and select the best action.
-- **Policy**: Use the epsilon-greedy policy to balance exploration and exploitation.
+- **Policy**: Use the **epsilon-greedy policy** to balance **exploration** and **exploitation**.
 
 Let's implement the above content in code.
 
@@ -272,9 +272,9 @@ It took an additional 20,000 plays to recognize a probability difference of abou
 
 ### Non-stationary Problem
 
-The bandit problem we've covered so far belongs to the category of stationary problems. A stationary problem is one where the probability distribution of rewards does not change. In the code above, you can see that the probabilities are fixed in the variable called rates.
+The bandit problem we've covered so far belongs to the category of **stationary problems**. A stationary problem is one where the probability distribution of rewards **does not change**. In the code above, you can see that the probabilities are fixed in the variable called rates.
 
-However, in reality, the probability distribution of rewards often changes. This is called a non-stationary problem. How should we handle this?
+However, in reality, the probability distribution of rewards often changes. This is called a **non-stationary problem**. How should we handle this?
 
 
 
@@ -284,13 +284,13 @@ $$
 Q_n = Q_{n - 1} + \frac{1}{n} (R_n - Q_{n - 1})
 $$
 
-But in non-stationary problems, we update the action value estimate with the following equation:
+But in **non-stationary problems**, we update the action value estimate with the following equation:
 
 $$
 Q_n = Q_{n - 1} + \alpha (R_n - Q_{n - 1})
 $$
 
-This method reduces the weight of rewards obtained long ago and increases the weight of recently obtained rewards. Here, $$\alpha$$ is called the learning rate.
+This method **reduces the weight of rewards obtained long ago** and **increases the weight of recently obtained rewards**. Here, $$\alpha$$ is called the **learning rate**.
 
 
 <div style="overflow-x: auto;">
@@ -322,10 +322,10 @@ $$
 $$Q_0$$ is the initial value. Depending on the value we set, bias can occur in the learning results. However, when using sample averages, the bias disappears.
 
 
-This method is called exponential moving average or exponentially weighted moving average.
+This method is called **exponential moving average** or **exponentially weighted moving average**.
 
 
-- **Exponential Weighted Moving Average**: A method that gives more weight to recently obtained rewards and less weight to rewards obtained long ago
+- **Exponential Weighted Moving Average**: A method that gives **more weight to recently obtained rewards** and **less weight to rewards obtained long ago**
 
 
 Let's implement this in Python code.
@@ -416,9 +416,9 @@ When we set the fixed value $$\alpha$$ = 0.8, we can see that the results conver
 - **Bandit Problem**: A fundamental problem in reinforcement learning where the goal is to find a method that maximizes rewards among multiple slot machines
 - **Action Value**: The expected reward obtained as a result of an action
 - **Policy**: The strategy that determines the actions an agent selects when interacting with the environment
-- **Epsilon-Greedy Policy**: One of the algorithms used to balance exploration and exploitation
+- **Epsilon-Greedy Policy**: One of the algorithms used to balance **exploration and exploitation**
 - **Non-stationary Problem**: A problem where the probability distribution of rewards changes
-- **Exponential Weighted Moving Average**: A method that gives more weight to recently obtained rewards and less weight to rewards obtained long ago
+- **Exponential Weighted Moving Average**: A method that gives **more weight to recently obtained rewards** and **less weight to rewards obtained long ago**
 
 ## Markov Decision Process
 
@@ -428,7 +428,7 @@ Let's examine problems where the state of the environment changes according to a
 
 - **Markov Decision Process (MDP)**: A method of modeling an environment where the agent interacts with the environment, and the environment's state satisfies the Markov property
 
-- **Markov Property**: The property where the future state depends only on the current state
+- **Markov Property**: The property where the **future state depends only on the current state**
 
 MDPs require the concept of time. At a specific time, the agent takes an action, and as a result, transitions to a new state. The time unit in this case is called a time step.
 
@@ -446,25 +446,25 @@ MDPs require the concept of time. At a specific time, the agent takes an action,
 
 The above three elements must be expressed in formulas.
 
-If the state transition is deterministic, the next state s' depends only on the current state s and action a.
+If the state transition is **deterministic**, the next state s' depends only on the current state s and action a.
 
-State transition function => 
+**State transition function** => 
 $$
 s' = f(s, a)
 $$
 
-If the state transition is probabilistic, the next state s' depends only on the current state s and action a.
+If the state transition is **probabilistic**, the next state s' depends only on the current state s and action a.
 
-State transition probability =>
+**State transition probability** =>
 $$
 P(s' | s, a)
 $$
 
 ### Reward Function
 
-The reward function returns the reward for state s and action a. It returns the reward received when the agent takes action a in state s and moves to the next state s'.
+The **reward function** returns the reward for state s and action a. It returns the reward received when the agent takes action a in state s and moves to the next state s'.
 
-Reward function =>
+**Reward function** =>
 $$
 r(s, a, s')
 $$
@@ -472,12 +472,12 @@ $$
 
 ### Agent's Policy
 
-The agent's policy refers to how the agent determines its actions. The agent determines its actions based solely on the 'current state'.
-This is because 'all the information needed about the environment is contained in the current state'.
+The agent's **policy** refers to how the agent determines its actions. The agent determines its actions based solely on the **'current state'**.
+This is because **'all the information needed about the environment is contained in the current state'**.
 
 A policy that the agent decides probabilistically can be expressed as follows:
 
-Policy =>
+**Policy** =>
 $$
 \pi(a | s) = P(a | s)
 $$
@@ -570,24 +570,24 @@ First, Summary of the Above.
 
 An MDP is a mathematical framework used to model decision-making in environments where outcomes are partly random and partly under the control of an agent. 
 
-It consisis of : 
+It consists of: 
 
-- A set of states (S)
-- A set of actions (A)
-- A transition Probablity function (P)
-- A reward function (R)
-- A discount factor (γ)
+- A set of **states (S)**
+- A set of **actions (A)**
+- A **transition probability function (P)**
+- A **reward function (R)**
+- A **discount factor (γ)**
 
-So, MDP is the foundation of reinforcement learning, where an agent learns to choose actions that maximize cumulative reward over time. 
+So, MDP is the **foundation of reinforcement learning**, where an agent learns to choose actions that maximize cumulative reward over time. 
 
 
 - **❓Why is important Bellman equation in MDP?**
 
-The Bellman equation is important in Markov Decision Processes (MDPs) because it provides a recursive decomposition of the value function, which represents the expected return starting from a given state. It serves as the foundation for many reinforcement learning algorithms, enabling efficient computation of optimal policies by breaking down complex problems into smaller subproblems.
+The **Bellman equation** is important in Markov Decision Processes (MDPs) because it provides a **recursive decomposition of the value function**, which represents the expected return starting from a given state. It serves as the **foundation for many reinforcement learning algorithms**, enabling **efficient computation of optimal policies** by breaking down complex problems into smaller subproblems.
 
-🔑 Bellman Equation – Easy Explanation (with Keywords)
+🔑 **Bellman Equation – Easy Explanation (with Keywords)**
 - **The Bellman equation expresses**
-"What kind of future reward can I expect if I act well in this state?"
+"**What kind of future reward can I expect if I act well in this state?**"
 
 - **It uses recursion to break down a complex problem into smaller subproblems.**
 
