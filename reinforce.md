@@ -41,50 +41,51 @@ micro_nav: true
   src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML">
 </script>
 
-## 밴디트 문제 (Bandit Problem)
+## Bandit Problem
 
-### 강화학습
+### Reinforcement Learning
 
-- 지도학습 (Supervised Learning) : 입력과 출력 데이터가 주어졌을 때, 입력 데이터와 출력 데이터 사이의 관계를 모델링하는 기계학습의 한 방법
+- Supervised Learning : When the input and output data are given, it is a method of modeling the relationship between input data and output data. 
 
-- 비지도학습 (Unsupervised Learning) : 입력 데이터만 주어졌을 때, 입력 데이터의 특징을 찾아내는 기계학습의 한 방법
+- Unsupervised Learning : When the input data is given, it is a method of finding the characteristics of the input data. 
 
-- 강화학습 (Reinforcement Learning) : 에이전트가 환경과 상호작용하며, 환경에 대한 정보를 받아 보상을 최대화하는 행동을 선택하는 방법
 
-### 밴디트 문제란?
+- Reinforcement Learning : Agent is an entity that interacts with the environment and receives information about the environment to choose actions that maximize rewards.
 
-밴디트 == 슬롯머신
+### What is Bandit problem?
 
-슬롯머신은 각각의 확률이 다름. 
+Bandit == Slot machine
 
-처음에는 어떤 슬롯머신이 가장 좋은지 모름. 
+Each slot machine has a different probability.
 
-실제로 플레이를 해보면서 좋은 머신을 찾아야 함. 
+At first, we don't know which slot machine is the best.
 
-정해진 횟수 안에 최대한 많이 보상을 얻는 것이 목표.
+We need to find the good machine by actually playing.
+
+The goal is to get as much reward as possible within a limited number of plays.
 
 <div align="center">
   <div class = 'mermaid'>
     graph LR
-    A[Agent] -->|행동| B[Environment]
-    B -->|보상| A
+    A[Agent] -->|action| B[Environment]
+    B -->|reward| A
   </div>
 </div>
 
 
-**플레이어인 에이전트는 주어진 환경에서 행동을 선택하고, 환경은 에이전트에게 보상을 제공한다.**
+**The agent as a player selects actions in a given environment, and the environment provides rewards to the agent.**
 
-목표 : **보상을 최대화하는 행동을 선택하는 것** -> **코인을 최대한 많이 얻는 것** -> **좋은 슬롯머신을 찾는 것**
+Goal: **Select actions that maximize rewards** -> **Get as many coins as possible** -> **Find the best slot machine**
 
-### 가치와 행동가치
+### Value and Action Value
 
-- 가치 (Value) : 특정 상태에서 얻을 수 있는 보상의 기대값
+- Value: Expected reward that can be obtained in a specific state
 
 $$
 E[R_t] 
 $$
 
-- 행동가치 (Action Value) :행동의 결과로 얻은 보상의 기대값
+- Action Value: Expected reward obtained as a result of an action
 
 $$
 Q(A) = E[R_t | A] 
@@ -92,53 +93,53 @@ $$
 
 (E = Expectation, Q = Quality, A = Action, R = Reward)
 
-슬롯 머신 a와 b의 보상의 기댓값을 구해보자. 
+Let's calculate the expected rewards for slot machines a and b.
 
-밑에는 슬롯머신 a에 대한 표이다. 
+Below is a table for slot machine a.
 
-| 슬롯머신 a | 
+| Slot machine a | 
 |:---:|:---:|:---:|:---:|:---:|:---:|
-| 얻을 수 있는 코인| 0 | 1 | 5 | 10 |
-| 보상 | 0.70 | 0.15 | 0.12 | 0.03 |
+| Coins obtainable | 0 | 1 | 5 | 10 |
+| Reward probability | 0.70 | 0.15 | 0.12 | 0.03 |
 
 
-슬롯 머신 b에 대한 표이다.
+Here's a table for slot machine b.
 
-| 슬롯머신 b | 
+| Slot machine b | 
 |:---:|:---:|:---:|:---:|:---:|:---:|
-| 얻을 수 있는 코인| 0 | 1 | 5 | 10 |
-| 보상 | 0.50 | 0.40 | 0.09 | 0.01 |
+| Coins obtainable | 0 | 1 | 5 | 10 |
+| Reward probability | 0.50 | 0.40 | 0.09 | 0.01 |
 
-두 머신에 대한 기댓값은
+The expected values for the two machines are:
 
-- 슬롯머신 a : (0.7 * 0 + 0.15 * 1 + 0.12 * 5 + 0.03 * 10) = 1.05
-- 슬롯머신 b : (0.5 * 0 + 0.4 * 1 + 0.09 * 5 + 0.01 * 10) = 0.95
+- Slot machine a: (0.7 * 0 + 0.15 * 1 + 0.12 * 5 + 0.03 * 10) = 1.05
+- Slot machine b: (0.5 * 0 + 0.4 * 1 + 0.09 * 5 + 0.01 * 10) = 0.95
 
-슬롯머신 a가 슬롯머신 b보다 좋다.
+Slot machine a is better than slot machine b.
 
-### 가치 추정
+### Value Estimation
 
-n번의 플레이를 하면서 얻은 보상을 R1, R2, ..., Rn이라고 하자.
-그때 행동 가치의 추정치 Qn은 다음과 같이 계산할 수 있다.
+Let's say the rewards obtained during n plays are R1, R2, ..., Rn.
+Then the action value estimate Qn can be calculated as follows:
 
 $$
 Q_n = \frac{R_1 + R_2 + ... + R_n}{n}
 $$
 
-하지만 만약 이렇게 n번 플레이 하면서 가치 추정을 한다면 계산량과 메모리 부하가 커진다.
-n - 1번째의 가치 추정치를 이용해서 n번째 가치 추정치를 계산할 수 있다.
+However, if we estimate the value this way after n plays, the computational and memory load becomes large.
+We can calculate the nth value estimate using the (n-1)th value estimate.
 
 $$
 Q_{n-1} = \frac{R_1 + R_2 + ... + R_{n-1}}{n-1}
 $$
 
-이식의 양변에 (n - 1)을 곱하면
+If we multiply both sides of this equation by (n-1):
 
 $$
 (n - 1)Q_{n-1} = R_1 + R_2 + ... + R_{n-1}
 $$
 
-이제 n번째 가치 추정치를 계산할 수 있다.
+Now we can calculate the nth value estimate:
 
 $$
 Q_n = \frac{1}{n} (R_1 + R_2 + ... + R_{n-1} + R_n) 
@@ -153,29 +154,29 @@ $$
 = Q_{n - 1} + \frac{1}{n} (R_n - Q_{n - 1})
 $$
 
-### 플레이어의 정책
+### Player's Policy
 
-확실하지 않은 추정치를 전적으로 신뢰하면 최선의 행동을 놓칠 수 있음. 따라서 에이전트는 불확실성을 줄여 추정의 신뢰도를 높여야 한다. 
+If we completely trust uncertain estimates, we might miss the best action. Therefore, the agent needs to reduce uncertainty and increase the reliability of estimation.
 
-- 정책 (Policy) : 에이전트가 환경과 상호작용할 때, 에이전트가 선택하는 행동을 결정하는 전략
+- Policy: The strategy that determines the actions an agent selects when interacting with the environment
 
-불확실성을 줄이기 위해서는 두가지 정책을 사용할 수 있다. 
+There are two policies that can be used to reduce uncertainty:
 
-1. **탐험 (Exploration)** : 불확실한 행동을 선택하여 환경에 대한 정보를 얻는 것
-2. **활용 (Exploitation)** : 현재까지의 정보를 활용하여 최선의 행동을 선택하는 것
+1. **Exploration**: Selecting uncertain actions to gain information about the environment
+2. **Exploitation**: Selecting the best action based on information available so far
 
-결국 강화학습알고리즘은 '활용과 탐험의 균형'을 맞추는 것!!!!
+Ultimately, reinforcement learning algorithms are about finding the right 'balance between exploitation and exploration'!!!!
 
-### 엡실론-그리디 정책
-탐험과 활용의 균형을 맞추기 위한 방법의 알고리즘 중 하나이다. 
-예를 들어, $$\epsilon$$ = 0.1로 설정하면 10%의 확률로 무작위 행동을 선택하고, 90%의 확률로 가장 좋은 행동을 선택한다.
+### Epsilon-Greedy Policy
+This is one of the algorithms used to balance exploration and exploitation.
+For example, if $$\epsilon$$ = 0.1, it selects a random action with 10% probability and selects the best action with 90% probability.
 
-### 밴디트 문제의 해결
+### Solving the Bandit Problem
 
-- **행동가치 추정** : 행동가치를 추정하고, 가장 좋은 행동을 선택한다.
-- **정책** : 엡실론-그리디 정책을 사용하여 탐험과 활용의 균형을 맞춘다.
+- **Action Value Estimation**: Estimate the action value and select the best action.
+- **Policy**: Use the epsilon-greedy policy to balance exploration and exploitation.
 
-그럼 위의 내용을 코드로 구현해보자.
+Let's implement the above content in code.
 
 ```python
 
@@ -258,38 +259,38 @@ plt.show()
   <img src="/images/bandit.png" alt="bandit" width="100%">
 </div>
 
-약 10000번의 플레이를 하면 인덱스 1번의 슬롯머신을 액션으로 선택하는 것이 최선임을 아직을 알지 못한다. 
-더 많은 스텝을 주어보자. 
+After about 10,000 plays, it still doesn't know that selecting the slot machine at index 1 as an action is optimal.
+Let's try with more steps.
 
 <div align="center">
   <img src="/images/bandit2.png" alt="bandit" width="100%">
 </div>
 
-약 30000번의 플레이를 하면 인덱스 1번의 슬롯머신을 액션으로 선택하는 것이 최선임을 알게 된다.
-약 2%의 확률 차이를 인지하기 위해 20000번의 플레이가 더 필요했다. 
+After about 30,000 plays, it learns that selecting the slot machine at index 1 as an action is optimal.
+It took an additional 20,000 plays to recognize a probability difference of about 2%.
 
 
-### 비정상 문제 (Non-stationary Problem)
+### Non-stationary Problem
 
-지금까지 다룬 밴디트 문제를 정상문제에 속한다. 정상문제란 보상의 확률 분포가 변하지 않는 문제이다. 위의 코드를 보면 rates라는 변수에 확률이 고정되어 있다.
+The bandit problem we've covered so far belongs to the category of stationary problems. A stationary problem is one where the probability distribution of rewards does not change. In the code above, you can see that the probabilities are fixed in the variable called rates.
 
-하지만 실제로는 보상의 확률 분포가 변하는 경우가 많다. 이런 경우를 비정상 문제라고 한다. 이런 경우에는 어떻게 해야할까?
+However, in reality, the probability distribution of rewards often changes. This is called a non-stationary problem. How should we handle this?
 
 
 
-먼저 정상 문제에서는 다음과 같은 식으로 행동가치 추정치를 업데이트 했다.
+First, in stationary problems, we updated the action value estimate with the following equation:
 
 $$
 Q_n = Q_{n - 1} + \frac{1}{n} (R_n - Q_{n - 1})
 $$
 
-하지만 비정상 문제에서는 다음과 같은 식으로 행동가치 추정치를 업데이트 한다.
+But in non-stationary problems, we update the action value estimate with the following equation:
 
 $$
 Q_n = Q_{n - 1} + \alpha (R_n - Q_{n - 1})
 $$
 
-오래전에 얻은 보상에 대한 가중치를 줄이고, 최근에 얻은 보상에 대한 가중치를 높이는 방법이다. 이때 $$\alpha$$는 학습률이라고 한다.
+This method reduces the weight of rewards obtained long ago and increases the weight of recently obtained rewards. Here, $$\alpha$$ is called the learning rate.
 
 
 <div style="overflow-x: auto;">
@@ -318,16 +319,16 @@ $$
 
 </div>
 
-$$Q_0$$는 초기값이다. 우리가 설정한 값에 따라서  학습결과에 편향이 생긴다. 하지만 표본 평균을 사용하면 편향이 사라진다.
+$$Q_0$$ is the initial value. Depending on the value we set, bias can occur in the learning results. However, when using sample averages, the bias disappears.
 
 
-위의 방식을 지수이동평균, 지수가중이동평균이라고 한다.
+This method is called exponential moving average or exponentially weighted moving average.
 
 
-- **지수 가중 이동 평균 (Exponential Weighted Moving Average)** : 최근에 얻은 보상에 더 많은 가중치를 주고, 오래전에 얻은 보상에는 적은 가중치를 주는 방법
+- **Exponential Weighted Moving Average**: A method that gives more weight to recently obtained rewards and less weight to rewards obtained long ago
 
 
-python 코드로 구현해보자.
+Let's implement this in Python code.
 
 ```python
 import numpy as np
@@ -408,102 +409,102 @@ plt.show()
   <img src="/images/bandit3.png" alt="bandit" width="100%">
 </div>
 
-고정값 $$\alpha$$ = 0.8로 설정하면 표본 평균을 사용한 경우보다 더 결과가 빨리 수렴하는 것을 볼 수 있다.
+When we set the fixed value $$\alpha$$ = 0.8, we can see that the results converge faster than when using sample averages.
 
-### 정리
+### Summary
 
-- **밴디트 문제** : 강화학습의 기초 문제로, 여러 개의 슬롯머신 중에서 최대 보상을 얻는 방법을 찾는 문제
-- **행동가치** : 행동의 결과로 얻은 보상의 기대값
-- **정책** : 에이전트가 환경과 상호작용할 때, 에이전트가 선택하는 행동을 결정하는 전략
-- **엡실론-그리디 정책** : 탐험과 활용의 균형을 맞추기 위한 방법의 알고리즘 중 하나
-- **비정상 문제** : 보상의 확률 분포가 변하는 문제
-- **지수 가중 이동 평균** : 최근에 얻은 보상에 더 많은 가중치를 주고, 오래전에 얻은 보상에는 적은 가중치를 주는 방법
+- **Bandit Problem**: A fundamental problem in reinforcement learning where the goal is to find a method that maximizes rewards among multiple slot machines
+- **Action Value**: The expected reward obtained as a result of an action
+- **Policy**: The strategy that determines the actions an agent selects when interacting with the environment
+- **Epsilon-Greedy Policy**: One of the algorithms used to balance exploration and exploitation
+- **Non-stationary Problem**: A problem where the probability distribution of rewards changes
+- **Exponential Weighted Moving Average**: A method that gives more weight to recently obtained rewards and less weight to rewards obtained long ago
 
-## 마르코프 결정 과정 (Markov Decision Process)
+## Markov Decision Process
 
-에리전트의 행동에 따라 환경의 상태가 변하는 문제를 다루어보자. 
+Let's examine problems where the state of the environment changes according to an agent's actions.
 
-### 마르코프 결정 과정이란?
+### What is a Markov Decision Process?
 
-- **마르코프 결정 과정 (Markov Decision Process, MDP)** : 에이전트가 환경과 상호작용하며, 환경의 상태가 마르코프 성질을 만족하는 환경을 모델링하는 방법
+- **Markov Decision Process (MDP)**: A method of modeling an environment where the agent interacts with the environment, and the environment's state satisfies the Markov property
 
-- **마르코프 성질** : 미래의 상태가 현재의 상태에만 의존하는 성질
+- **Markov Property**: The property where the future state depends only on the current state
 
-MDP에는 시간 개념이 필요하다. 특정 시간에 에이전트가 행동을 취하고, 그 결과 새로우 상태로 전이한다. 이때의 시간단위를 time step이라고 한다.
+MDPs require the concept of time. At a specific time, the agent takes an action, and as a result, transitions to a new state. The time unit in this case is called a time step.
 
 <div align="center">
   <div class = 'mermaid'>
     graph LR
-    A[Agent] -->|행동| B[Environment]
-    B -->|보상, 상태| A
+    A[Agent] -->|action| B[Environment]
+    B -->|reward, state| A
   </div>
 </div>
 
-- **상태전이** : 상태는 어떻게 전이되는가?
-- **보상** : 보상은 어떻게 주어지는가?
-- **정책** : 에이전트는 행동을 어떻게 결정하는가?
+- **State Transition**: How does the state transition?
+- **Reward**: How is the reward given?
+- **Policy**: How does the agent determine its actions?
 
-위의 세가지 요소를 수식으로 표현해야한다. 
+The above three elements must be expressed in formulas.
 
-상태전이가 결정적일 경우 다음 상태 s'는 현재 상태 s와 행동 a에만 의존한다.
+If the state transition is deterministic, the next state s' depends only on the current state s and action a.
 
-상태전이함수 => 
+State transition function => 
 $$
 s' = f(s, a)
 $$
 
-상태전이가 확률적일 경우 다음 상태 s'는 현재 상태 s와 행동 a에만 의존한다.
+If the state transition is probabilistic, the next state s' depends only on the current state s and action a.
 
-상태전이확률 =>
+State transition probability =>
 $$
 P(s' | s, a)
 $$
 
-### 보상함수
+### Reward Function
 
-보상함수는 상태 s와 행동 a에 대한 보상을 반환한다.에이전트가 상태 s에서 행동 a를 취하여 다음 상태 s'로 이동했을 때 받는 보상을 반환한다.
+The reward function returns the reward for state s and action a. It returns the reward received when the agent takes action a in state s and moves to the next state s'.
 
-보상함수 =>
+Reward function =>
 $$
 r(s, a, s')
 $$
 
 
-### 에이전트의 정책
+### Agent's Policy
 
-에이전트의 정책은 에이전트가 행동을 결정하는 방식을 말한다. 에이전트는 '현재 상태' 만드오 행동을 결정한다.
-왜냐하면 '환경에 대해 필요한 정보는 모두 현재 상태에 담겨' 있기 때문이다.
+The agent's policy refers to how the agent determines its actions. The agent determines its actions based solely on the 'current state'.
+This is because 'all the information needed about the environment is contained in the current state'.
 
-에이전트가 확률적으로 결정되는 정책을 다음과 같이 표현할 수 있다.
+A policy that the agent decides probabilistically can be expressed as follows:
 
-정책 =>
+Policy =>
 $$
 \pi(a | s) = P(a | s)
 $$
     
-### MDP의 목표
+### Goal of MDP
 
-MDP의 목표는 보상을 최대화하는 정책을 찾는 것이다. 에이전는 정책 
+The goal of MDP is to find a policy that maximizes rewards. The agent behaves according to the policy 
 $$ 
 \pi(a | s) 
 $$
-에 따라 행동한다. 그 행동과 상태 전이 확률 $$ P(s' | s, a) $$ 에 따라 다음 상태가 결정된다. 그리고 보상함수 $$ r(s, a, s') $$ 에 따라 보상을 받는다.
+The next state is determined according to that action and the state transition probability $$ P(s' | s, a) $$. And the agent receives rewards according to the reward function $$ r(s, a, s') $$.
 
-### return : 수익
+### Return
 
-시간 t에서의 상태를 $$ S_t $$, 정책 $$ \pi $$ 에 따라 행동을 $$ A_t $$, 보상을 $$ R_t $$를 얻고, 새로운 상태 $$ S_{t+1} $$전이되는 흐름으로 이어진다. 이때의 수익은 다음과 같이 정의할 수 있다.
+The state at time t is $$ S_t $$, according to the policy $$ \pi $$, the action is $$ A_t $$, the reward is $$ R_t $$, and this leads to a flow that transitions to the new state $$ S_{t+1} $$. The return at this time can be defined as follows:
 
 $$
 G_t = R_t + rR_{t+1} + r^2R_{t+2} + ... = \sum_{k=0}^{\infty} r^k R_{t+k}
 $$
 
-시간이 지날수록 보상을 $$ \gamma $$ 에 의해 기하급수적으로 감소한다. 
+As time passes, the reward decreases exponentially due to $$ \gamma $$.
 
-### 상태가치함수
+### State Value Function
 
-수익을 극대화 화는 것이 에이전트의 목표임. 같은 상태에서 에이전트가 시작하더라도 수익이 에피소드마다 다를 수 있다. 이러한 확률적 동작에 대응하기 위해, 기댓값, 즉, 수익의 기댓값을 지표로 삼는다.
+The agent's goal is to maximize returns. Even if an agent starts in the same state, the returns can vary for each episode. To respond to such stochastic behavior, we use the expectation, i.e., the expected return, as an indicator.
 
-상태 가치 함수는 강화 학습에서 특정 상태에서 시작하여 미래에 받을 수 있는 보상의 기대값을 나타내는 함수다. 일반적으로 $$V(s)$$로 표현되며, 여기서 $$s$$는 상태를 나타낸다. 상태 가치 함수는 정책 $$\pi$$에 따라 계산되며, 수식으로는 다음과 같이 정의된다:
+The state value function is a function that represents the expected value of rewards that can be received in the future, starting from a specific state in reinforcement learning. It is generally represented as $$V(s)$$, where $$s$$ represents the state. The state value function is calculated according to policy $$\pi$$, and is defined by the following formula:
 
 <div style="overflow-x: auto;">
 $$
@@ -515,20 +516,20 @@ $$
 = \mathbb{E}_\pi \left[G_t \mid S_t = s \right]
 $$
 
-여기서:
-- $$\mathbb{E}_\pi$$: 정책 $$\pi$$에 따른 기대값
-- $$\gamma$$: 할인율 (0 ≤ $$\gamma$$ < 1)
-- $$R_{t+1}$$: 시간 $$t+1$$에서의 보상
-- $$S_0 = s$$: 초기 상태
+Where:
+- $$\mathbb{E}_\pi$$: Expected value according to policy $$\pi$$
+- $$\gamma$$: Discount rate (0 ≤ $$\gamma$$ < 1)
+- $$R_{t+1}$$: Reward at time $$t+1$$
+- $$S_0 = s$$: Initial state
 
-즉, 상태 가치 함수는 주어진 정책을 따를 때 특정 상태에서 시작하여 장기적으로 받을 보상의 총합을 예측하는 데 사용된다. 이는 정책의 품질을 평가하거나 최적 정책을 찾는데 중요한 역할을 한다.
+In other words, the state value function is used to predict the total rewards that will be received in the long term, starting from a specific state, when following a given policy. This plays an important role in evaluating the quality of a policy or finding the optimal policy.
 
-### 최적 정책과 최적 가치 함수
+### Optimal Policy and Optimal Value Function
 
 
-강화 학습에서 최적 정책(optimal policy) $$\pi^*$$는 모든 상태에서 기대 보상을 최대화하는 정책이다. 최적 정책을 따른다면 에이전트는 가능한 최대 보상을 얻을 수 있다.
+In reinforcement learning, the optimal policy $$\pi^*$$ is a policy that maximizes the expected reward in all states. If the agent follows the optimal policy, it can obtain the maximum possible reward.
 
-최적 가치 함수(optimal value function) $$V^*(s)$$는 최적 정책을 따를 때 상태 $$s$$에서 시작하여 얻을 수 있는 기대 보상의 합이다:
+The optimal value function $$V^*(s)$$ is the sum of expected rewards that can be obtained when starting from state $$s$$ and following the optimal policy:
 
 <div style="overflow-x: auto;">
 $$
@@ -536,7 +537,7 @@ V^*(s) = \max_{\pi} V^{\pi}(s) = \max_{\pi} \mathbb{E}_{\pi} \left[ \sum_{t=0}^{
 $$
 </div>
 
-마찬가지로, 최적 행동 가치 함수(optimal action-value function) $$Q^*(s,a)$$는 상태 $$s$$에서 행동 $$a$$를 취하고 그 이후 최적 정책을 따를 때 얻을 수 있는 기대 보상의 합이다:
+Similarly, the optimal action-value function $$Q^*(s,a)$$ is the sum of expected rewards that can be obtained when taking action $$a$$ in state $$s$$ and thereafter following the optimal policy:
 
 <div style="overflow-x: auto;">
 $$
@@ -544,7 +545,7 @@ Q^*(s,a) = \max_{\pi} Q^{\pi}(s,a) = \max_{\pi} \mathbb{E}_{\pi} \left[ \sum_{t=
 $$
 </div>
 
-최적 정책과 최적 가치 함수는 벨만 최적 방정식(Bellman Optimality Equation)을 통해 정의될 수 있다:
+The optimal policy and optimal value function can be defined through the Bellman Optimality Equation:
 
 
 <div style="overflow-x: auto;">
@@ -559,7 +560,7 @@ Q^*(s,a) = R(s,a) + \gamma \sum_{s'} P(s'|s,a) \max_{a'} Q^*(s',a')
 $$
 </div>
 
-강화 학습의 목표는 이러한 최적 정책 또는 최적 가치 함수를 찾아내는 것이다.
+The goal of reinforcement learning is to find such an optimal policy or optimal value function.
 
 ## Bellman equation
 
