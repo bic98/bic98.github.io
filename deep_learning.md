@@ -2858,18 +2858,198 @@ print(patches.shape) # torch.Size([1, 75, 9])
 ```
 
 - Implementing Convolution Layers  
+
+```python
+
+import torch
+
+class Convolution:
+    def __init__(self, W, b, stride=1, pad=0):
+        self.W = W
+        self.b = b
+        self.stride = stride
+        self.pad = pad
+
+    def forward(self, x):
+        N, C, H, W = x.shape
+        FN, C, FH, FW = self.W.shape
+        OH = (H + 2 * self.pad - FH + self.stride - 1) // self.stride
+        OW = (W + 2 * self.pad - FW + self.stride - 1) // self.stride
+
+        # Use unfold to extract patches
+        patches = torch.nn.functional.unfold(x, kernel_size=(FH, FW), stride=self.stride, padding=self.pad)
+        col_W = self.W.view(FN, -1).T
+
+        # Perform matrix multiplication and add bias
+        out = torch.matmul(patches.transpose(1, 2), col_W) + self.b
+        out = out.transpose(1, 2).reshape(N, FN, OH, OW)
+
+        return out
+```
+
 - Implementing Pooling Layers  
+
+Pooling layers make using im2col easier like convolution layers. but the differecnce is that the pooling layer uses the maximum or average value of the area.
+
+and Let me explain the pooling layer. The pooling layer is a layer that reduces the size of the input data. 
+
+<div align="center">
+    <img src="/images/pooling.png" alt="pool" width="85%">
+</div>
+
+
+Above, the input data is pooled in two dimensions, selecting the maximum value from each row, resulting in an output with dimensions '1 x column'. Finally, the output is reshaped to the original shape. 
+
+Below is the code for the Pooling Layer. 
+
+```python
+import torch
+
+class Pooling:
+    def __init__(self, pool_h, pool_w, stride=1, pad=0):
+        self.pool_h = pool_h
+        self.pool_w = pool_w
+        self.stride = stride
+        self.pad = pad
+
+    def forward(self, x):
+        N, C, H, W = x.shape
+        OH = (H + 2 * self.pad - self.pool_h) // self.stride + 1
+        OW = (W + 2 * self.pad - self.pool_w) // self.stride + 1
+
+        # Use unfold to extract patches
+        patches = torch.nn.functional.unfold(x, kernel_size=(self.pool_h, self.pool_w), stride=self.stride, padding=self.pad)
+        
+        # Find the maximum value in each patch
+        out = patches.view(N, C, self.pool_h * self.pool_w, OH * OW).max(dim=2)[0]
+        
+        return out.view(N, C, OH, OW)
+```
+
+### Befor Implementing CNN
+
+View the 3blue1brown youtube channel informing us about the Convlution. 
+
+- [3blue1brown - Convolution](https://www.youtube.com/watch?v=KuXjwB4LzSA)
+
+This video explains the Convolution operation in a very easy way. 
 
 ### Implementing a CNN
 
+Let's implement the CNN with pytorch or tensorflow. 
+
+```python
+import torch
+import wandb
+import torch.nn as nn
+import torch.optim as optim
+import torchvision
+import torchvision.transforms as transforms
+
+# Initialize wandb
+wandb.init(name='workshop_1', project="mnist_project-convd")
+
+# MNIST dataset loading (PyTorch)
+transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
+train_dataset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
+test_dataset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
+
+train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=64, shuffle=True)
+test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=64, shuffle=False)
+
+# Define CNN model
+model = nn.Sequential(
+    nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1),
+    nn.ReLU(),
+    nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+    nn.ReLU(),
+    nn.MaxPool2d(kernel_size=2, stride=2),
+    nn.Flatten(),
+    nn.Linear(64 * 14 * 14, 128),
+    nn.ReLU(),
+    nn.Linear(128, 10)
+)
+
+# Device setup and training preparation
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model = model.to(device)
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+# Training loop
+epochs = 32
+for epoch in range(epochs):
+    model.train()
+    running_loss = 0.0
+    for images, labels in train_loader:
+        images, labels = images.to(device), labels.to(device)
+
+        # Forward pass
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+
+        # Backward pass and optimization
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        running_loss += loss.item()
+
+    # Log training loss to wandb
+    wandb.log({"epoch": epoch + 1, "loss": running_loss / len(train_loader)})
+    print(f"epoch {epoch + 1}, loss: {running_loss / len(train_loader)}")
+
+# Testing loop
+model.eval()
+correct = 0
+total = 0
+with torch.no_grad():
+    for images, labels in test_loader:
+        images, labels = images.to(device), labels.to(device)
+        outputs = model(images)
+        _, predicted = torch.max(outputs, 1)
+        total += labels.size(0)
+        correct += (predicted == labels).sum().item()
+
+# Log accuracy to wandb
+accuracy = 100 * correct / total
+wandb.log({"accuracy": accuracy})
+print(f"accuracy: {accuracy:.2f}%")
+```
+
+<div align="left">
+    <img src="/images/convd.png" alt="cnn" width="40%">
+</div>
+
+You can see the results of the CNN modles along with the training and testing process for each epoch. 
+The result of accuracy is 99.11%.
+
+#### Explanation:
+1. **`nn.Sequential`**: The CNN is defined using `nn.Sequential`, which stacks layers in order without creating a custom class.
+2. **Training and Testing**: The training and testing loops remain the same as before.
+
+
 ### Visualizing CNNs
-- Visualizing Weights in the First Layer  
-- Information Change by Layer Depth  
 
-### Famous CNNs
-- LeNet  
-- AlexNet  
+What exactly is a Convlutional layer in a CNN looking at in the imput image?
 
-### Summary
+- **Convolutional Layer**: The convolutional layer applies a filter to the input image, extracting features such as edges, textures, and patterns. The filter slides over the image, performing element-wise multiplication and summing the results to create a feature map.
+
+<div align="center">
+    <img src="/images/clear.png" alt="conv_layer" width="70%">
+</div>
+
+Above is the image of the fileter layer and after applying sliding window, the image is converted to clear or blurred image. so this technique is used to extract the features of the input image. 
+
+
+- **Pooling Layer**: The pooling layer reduces the spatial dimensions of the feature map, retaining important features while reducing computational complexity. It typically uses max pooling or average pooling to downsample the feature map.
+
+<div align="center">
+    <img src="/images/eight.png" alt="conv_layer" width="70%">
+</div>
+
+As deep as layers go, the more complex features are extracted. The first layer might detect edges, the second layer might detect shapes, and deeper layers might detect more complex patterns or objects.
+
+so you can understand that the image becomes clearer and clearer as the layers go deeper. 
 
 

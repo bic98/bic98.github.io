@@ -2898,24 +2898,204 @@ CNN에서는 합성곱 계층의 입출력 데이터를 특징 맵(feature map)�
 
 <ul>
   <li>Implementing Convolution Layers</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="kn">import</span> <span class="n">torch</span>
+
+<span class="k">class</span> <span class="nc">Convolution</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">W</span> <span class="o">=</span> <span class="n">W</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">b</span> <span class="o">=</span> <span class="n">b</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">stride</span> <span class="o">=</span> <span class="n">stride</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">pad</span> <span class="o">=</span> <span class="n">pad</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">N</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">W</span> <span class="o">=</span> <span class="n">x</span><span class="p">.</span><span class="n">shape</span>
+        <span class="n">FN</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">FH</span><span class="p">,</span> <span class="n">FW</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">W</span><span class="p">.</span><span class="n">shape</span>
+        <span class="n">OH</span> <span class="o">=</span> <span class="p">(</span><span class="n">H</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">self</span><span class="p">.</span><span class="n">pad</span> <span class="o">-</span> <span class="n">FH</span> <span class="o">+</span> <span class="n">self</span><span class="p">.</span><span class="n">stride</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="n">self</span><span class="p">.</span><span class="n">stride</span>
+        <span class="n">OW</span> <span class="o">=</span> <span class="p">(</span><span class="n">W</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">self</span><span class="p">.</span><span class="n">pad</span> <span class="o">-</span> <span class="n">FW</span> <span class="o">+</span> <span class="n">self</span><span class="p">.</span><span class="n">stride</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="n">self</span><span class="p">.</span><span class="n">stride</span>
+
+        <span class="c1"># Use unfold to extract patches
+</span>        <span class="n">patches</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">nn</span><span class="p">.</span><span class="n">functional</span><span class="p">.</span><span class="nf">unfold</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="n">FH</span><span class="p">,</span> <span class="n">FW</span><span class="p">),</span> <span class="n">stride</span><span class="o">=</span><span class="n">self</span><span class="p">.</span><span class="n">stride</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">self</span><span class="p">.</span><span class="n">pad</span><span class="p">)</span>
+        <span class="n">col_W</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">W</span><span class="p">.</span><span class="nf">view</span><span class="p">(</span><span class="n">FN</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">).</span><span class="n">T</span>
+
+        <span class="c1"># Perform matrix multiplication and add bias
+</span>        <span class="n">out</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">matmul</span><span class="p">(</span><span class="n">patches</span><span class="p">.</span><span class="nf">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">col_W</span><span class="p">)</span> <span class="o">+</span> <span class="n">self</span><span class="p">.</span><span class="n">b</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="p">.</span><span class="nf">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">).</span><span class="nf">reshape</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">FN</span><span class="p">,</span> <span class="n">OH</span><span class="p">,</span> <span class="n">OW</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">out</span>
+</code></pre></div></div>
+
+<ul>
   <li>Implementing Pooling Layers</li>
 </ul>
 
+<p>Pooling layers make using im2col easier like convolution layers. but the differecnce is that the pooling layer uses the maximum or average value of the area.</p>
+
+<p>and Let me explain the pooling layer. The pooling layer is a layer that reduces the size of the input data.</p>
+
+<div align="center">
+    <img src="/images/pooling.png" alt="pool" width="85%" />
+</div>
+
+<p>Above, the input data is pooled in two dimensions, selecting the maximum value from each row, resulting in an output with dimensions ‘1 x column’. Finally, the output is reshaped to the original shape.</p>
+
+<p>Below is the code for the Pooling Layer.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">torch</span>
+
+<span class="k">class</span> <span class="nc">Pooling</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">pool_h</span><span class="p">,</span> <span class="n">pool_w</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">pool_h</span> <span class="o">=</span> <span class="n">pool_h</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">pool_w</span> <span class="o">=</span> <span class="n">pool_w</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">stride</span> <span class="o">=</span> <span class="n">stride</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">pad</span> <span class="o">=</span> <span class="n">pad</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">N</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">W</span> <span class="o">=</span> <span class="n">x</span><span class="p">.</span><span class="n">shape</span>
+        <span class="n">OH</span> <span class="o">=</span> <span class="p">(</span><span class="n">H</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">self</span><span class="p">.</span><span class="n">pad</span> <span class="o">-</span> <span class="n">self</span><span class="p">.</span><span class="n">pool_h</span><span class="p">)</span> <span class="o">//</span> <span class="n">self</span><span class="p">.</span><span class="n">stride</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">OW</span> <span class="o">=</span> <span class="p">(</span><span class="n">W</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">self</span><span class="p">.</span><span class="n">pad</span> <span class="o">-</span> <span class="n">self</span><span class="p">.</span><span class="n">pool_w</span><span class="p">)</span> <span class="o">//</span> <span class="n">self</span><span class="p">.</span><span class="n">stride</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="c1"># Use unfold to extract patches
+</span>        <span class="n">patches</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">nn</span><span class="p">.</span><span class="n">functional</span><span class="p">.</span><span class="nf">unfold</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">pool_h</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">pool_w</span><span class="p">),</span> <span class="n">stride</span><span class="o">=</span><span class="n">self</span><span class="p">.</span><span class="n">stride</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">self</span><span class="p">.</span><span class="n">pad</span><span class="p">)</span>
+        
+        <span class="c1"># Find the maximum value in each patch
+</span>        <span class="n">out</span> <span class="o">=</span> <span class="n">patches</span><span class="p">.</span><span class="nf">view</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">pool_h</span> <span class="o">*</span> <span class="n">self</span><span class="p">.</span><span class="n">pool_w</span><span class="p">,</span> <span class="n">OH</span> <span class="o">*</span> <span class="n">OW</span><span class="p">).</span><span class="nf">max</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        
+        <span class="k">return</span> <span class="n">out</span><span class="p">.</span><span class="nf">view</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">OH</span><span class="p">,</span> <span class="n">OW</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="befor-implementing-cnn">Befor Implementing CNN</h3>
+
+<p>View the 3blue1brown youtube channel informing us about the Convlution.</p>
+
+<ul>
+  <li><a href="https://www.youtube.com/watch?v=KuXjwB4LzSA">3blue1brown - Convolution</a></li>
+</ul>
+
+<p>This video explains the Convolution operation in a very easy way.</p>
+
 <h3 id="implementing-a-cnn">Implementing a CNN</h3>
 
+<p>Let’s implement the CNN with pytorch or tensorflow.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">torch</span>
+<span class="kn">import</span> <span class="n">wandb</span>
+<span class="kn">import</span> <span class="n">torch.nn</span> <span class="k">as</span> <span class="n">nn</span>
+<span class="kn">import</span> <span class="n">torch.optim</span> <span class="k">as</span> <span class="n">optim</span>
+<span class="kn">import</span> <span class="n">torchvision</span>
+<span class="kn">import</span> <span class="n">torchvision.transforms</span> <span class="k">as</span> <span class="n">transforms</span>
+
+<span class="c1"># Initialize wandb
+</span><span class="n">wandb</span><span class="p">.</span><span class="nf">init</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="sh">'</span><span class="s">workshop_1</span><span class="sh">'</span><span class="p">,</span> <span class="n">project</span><span class="o">=</span><span class="sh">"</span><span class="s">mnist_project-convd</span><span class="sh">"</span><span class="p">)</span>
+
+<span class="c1"># MNIST dataset loading (PyTorch)
+</span><span class="n">transform</span> <span class="o">=</span> <span class="n">transforms</span><span class="p">.</span><span class="nc">Compose</span><span class="p">([</span><span class="n">transforms</span><span class="p">.</span><span class="nc">ToTensor</span><span class="p">(),</span> <span class="n">transforms</span><span class="p">.</span><span class="nc">Normalize</span><span class="p">((</span><span class="mf">0.5</span><span class="p">,),</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,))])</span>
+<span class="n">train_dataset</span> <span class="o">=</span> <span class="n">torchvision</span><span class="p">.</span><span class="n">datasets</span><span class="p">.</span><span class="nc">MNIST</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="sh">'</span><span class="s">./data</span><span class="sh">'</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">)</span>
+<span class="n">test_dataset</span> <span class="o">=</span> <span class="n">torchvision</span><span class="p">.</span><span class="n">datasets</span><span class="p">.</span><span class="nc">MNIST</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="sh">'</span><span class="s">./data</span><span class="sh">'</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">)</span>
+
+<span class="n">train_loader</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">utils</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="nc">DataLoader</span><span class="p">(</span><span class="n">train_dataset</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">test_loader</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">utils</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="nc">DataLoader</span><span class="p">(</span><span class="n">test_dataset</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+<span class="c1"># Define CNN model
+</span><span class="n">model</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Sequential</span><span class="p">(</span>
+    <span class="n">nn</span><span class="p">.</span><span class="nc">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+    <span class="n">nn</span><span class="p">.</span><span class="nc">ReLU</span><span class="p">(),</span>
+    <span class="n">nn</span><span class="p">.</span><span class="nc">Conv2d</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+    <span class="n">nn</span><span class="p">.</span><span class="nc">ReLU</span><span class="p">(),</span>
+    <span class="n">nn</span><span class="p">.</span><span class="nc">MaxPool2d</span><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
+    <span class="n">nn</span><span class="p">.</span><span class="nc">Flatten</span><span class="p">(),</span>
+    <span class="n">nn</span><span class="p">.</span><span class="nc">Linear</span><span class="p">(</span><span class="mi">64</span> <span class="o">*</span> <span class="mi">14</span> <span class="o">*</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span>
+    <span class="n">nn</span><span class="p">.</span><span class="nc">ReLU</span><span class="p">(),</span>
+    <span class="n">nn</span><span class="p">.</span><span class="nc">Linear</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="c1"># Device setup and training preparation
+</span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">device</span><span class="p">(</span><span class="sh">'</span><span class="s">cuda</span><span class="sh">'</span> <span class="k">if</span> <span class="n">torch</span><span class="p">.</span><span class="n">cuda</span><span class="p">.</span><span class="nf">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="sh">'</span><span class="s">cpu</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="p">.</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">CrossEntropyLoss</span><span class="p">()</span>
+<span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="p">.</span><span class="nc">Adam</span><span class="p">(</span><span class="n">model</span><span class="p">.</span><span class="nf">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.001</span><span class="p">)</span>
+
+<span class="c1"># Training loop
+</span><span class="n">epochs</span> <span class="o">=</span> <span class="mi">32</span>
+<span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">epochs</span><span class="p">):</span>
+    <span class="n">model</span><span class="p">.</span><span class="nf">train</span><span class="p">()</span>
+    <span class="n">running_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">images</span><span class="p">,</span> <span class="n">labels</span> <span class="ow">in</span> <span class="n">train_loader</span><span class="p">:</span>
+        <span class="n">images</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">images</span><span class="p">.</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span> <span class="n">labels</span><span class="p">.</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="c1"># Forward pass
+</span>        <span class="n">outputs</span> <span class="o">=</span> <span class="nf">model</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="nf">criterion</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+
+        <span class="c1"># Backward pass and optimization
+</span>        <span class="n">optimizer</span><span class="p">.</span><span class="nf">zero_grad</span><span class="p">()</span>
+        <span class="n">loss</span><span class="p">.</span><span class="nf">backward</span><span class="p">()</span>
+        <span class="n">optimizer</span><span class="p">.</span><span class="nf">step</span><span class="p">()</span>
+
+        <span class="n">running_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="p">.</span><span class="nf">item</span><span class="p">()</span>
+
+    <span class="c1"># Log training loss to wandb
+</span>    <span class="n">wandb</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span><span class="sh">"</span><span class="s">epoch</span><span class="sh">"</span><span class="p">:</span> <span class="n">epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="sh">"</span><span class="s">loss</span><span class="sh">"</span><span class="p">:</span> <span class="n">running_loss</span> <span class="o">/</span> <span class="nf">len</span><span class="p">(</span><span class="n">train_loader</span><span class="p">)})</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">epoch </span><span class="si">{</span><span class="n">epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="si">}</span><span class="s">, loss: </span><span class="si">{</span><span class="n">running_loss</span> <span class="o">/</span> <span class="nf">len</span><span class="p">(</span><span class="n">train_loader</span><span class="p">)</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+
+<span class="c1"># Testing loop
+</span><span class="n">model</span><span class="p">.</span><span class="nf">eval</span><span class="p">()</span>
+<span class="n">correct</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="k">with</span> <span class="n">torch</span><span class="p">.</span><span class="nf">no_grad</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">images</span><span class="p">,</span> <span class="n">labels</span> <span class="ow">in</span> <span class="n">test_loader</span><span class="p">:</span>
+        <span class="n">images</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">images</span><span class="p">.</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span> <span class="n">labels</span><span class="p">.</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">outputs</span> <span class="o">=</span> <span class="nf">model</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">predicted</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">max</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">total</span> <span class="o">+=</span> <span class="n">labels</span><span class="p">.</span><span class="nf">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">correct</span> <span class="o">+=</span> <span class="p">(</span><span class="n">predicted</span> <span class="o">==</span> <span class="n">labels</span><span class="p">).</span><span class="nf">sum</span><span class="p">().</span><span class="nf">item</span><span class="p">()</span>
+
+<span class="c1"># Log accuracy to wandb
+</span><span class="n">accuracy</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">correct</span> <span class="o">/</span> <span class="n">total</span>
+<span class="n">wandb</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span><span class="sh">"</span><span class="s">accuracy</span><span class="sh">"</span><span class="p">:</span> <span class="n">accuracy</span><span class="p">})</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">accuracy: </span><span class="si">{</span><span class="n">accuracy</span><span class="si">:</span><span class="p">.</span><span class="mi">2</span><span class="n">f</span><span class="si">}</span><span class="s">%</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div align="left">
+    <img src="/images/convd.png" alt="cnn" width="40%" />
+</div>
+
+<p>You can see the results of the CNN modles along with the training and testing process for each epoch. 
+The result of accuracy is 99.11%.</p>
+
+<h4 id="explanation">Explanation:</h4>
+<ol>
+  <li><strong><code class="language-plaintext highlighter-rouge">nn.Sequential</code></strong>: The CNN is defined using <code class="language-plaintext highlighter-rouge">nn.Sequential</code>, which stacks layers in order without creating a custom class.</li>
+  <li><strong>Training and Testing</strong>: The training and testing loops remain the same as before.</li>
+</ol>
+
 <h3 id="visualizing-cnns">Visualizing CNNs</h3>
+
+<p>What exactly is a Convlutional layer in a CNN looking at in the imput image?</p>
+
 <ul>
-  <li>Visualizing Weights in the First Layer</li>
-  <li>Information Change by Layer Depth</li>
+  <li><strong>Convolutional Layer</strong>: The convolutional layer applies a filter to the input image, extracting features such as edges, textures, and patterns. The filter slides over the image, performing element-wise multiplication and summing the results to create a feature map.</li>
 </ul>
 
-<h3 id="famous-cnns">Famous CNNs</h3>
+<div align="center">
+    <img src="/images/clear.png" alt="conv_layer" width="70%" />
+</div>
+
+<p>Above is the image of the fileter layer and after applying sliding window, the image is converted to clear or blurred image. so this technique is used to extract the features of the input image.</p>
+
 <ul>
-  <li>LeNet</li>
-  <li>AlexNet</li>
+  <li><strong>Pooling Layer</strong>: The pooling layer reduces the spatial dimensions of the feature map, retaining important features while reducing computational complexity. It typically uses max pooling or average pooling to downsample the feature map.</li>
 </ul>
 
-<h3 id="summary-1">Summary</h3>
+<div align="center">
+    <img src="/images/eight.png" alt="conv_layer" width="70%" />
+</div>
+
+<p>As deep as layers go, the more complex features are extracted. The first layer might detect edges, the second layer might detect shapes, and deeper layers might detect more complex patterns or objects.</p>
+
+<p>so you can understand that the image becomes clearer and clearer as the layers go deeper.</p>
 
 
 						</div><!-- /.content -->
