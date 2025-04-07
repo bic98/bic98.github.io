@@ -634,3 +634,121 @@ $$
 </div>
 
 (Since Linearity of Expectation 👉 $$\mathbb{E}[X + Y] = \mathbb{E}[X] + \mathbb{E}[Y]$$)
+
+
+<div style="text-align: center;">
+    <div class="mermaid">
+    graph TD
+        s((s)) --> A((A))
+        s((s)) --> B((B))
+        s((s)) --> C((C))
+        A --> A1((A1))
+        A --> A2((A2))
+        B --> B1((B1))
+        B --> B2((B2))
+        C --> C1((C1))
+        C --> C2((C2))
+        style s fill:#ffffff,stroke:#000000,stroke-width:2px
+        style A fill:#ffffff,stroke:#000000,stroke-width:2px
+        style B fill:#ffffff,stroke:#000000,stroke-width:2px
+        style C fill:#ffffff,stroke:#000000,stroke-width:2px
+        style A1 fill:#ffffff,stroke:#000000,stroke-width:2px
+        style A2 fill:#ffffff,stroke:#000000,stroke-width:2px
+        style B1 fill:#ffffff,stroke:#000000,stroke-width:2px
+        style B2 fill:#ffffff,stroke:#000000,stroke-width:2px
+        style C1 fill:#ffffff,stroke:#000000,stroke-width:2px
+        style C2 fill:#ffffff,stroke:#000000,stroke-width:2px
+    </div>
+</div>
+
+
+we define $$
+\pi(a | s) 
+$$ as the probability of taking action $$a$$ in state $$s$$.
+
+
+
+<div style="text-align: center;">
+    <div class="mermaid">
+    graph TD
+        s((s)) --> A((A))
+        s((s)) --> B((B))
+        s((s)) --> C((C))
+        style s fill:#ffffff,stroke:#000000,stroke-width:2px
+        style A fill:#ffffff,stroke:#000000,stroke-width:2px
+        style B fill:#ffffff,stroke:#000000,stroke-width:2px
+        style C fill:#ffffff,stroke:#000000,stroke-width:2px
+    </div>
+</div>
+
+so 
+$$
+\pi(a_1 | s) = A
+$$, 
+$$
+\pi(a_2 | s) = B
+$$, 
+$$
+\pi(a_3 | s) = C
+$$
+
+and we choose the action along with the policy $$\pi$$. we move $$s$$ to $$s'$$ with the probability 
+$$
+P(s' | s, a)
+$$. (P is the transition probability function)
+
+
+<div style="text-align: center;">
+    <div class="mermaid">
+    graph TD
+        A((A)) --> A1((A1))
+        A --> A2((A2))
+        B((B)) --> B1((B1))
+        B --> B2((B2))
+        C((C)) --> C1((C1))
+        C --> C2((C2))
+        style A fill:#ffffff,stroke:#000000,stroke-width:2px
+        style B fill:#ffffff,stroke:#000000,stroke-width:2px
+        style C fill:#ffffff,stroke:#000000,stroke-width:2px
+        style A1 fill:#ffffff,stroke:#000000,stroke-width:2px
+        style A2 fill:#ffffff,stroke:#000000,stroke-width:2px
+        style B1 fill:#ffffff,stroke:#000000,stroke-width:2px
+        style B2 fill:#ffffff,stroke:#000000,stroke-width:2px
+        style C1 fill:#ffffff,stroke:#000000,stroke-width:2px
+        style C2 fill:#ffffff,stroke:#000000,stroke-width:2px
+    </div>
+</div>
+
+According to above graph, 
+
+$$
+A_1 = P(s' | s, a_1) * \pi(a_1 | s)
+$$
+
+$$
+A_2 = P(s' | s, a_2) * \pi(a_2 | s)
+$$
+
+$$
+B_1 = P(s' | s, a_1) * \pi(a_1 | s)
+$$
+
+$$
+B_2 = P(s' | s, a_2) * \pi(a_2 | s)
+$$
+
+$$
+C_1 = P(s' | s, a_1) * \pi(a_1 | s)
+$$
+
+$$
+C_2 = P(s' | s, a_2) * \pi(a_2 | s)
+$$
+
+Let's generalize the above equation.
+
+<div style="text-align: center;">
+$$
+\mathbb{E}_\pi[R_t | S_t = s] = \sum_{a} \pi(a | s) \sum_{s'} P(s' | s, a) R(s, a, s')
+$$
+</div>
