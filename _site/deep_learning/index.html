@@ -3097,6 +3097,46 @@ The result of accuracy is 99.11%.</p>
 
 <p>so you can understand that the image becomes clearer and clearer as the layers go deeper.</p>
 
+<h1 id="graph-neural-networks-gnn">Graph Neural Networks (GNN)</h1>
+
+<p>A deep learning has layers that are stacked on top of each other. The more layers, the more complex the features that can be learned.</p>
+
+<h3 id="what-is-gnn">What is GNN?</h3>
+
+<p>GNN is a type of neural network that operates on graph-structured data. Graphs are a powerful way to represent relationships between entities, and GNNs leverage this structure to learn meaningful representations.</p>
+
+<h3 id="preliminary-step">Preliminary step</h3>
+
+<ul>
+  <li>
+    <p><strong>Graph Representation</strong>: A graph is represented as a set of nodes (vertices) and edges (connections between nodes). Each node can have features, and edges can also have weights or features.</p>
+  </li>
+  <li>
+    <p><strong>Graph Convolution</strong>: GNNs use graph convolutional layers to aggregate information from neighboring nodes. This allows the model to learn node representations based on their local structure and features.</p>
+  </li>
+</ul>
+
+<div style="text-align: center;">
+    <div class="mermaid">
+    graph TD
+        A((A)) --&gt; A1((A1))
+        A --&gt; A2((A2))
+        B((B)) --&gt; B1((B1))
+        B --&gt; B2((B2))
+        C((C)) --&gt; C1((C1))
+        C --&gt; C2((C2))
+        style A fill:#ffffff,stroke:#000000,stroke-width:2px
+        style B fill:#ffffff,stroke:#000000,stroke-width:2px
+        style C fill:#ffffff,stroke:#000000,stroke-width:2px
+        style A1 fill:#ffffff,stroke:#000000,stroke-width:2px
+        style A2 fill:#ffffff,stroke:#000000,stroke-width:2px
+        style B1 fill:#ffffff,stroke:#000000,stroke-width:2px
+        style B2 fill:#ffffff,stroke:#000000,stroke-width:2px
+        style C1 fill:#ffffff,stroke:#000000,stroke-width:2px
+        style C2 fill:#ffffff,stroke:#000000,stroke-width:2px
+    </div>
+</div>
+
 
 						</div><!-- /.content -->
 					</div><!-- /.col -->

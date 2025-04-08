@@ -3053,3 +3053,40 @@ As deep as layers go, the more complex features are extracted. The first layer m
 so you can understand that the image becomes clearer and clearer as the layers go deeper. 
 
 
+# Graph Neural Networks (GNN)
+
+A deep learning has layers that are stacked on top of each other. The more layers, the more complex the features that can be learned.
+
+### What is GNN?
+
+GNN is a type of neural network that operates on graph-structured data. Graphs are a powerful way to represent relationships between entities, and GNNs leverage this structure to learn meaningful representations.
+
+### Preliminary step
+
+- **Graph Representation**: A graph is represented as a set of nodes (vertices) and edges (connections between nodes). Each node can have features, and edges can also have weights or features.
+
+- **Graph Convolution**: GNNs use graph convolutional layers to aggregate information from neighboring nodes. This allows the model to learn node representations based on their local structure and features.
+
+<div style="text-align: center;">
+    <div class="mermaid">
+    graph TD
+        A((A)) --> A1((A1))
+        A --> A2((A2))
+        B((B)) --> B1((B1))
+        B --> B2((B2))
+        C((C)) --> C1((C1))
+        C --> C2((C2))
+        style A fill:#ffffff,stroke:#000000,stroke-width:2px
+        style B fill:#ffffff,stroke:#000000,stroke-width:2px
+        style C fill:#ffffff,stroke:#000000,stroke-width:2px
+        style A1 fill:#ffffff,stroke:#000000,stroke-width:2px
+        style A2 fill:#ffffff,stroke:#000000,stroke-width:2px
+        style B1 fill:#ffffff,stroke:#000000,stroke-width:2px
+        style B2 fill:#ffffff,stroke:#000000,stroke-width:2px
+        style C1 fill:#ffffff,stroke:#000000,stroke-width:2px
+        style C2 fill:#ffffff,stroke:#000000,stroke-width:2px
+    </div>
+</div>
+
+
+
