@@ -747,8 +747,31 @@ $$
 
 Let's generalize the above equation.
 
-<div style="text-align: center;">
+<div style="overflow-x: auto;">
+
 $$
 \mathbb{E}_\pi[R_t | S_t = s] = \sum_{a} \pi(a | s) \sum_{s'} P(s' | s, a) R(s, a, s')
 $$
+
 </div>
+
+
+<div style="overflow-x: auto;">
+
+$$
+V_\pi(s) = \mathbb{E}_\pi[R_t | S_t = s] + \gamma \mathbb{E}_\pi[G_{t+1} | S_t = s]
+$$
+
+
+$$
+= \sum_{a} \pi(a | s) \sum_{s'} P(s' | s, a) R(s, a, s') + \gamma \sum_{a} \pi(a | s) \sum_{s'} P(s' | s, a) V_\pi(s')
+$$
+
+$$
+= \sum_{a} \pi(a | s) \sum_{s'} P(s' | s, a) \left[ R(s, a, s') + \gamma V_\pi(s') \right]
+$$
+
+</div>
+
+This is the **Bellman euqation** for the state value function. 
+
