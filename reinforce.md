@@ -776,7 +776,8 @@ $$
 This is the **Bellman euqation** for the state value function. 
 
 
-### State Value Function
+### State Value Function and Action Value Function(Q-function)
+
 The state value function $$V_\pi(s)$$ is the expected return starting from state $$s$$ and following policy $$\pi$$. It can be expressed as:
 
 <div style="overflow-x: auto;">
@@ -784,6 +785,7 @@ $$
 V_\pi(s) = \sum_{a} \pi(a | s) \sum_{s'} P(s' | s, a) \left[ R(s, a, s') + \gamma V_\pi(s') \right]
 = \mathbb{E}_\pi \left[ G_t | S_t = s \right]
 $$
+</div>
 
 The Q-function represents the expected return when taking action a in state s at time t, and thereafter following policy π.
 
@@ -793,5 +795,45 @@ $$
 q_\pi(s, a) = \mathbb{E}_\pi[G_t | S_t = s, A_t = a]
 $$
 </div>
+
+In short, 
+
+- policy 
+$$\pi$$
+determines how to act in a given state $$s$$
+
+- Value function $$V_\pi(s)$$ evalutes how good it is to be in a specific state under policy $$\pi$$
+
+- Action value function(Q-function) $$q_\pi(s, a)$$ evalutes how good it is to take a specific action in a given state under policy $$\pi$$
+
+<div style="overflow-x: auto;">
+$$
+q_\pi(s, a) = \sum_{s'} P(s' | s, a) \left[ R(s, a, s') + \gamma V_\pi(s') \right] = \sum_{s'} P(s' | s, a) \left[ R(s, a, s') + \gamma \sum_{a'} \pi(a' | s') q_\pi(s', a') \right]
+$$
+</div>
+
+
+### optimal Action Value Function
+
+The optimal action value function $$q^*(s, a)$$ is the maximum expected return when taking action $$a$$ in state $$s$$ and thereafter following the optimal policy:
+
+<div style="overflow-x: auto;">
+$$
+q^*(s, a) = \max_{\pi} q_\pi(s, a) = \mathbb{E}_{\pi} \left[ G_t | S_t = s, A_t = a \right] = \sum_{s'} P(s' | s, a) \left[ R(s, a, s') + \gamma \max_{a'} q^*(s', a') \right]
+$$
+</div>
+
+### optimal Policy
+
+We assume that the optimal action value function $$q^*(s, a)$$ is known. Then the optimal policy at state $$s$$ is defined as follows. 
+
+<div style="overflow-x: auto;">
+$$
+\mu^*(s) = \arg \max_a q^*(s, a)
+$$
+</div>
+
+
+
 
 
