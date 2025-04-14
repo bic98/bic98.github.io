@@ -775,3 +775,23 @@ $$
 
 This is the **Bellman euqation** for the state value function. 
 
+
+### State Value Function
+The state value function $$V_\pi(s)$$ is the expected return starting from state $$s$$ and following policy $$\pi$$. It can be expressed as:
+
+<div style="overflow-x: auto;">
+$$
+V_\pi(s) = \sum_{a} \pi(a | s) \sum_{s'} P(s' | s, a) \left[ R(s, a, s') + \gamma V_\pi(s') \right]
+= \mathbb{E}_\pi \left[ G_t | S_t = s \right]
+$$
+
+The Q-function represents the expected return when taking action a in state s at time t, and thereafter following policy π.
+
+
+<div style="overflow-x: auto;">
+$$
+q_\pi(s, a) = \mathbb{E}_\pi[G_t | S_t = s, A_t = a]
+$$
+</div>
+
+
