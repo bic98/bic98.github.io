@@ -837,3 +837,23 @@ $$
 ## Dynamic Programming
 
 강화학습에서 두가지 문제를 해결해야 한다. 바로 정책 평가와 정책제어이다. 정책평가는 정책 $$\pi$$가 주어졌을 때, 그 정책의 value-function or action value function 을 구하는 것이다. 
+
+### 3x4 grid world
+
+<div style="text-align: center;">
+    <div class="mermaid">
+    graph TD
+        A((A)) --> B((B))
+        A((A)) --> C((C))
+        A((A)) --> D((D))
+        A((A)) --> E((E))
+        A((A)) --> F((F))
+        style A fill:#ffffff,stroke:#000000,stroke-width:2px
+        style B fill:#ffffff,stroke:#000000,stroke-width:2px
+        style C fill:#ffffff,stroke:#000000,stroke-width:2px
+        style D fill:#ffffff,stroke:#000000,stroke-width:2px
+        style E fill:#ffffff,stroke:#000000,stroke-width:2px
+        style F fill:#ffffff,stroke:#000000,stroke-width:2px
+    </div>
+</div>
+
