@@ -840,20 +840,270 @@ $$
 
 ### 3x4 grid world
 
-<div style="text-align: center;">
-    <div class="mermaid">
-    graph TD
-        A((A)) --> B((B))
-        A((A)) --> C((C))
-        A((A)) --> D((D))
-        A((A)) --> E((E))
-        A((A)) --> F((F))
-        style A fill:#ffffff,stroke:#000000,stroke-width:2px
-        style B fill:#ffffff,stroke:#000000,stroke-width:2px
-        style C fill:#ffffff,stroke:#000000,stroke-width:2px
-        style D fill:#ffffff,stroke:#000000,stroke-width:2px
-        style E fill:#ffffff,stroke:#000000,stroke-width:2px
-        style F fill:#ffffff,stroke:#000000,stroke-width:2px
-    </div>
-</div>
+```
++---+---+---+---+
+| S |   |   | G |
++---+---+---+---+
+|   | # |   | B |
++---+---+---+---+
+|   |   |   |   |
++---+---+---+---+
+```
 
+- `S`: Start position
+- `G`: Goal position
+- `#`: Obstacle or blocked cell
+- `B`: Bomb location with a reward of `-1.0`
+- Blank cells are navigable spaces.
+
+```python
+import numpy as np
+import common.gridworld_render as render_helper
+
+
+class GridWorld:
+    def __init__(self):
+        self.action_space = [0, 1, 2, 3]  # 행동 공간(가능한 행동들)
+        self.action_meaning = {  # 행동의 의미
+            0: "UP",
+            1: "DOWN",
+            2: "LEFT",
+            3: "RIGHT",
+        }
+
+        self.reward_map = np.array(  # 보상 맵(각 좌표의 보상 값)
+            [[0, 0, 0, 1.0],
+             [0, None, 0, -1.0],
+             [0, 0, 0, 0]]
+        )
+        self.goal_state = (0, 3)    # 목표 상태(좌표)
+        self.wall_state = (1, 1)    # 벽 상태(좌표)
+        self.start_state = (2, 0)   # 시작 상태(좌표)
+        self.agent_state = self.start_state   # 에이전트 초기 상태(좌표)
+
+    @property
+    def height(self):
+        return len(self.reward_map)
+
+    @property
+    def width(self):
+        return len(self.reward_map[0])
+
+    @property
+    def shape(self):
+        return self.reward_map.shape
+
+    def actions(self):
+        return self.action_space
+
+    def states(self):
+        for h in range(self.height):
+            for w in range(self.width):
+                yield (h, w)
+
+    def next_state(self, state, action):
+        # 이동 위치 계산
+        action_move_map = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        move = action_move_map[action]
+        next_state = (state[0] + move[0], state[1] + move[1])
+        ny, nx = next_state
+
+        # 이동한 위치가 그리드 월드의 테두리 밖이나 벽인가?
+        if nx < 0 or nx >= self.width or ny < 0 or ny >= self.height:
+            next_state = state
+        elif next_state == self.wall_state:
+            next_state = state
+
+        return next_state  # 다음 상태 반환
+
+    def reward(self, state, action, next_state):
+        return self.reward_map[next_state]
+
+    def reset(self):
+        self.agent_state = self.start_state
+        return self.agent_state
+
+    def step(self, action):
+        state = self.agent_state
+        next_state = self.next_state(state, action)
+        reward = self.reward(state, action, next_state)
+        done = (next_state == self.goal_state)
+
+        self.agent_state = next_state
+        return next_state, reward, done
+
+    def render_v(self, v=None, policy=None, print_value=True):
+        renderer = render_helper.Renderer(self.reward_map, self.goal_state,
+                                          self.wall_state)
+        renderer.render_v(v, policy, print_value)
+
+    def render_q(self, q=None, print_value=True):
+        renderer = render_helper.Renderer(self.reward_map, self.goal_state,
+                                          self.wall_state)
+        renderer.render_q(q, print_value)
+```
+
+
+### Class: `GridWorld`
+This class represents a simple grid-based environment for reinforcement learning. It defines the grid's structure, the agent's movement, and the rewards associated with each state.
+
+---
+
+#### **`__init__` Method**
+```python
+def __init__(self):
+    self.action_space = [0, 1, 2, 3]  # up, down, left, right
+    self.action_meaning = {
+        0: 'up',
+        1: 'down',
+        2: 'left',
+        3: 'right'
+    }
+    self.reward_map = np.array([
+        [0, 0, 0, 1.0],
+        [0, None, 0, -1.0],
+        [0, 0, 0, 0]
+    ])
+    self.start_state = (2, 0)
+    self.wall_state = (1, 1)
+    self.goal_state = (0, 3)
+    self.agent_state = self.start_state
+```
+
+1. **`action_space`**: Defines the possible actions the agent can take:
+   - `0`: Move up
+   - `1`: Move down
+   - `2`: Move left
+   - `3`: Move right
+
+2. **`action_meaning`**: Maps action indices to human-readable directions.
+
+3. **`reward_map`**: A 2D NumPy array representing the grid. Each cell contains:
+   - `0`: Neutral reward.
+   - `1.0`: Positive reward (goal state).
+   - `-1.0`: Negative reward (bomb state).
+   - `None`: Represents an obstacle (wall).
+
+4. **`start_state`**: The agent's starting position `(2, 0)` (row 2, column 0).
+
+5. **`wall_state`**: The position of the wall `(1, 1)` (row 1, column 1), which the agent cannot pass through.
+
+6. **`goal_state`**: The position of the goal `(0, 3)` (row 0, column 3).
+
+7. **`agent_state`**: Tracks the agent's current position, initialized to the start state.
+
+---
+
+#### **Properties**
+These properties provide useful information about the grid.
+
+1. **`height`**
+```python
+@property
+def height(self):
+    return len(self.reward_map)
+```
+- Returns the number of rows in the grid.
+
+2. **`width`**
+```python
+@property
+def width(self):
+    return len(self.reward_map[0])
+```
+- Returns the number of columns in the grid.
+
+3. **`shape`**
+```python
+@property
+def shape(self):
+    return self.reward_map.shape
+```
+- Returns the grid's dimensions as a tuple `(rows, columns)`.
+
+4. **`actions`**
+```python
+@property
+def actions(self):
+    return self.action_space
+```
+- Returns the list of possible actions.
+
+---
+
+#### **`state` Method**
+```python
+def state(self):
+    for h in range(self.height):
+        for w in range(self.width):
+            yield (h, w)
+```
+- A generator that iterates over all possible states (grid cells) in the environment.
+- Each state is represented as a tuple `(row, column)`.
+
+---
+
+#### **`next_state` Method**
+```python
+def next_state(self, state, action):
+    action_move_map = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+    move = action_move_map[action]
+    next_state = (state[0] + move[0], state[1] + move[1])
+    ny, nx = next_state
+
+    if ny < 0 or ny >= self.height or nx < 0 or nx >= self.width:
+        next_state = state
+
+    if next_state == self.wall_state:
+        next_state = state
+
+    return next_state
+```
+
+1. **`action_move_map`**: Maps actions to their corresponding movements:
+   - `(-1, 0)`: Move up (decrease row index).
+   - `(1, 0)`: Move down (increase row index).
+   - `(0, -1)`: Move left (decrease column index).
+   - `(0, 1)`: Move right (increase column index).
+
+2. **`next_state`**: Calculates the agent's next position based on the current state and action.
+
+3. **Boundary Check**:
+   - If the next state is outside the grid's boundaries, the agent stays in the current state.
+
+4. **Wall Check**:
+   - If the next state is a wall, the agent stays in the current state.
+
+5. **Returns**: The valid next state after applying the action.
+
+---
+
+#### **`reward` Method**
+```python
+def reward(self, state, action, next_state):
+    return self.reward_map[next_state]
+```
+
+1. **Inputs**:
+   - `state`: The current state.
+   - `action`: The action taken.
+   - `next_state`: The resulting state after the action.
+
+2. **Returns**: The reward associated with the `next_state`, as defined in the `reward_map`.
+
+---
+
+### Summary
+The `GridWorld` class provides a simple environment for reinforcement learning:
+- It defines the grid layout, including walls, rewards, and penalties.
+- It allows the agent to move within the grid while handling boundaries and obstacles.
+- It provides rewards based on the agent's position.
+
+```python
+env = GridWorld()
+env.render_v()
+```
+
+<div align="center">
+  <img src="/images/gridworld1.png" alt="gridworld" width="100%">
+</div>

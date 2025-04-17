@@ -1,76 +1,94 @@
-import torch
-import wandb
-import torch.nn as nn
-import torch.optim as optim
-import torchvision
-import torchvision.transforms as transforms
+import numpy as np
+import common.gridworld_render as render_helper
 
-# Initialize wandb
-wandb.init(name='workshop_1', project="mnist_project-convd")
 
-# MNIST dataset loading (PyTorch)
-transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
-train_dataset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
-test_dataset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
+class GridWorld:
+    def __init__(self):
+        self.action_space = [0, 1, 2, 3]  # 행동 공간(가능한 행동들)
+        self.action_meaning = {  # 행동의 의미
+            0: "UP",
+            1: "DOWN",
+            2: "LEFT",
+            3: "RIGHT",
+        }
 
-train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=64, shuffle=True)
-test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=64, shuffle=False)
+        self.reward_map = np.array(  # 보상 맵(각 좌표의 보상 값)
+            [[0, 0, 0, 1.0],
+             [0, None, 0, -1.0],
+             [0, 0, 0, 0]]
+        )
+        self.goal_state = (0, 3)    # 목표 상태(좌표)
+        self.wall_state = (1, 1)    # 벽 상태(좌표)
+        self.start_state = (2, 0)   # 시작 상태(좌표)
+        self.agent_state = self.start_state   # 에이전트 초기 상태(좌표)
 
-# Define CNN model
-model = nn.Sequential(
-    nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1),
-    nn.ReLU(),
-    nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
-    nn.ReLU(),
-    nn.MaxPool2d(kernel_size=2, stride=2),
-    nn.Flatten(),
-    nn.Linear(64 * 14 * 14, 128),
-    nn.ReLU(),
-    nn.Linear(128, 10)
-)
+    @property
+    def height(self):
+        return len(self.reward_map)
 
-# Device setup and training preparation
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = model.to(device)
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001)
+    @property
+    def width(self):
+        return len(self.reward_map[0])
 
-# Training loop
-epochs = 32
-for epoch in range(epochs):
-    model.train()
-    running_loss = 0.0
-    for images, labels in train_loader:
-        images, labels = images.to(device), labels.to(device)
+    @property
+    def shape(self):
+        return self.reward_map.shape
 
-        # Forward pass
-        outputs = model(images)
-        loss = criterion(outputs, labels)
+    def actions(self):
+        return self.action_space
 
-        # Backward pass and optimization
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+    def states(self):
+        for h in range(self.height):
+            for w in range(self.width):
+                yield (h, w)
 
-        running_loss += loss.item()
+    def next_state(self, state, action):
+        # 이동 위치 계산
+        action_move_map = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        move = action_move_map[action]
+        next_state = (state[0] + move[0], state[1] + move[1])
+        ny, nx = next_state
 
-    # Log training loss to wandb
-    wandb.log({"epoch": epoch + 1, "loss": running_loss / len(train_loader)})
-    print(f"epoch {epoch + 1}, loss: {running_loss / len(train_loader)}")
+        # 이동한 위치가 그리드 월드의 테두리 밖이나 벽인가?
+        if nx < 0 or nx >= self.width or ny < 0 or ny >= self.height:
+            next_state = state
+        elif next_state == self.wall_state:
+            next_state = state
 
-# Testing loop
-model.eval()
-correct = 0
-total = 0
-with torch.no_grad():
-    for images, labels in test_loader:
-        images, labels = images.to(device), labels.to(device)
-        outputs = model(images)
-        _, predicted = torch.max(outputs, 1)
-        total += labels.size(0)
-        correct += (predicted == labels).sum().item()
+        return next_state  # 다음 상태 반환
 
-# Log accuracy to wandb
-accuracy = 100 * correct / total
-wandb.log({"accuracy": accuracy})
-print(f"accuracy: {accuracy:.2f}%")
+    def reward(self, state, action, next_state):
+        return self.reward_map[next_state]
+
+    def reset(self):
+        self.agent_state = self.start_state
+        return self.agent_state
+
+    def step(self, action):
+        state = self.agent_state
+        next_state = self.next_state(state, action)
+        reward = self.reward(state, action, next_state)
+        done = (next_state == self.goal_state)
+
+        self.agent_state = next_state
+        return next_state, reward, done
+
+    def render_v(self, v=None, policy=None, print_value=True):
+        renderer = render_helper.Renderer(self.reward_map, self.goal_state,
+                                          self.wall_state)
+        renderer.render_v(v, policy, print_value)
+
+    def render_q(self, q=None, print_value=True):
+        renderer = render_helper.Renderer(self.reward_map, self.goal_state,
+                                          self.wall_state)
+        renderer.render_q(q, print_value)
+
+# env = GridWorld()
+# V = {}
+# for state in env.states():
+#     V[state] = np.random.randn()  # 더미 상태 가치 함수
+# env.render_v(V)
+
+
+env = GridWorld()
+env.render_v()

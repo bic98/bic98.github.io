@@ -936,23 +936,301 @@ $$
 
 <h3 id="3x4-grid-world">3x4 grid world</h3>
 
-<div style="text-align: center;">
-    <div class="mermaid">
-    graph TD
-        A((A)) --&gt; B((B))
-        A((A)) --&gt; C((C))
-        A((A)) --&gt; D((D))
-        A((A)) --&gt; E((E))
-        A((A)) --&gt; F((F))
-        style A fill:#ffffff,stroke:#000000,stroke-width:2px
-        style B fill:#ffffff,stroke:#000000,stroke-width:2px
-        style C fill:#ffffff,stroke:#000000,stroke-width:2px
-        style D fill:#ffffff,stroke:#000000,stroke-width:2px
-        style E fill:#ffffff,stroke:#000000,stroke-width:2px
-        style F fill:#ffffff,stroke:#000000,stroke-width:2px
-    </div>
-</div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>+---+---+---+---+
+| S |   |   | G |
++---+---+---+---+
+|   | # |   | B |
++---+---+---+---+
+|   |   |   |   |
++---+---+---+---+
+</code></pre></div></div>
 
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">S</code>: Start position</li>
+  <li><code class="language-plaintext highlighter-rouge">G</code>: Goal position</li>
+  <li><code class="language-plaintext highlighter-rouge">#</code>: Obstacle or blocked cell</li>
+  <li><code class="language-plaintext highlighter-rouge">B</code>: Bomb location with a reward of <code class="language-plaintext highlighter-rouge">-1.0</code></li>
+  <li>Blank cells are navigable spaces.</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="n">common.gridworld_render</span> <span class="k">as</span> <span class="n">render_helper</span>
+
+
+<span class="k">class</span> <span class="nc">GridWorld</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">action_space</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># 행동 공간(가능한 행동들)
+</span>        <span class="n">self</span><span class="p">.</span><span class="n">action_meaning</span> <span class="o">=</span> <span class="p">{</span>  <span class="c1"># 행동의 의미
+</span>            <span class="mi">0</span><span class="p">:</span> <span class="sh">"</span><span class="s">UP</span><span class="sh">"</span><span class="p">,</span>
+            <span class="mi">1</span><span class="p">:</span> <span class="sh">"</span><span class="s">DOWN</span><span class="sh">"</span><span class="p">,</span>
+            <span class="mi">2</span><span class="p">:</span> <span class="sh">"</span><span class="s">LEFT</span><span class="sh">"</span><span class="p">,</span>
+            <span class="mi">3</span><span class="p">:</span> <span class="sh">"</span><span class="s">RIGHT</span><span class="sh">"</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="n">self</span><span class="p">.</span><span class="n">reward_map</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">array</span><span class="p">(</span>  <span class="c1"># 보상 맵(각 좌표의 보상 값)
+</span>            <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span>
+             <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">],</span>
+             <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]</span>
+        <span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">goal_state</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>    <span class="c1"># 목표 상태(좌표)
+</span>        <span class="n">self</span><span class="p">.</span><span class="n">wall_state</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>    <span class="c1"># 벽 상태(좌표)
+</span>        <span class="n">self</span><span class="p">.</span><span class="n">start_state</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>   <span class="c1"># 시작 상태(좌표)
+</span>        <span class="n">self</span><span class="p">.</span><span class="n">agent_state</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">start_state</span>   <span class="c1"># 에이전트 초기 상태(좌표)
+</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">height</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nf">len</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">reward_map</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">width</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nf">len</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">reward_map</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">reward_map</span><span class="p">.</span><span class="n">shape</span>
+
+    <span class="k">def</span> <span class="nf">actions</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">action_space</span>
+
+    <span class="k">def</span> <span class="nf">states</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">height</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">width</span><span class="p">):</span>
+                <span class="nf">yield </span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">next_state</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="c1"># 이동 위치 계산
+</span>        <span class="n">action_move_map</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span>
+        <span class="n">move</span> <span class="o">=</span> <span class="n">action_move_map</span><span class="p">[</span><span class="n">action</span><span class="p">]</span>
+        <span class="n">next_state</span> <span class="o">=</span> <span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">move</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">state</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">move</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">ny</span><span class="p">,</span> <span class="n">nx</span> <span class="o">=</span> <span class="n">next_state</span>
+
+        <span class="c1"># 이동한 위치가 그리드 월드의 테두리 밖이나 벽인가?
+</span>        <span class="k">if</span> <span class="n">nx</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">nx</span> <span class="o">&gt;=</span> <span class="n">self</span><span class="p">.</span><span class="n">width</span> <span class="ow">or</span> <span class="n">ny</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">ny</span> <span class="o">&gt;=</span> <span class="n">self</span><span class="p">.</span><span class="n">height</span><span class="p">:</span>
+            <span class="n">next_state</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="k">elif</span> <span class="n">next_state</span> <span class="o">==</span> <span class="n">self</span><span class="p">.</span><span class="n">wall_state</span><span class="p">:</span>
+            <span class="n">next_state</span> <span class="o">=</span> <span class="n">state</span>
+
+        <span class="k">return</span> <span class="n">next_state</span>  <span class="c1"># 다음 상태 반환
+</span>
+    <span class="k">def</span> <span class="nf">reward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">next_state</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">reward_map</span><span class="p">[</span><span class="n">next_state</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">agent_state</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">start_state</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">agent_state</span>
+
+    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">agent_state</span>
+        <span class="n">next_state</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="nf">next_state</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span>
+        <span class="n">reward</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="nf">reward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">next_state</span><span class="p">)</span>
+        <span class="n">done</span> <span class="o">=</span> <span class="p">(</span><span class="n">next_state</span> <span class="o">==</span> <span class="n">self</span><span class="p">.</span><span class="n">goal_state</span><span class="p">)</span>
+
+        <span class="n">self</span><span class="p">.</span><span class="n">agent_state</span> <span class="o">=</span> <span class="n">next_state</span>
+        <span class="k">return</span> <span class="n">next_state</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span>
+
+    <span class="k">def</span> <span class="nf">render_v</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">v</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">policy</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">print_value</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="n">renderer</span> <span class="o">=</span> <span class="n">render_helper</span><span class="p">.</span><span class="nc">Renderer</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">reward_map</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">goal_state</span><span class="p">,</span>
+                                          <span class="n">self</span><span class="p">.</span><span class="n">wall_state</span><span class="p">)</span>
+        <span class="n">renderer</span><span class="p">.</span><span class="nf">render_v</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">policy</span><span class="p">,</span> <span class="n">print_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">render_q</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">print_value</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="n">renderer</span> <span class="o">=</span> <span class="n">render_helper</span><span class="p">.</span><span class="nc">Renderer</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">reward_map</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">goal_state</span><span class="p">,</span>
+                                          <span class="n">self</span><span class="p">.</span><span class="n">wall_state</span><span class="p">)</span>
+        <span class="n">renderer</span><span class="p">.</span><span class="nf">render_q</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">print_value</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="class-gridworld">Class: <code class="language-plaintext highlighter-rouge">GridWorld</code></h3>
+<p>This class represents a simple grid-based environment for reinforcement learning. It defines the grid’s structure, the agent’s movement, and the rewards associated with each state.</p>
+
+<hr />
+
+<h4 id="__init__-method"><strong><code class="language-plaintext highlighter-rouge">__init__</code> Method</strong></h4>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+    <span class="n">self</span><span class="p">.</span><span class="n">action_space</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># up, down, left, right
+</span>    <span class="n">self</span><span class="p">.</span><span class="n">action_meaning</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="mi">0</span><span class="p">:</span> <span class="sh">'</span><span class="s">up</span><span class="sh">'</span><span class="p">,</span>
+        <span class="mi">1</span><span class="p">:</span> <span class="sh">'</span><span class="s">down</span><span class="sh">'</span><span class="p">,</span>
+        <span class="mi">2</span><span class="p">:</span> <span class="sh">'</span><span class="s">left</span><span class="sh">'</span><span class="p">,</span>
+        <span class="mi">3</span><span class="p">:</span> <span class="sh">'</span><span class="s">right</span><span class="sh">'</span>
+    <span class="p">}</span>
+    <span class="n">self</span><span class="p">.</span><span class="n">reward_map</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">array</span><span class="p">([</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="p">])</span>
+    <span class="n">self</span><span class="p">.</span><span class="n">start_state</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">self</span><span class="p">.</span><span class="n">wall_state</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">self</span><span class="p">.</span><span class="n">goal_state</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">self</span><span class="p">.</span><span class="n">agent_state</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">start_state</span>
+</code></pre></div></div>
+
+<ol>
+  <li><strong><code class="language-plaintext highlighter-rouge">action_space</code></strong>: Defines the possible actions the agent can take:
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">0</code>: Move up</li>
+      <li><code class="language-plaintext highlighter-rouge">1</code>: Move down</li>
+      <li><code class="language-plaintext highlighter-rouge">2</code>: Move left</li>
+      <li><code class="language-plaintext highlighter-rouge">3</code>: Move right</li>
+    </ul>
+  </li>
+  <li>
+    <p><strong><code class="language-plaintext highlighter-rouge">action_meaning</code></strong>: Maps action indices to human-readable directions.</p>
+  </li>
+  <li><strong><code class="language-plaintext highlighter-rouge">reward_map</code></strong>: A 2D NumPy array representing the grid. Each cell contains:
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">0</code>: Neutral reward.</li>
+      <li><code class="language-plaintext highlighter-rouge">1.0</code>: Positive reward (goal state).</li>
+      <li><code class="language-plaintext highlighter-rouge">-1.0</code>: Negative reward (bomb state).</li>
+      <li><code class="language-plaintext highlighter-rouge">None</code>: Represents an obstacle (wall).</li>
+    </ul>
+  </li>
+  <li>
+    <p><strong><code class="language-plaintext highlighter-rouge">start_state</code></strong>: The agent’s starting position <code class="language-plaintext highlighter-rouge">(2, 0)</code> (row 2, column 0).</p>
+  </li>
+  <li>
+    <p><strong><code class="language-plaintext highlighter-rouge">wall_state</code></strong>: The position of the wall <code class="language-plaintext highlighter-rouge">(1, 1)</code> (row 1, column 1), which the agent cannot pass through.</p>
+  </li>
+  <li>
+    <p><strong><code class="language-plaintext highlighter-rouge">goal_state</code></strong>: The position of the goal <code class="language-plaintext highlighter-rouge">(0, 3)</code> (row 0, column 3).</p>
+  </li>
+  <li><strong><code class="language-plaintext highlighter-rouge">agent_state</code></strong>: Tracks the agent’s current position, initialized to the start state.</li>
+</ol>
+
+<hr />
+
+<h4 id="properties"><strong>Properties</strong></h4>
+<p>These properties provide useful information about the grid.</p>
+
+<ol>
+  <li><strong><code class="language-plaintext highlighter-rouge">height</code></strong>
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@property</span>
+<span class="k">def</span> <span class="nf">height</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+ <span class="k">return</span> <span class="nf">len</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">reward_map</span><span class="p">)</span>
+</code></pre></div>    </div>
+    <ul>
+      <li>Returns the number of rows in the grid.</li>
+    </ul>
+  </li>
+  <li><strong><code class="language-plaintext highlighter-rouge">width</code></strong>
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@property</span>
+<span class="k">def</span> <span class="nf">width</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+ <span class="k">return</span> <span class="nf">len</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">reward_map</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</code></pre></div>    </div>
+    <ul>
+      <li>Returns the number of columns in the grid.</li>
+    </ul>
+  </li>
+  <li><strong><code class="language-plaintext highlighter-rouge">shape</code></strong>
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@property</span>
+<span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+ <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">reward_map</span><span class="p">.</span><span class="n">shape</span>
+</code></pre></div>    </div>
+    <ul>
+      <li>Returns the grid’s dimensions as a tuple <code class="language-plaintext highlighter-rouge">(rows, columns)</code>.</li>
+    </ul>
+  </li>
+  <li><strong><code class="language-plaintext highlighter-rouge">actions</code></strong>
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@property</span>
+<span class="k">def</span> <span class="nf">actions</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+ <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">action_space</span>
+</code></pre></div>    </div>
+    <ul>
+      <li>Returns the list of possible actions.</li>
+    </ul>
+  </li>
+</ol>
+
+<hr />
+
+<h4 id="state-method"><strong><code class="language-plaintext highlighter-rouge">state</code> Method</strong></h4>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">state</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">height</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">width</span><span class="p">):</span>
+            <span class="nf">yield </span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span>
+</code></pre></div></div>
+<ul>
+  <li>A generator that iterates over all possible states (grid cells) in the environment.</li>
+  <li>Each state is represented as a tuple <code class="language-plaintext highlighter-rouge">(row, column)</code>.</li>
+</ul>
+
+<hr />
+
+<h4 id="next_state-method"><strong><code class="language-plaintext highlighter-rouge">next_state</code> Method</strong></h4>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">next_state</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+    <span class="n">action_move_map</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span>
+    <span class="n">move</span> <span class="o">=</span> <span class="n">action_move_map</span><span class="p">[</span><span class="n">action</span><span class="p">]</span>
+    <span class="n">next_state</span> <span class="o">=</span> <span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">move</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">state</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">move</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">ny</span><span class="p">,</span> <span class="n">nx</span> <span class="o">=</span> <span class="n">next_state</span>
+
+    <span class="k">if</span> <span class="n">ny</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">ny</span> <span class="o">&gt;=</span> <span class="n">self</span><span class="p">.</span><span class="n">height</span> <span class="ow">or</span> <span class="n">nx</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">nx</span> <span class="o">&gt;=</span> <span class="n">self</span><span class="p">.</span><span class="n">width</span><span class="p">:</span>
+        <span class="n">next_state</span> <span class="o">=</span> <span class="n">state</span>
+
+    <span class="k">if</span> <span class="n">next_state</span> <span class="o">==</span> <span class="n">self</span><span class="p">.</span><span class="n">wall_state</span><span class="p">:</span>
+        <span class="n">next_state</span> <span class="o">=</span> <span class="n">state</span>
+
+    <span class="k">return</span> <span class="n">next_state</span>
+</code></pre></div></div>
+
+<ol>
+  <li><strong><code class="language-plaintext highlighter-rouge">action_move_map</code></strong>: Maps actions to their corresponding movements:
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">(-1, 0)</code>: Move up (decrease row index).</li>
+      <li><code class="language-plaintext highlighter-rouge">(1, 0)</code>: Move down (increase row index).</li>
+      <li><code class="language-plaintext highlighter-rouge">(0, -1)</code>: Move left (decrease column index).</li>
+      <li><code class="language-plaintext highlighter-rouge">(0, 1)</code>: Move right (increase column index).</li>
+    </ul>
+  </li>
+  <li>
+    <p><strong><code class="language-plaintext highlighter-rouge">next_state</code></strong>: Calculates the agent’s next position based on the current state and action.</p>
+  </li>
+  <li><strong>Boundary Check</strong>:
+    <ul>
+      <li>If the next state is outside the grid’s boundaries, the agent stays in the current state.</li>
+    </ul>
+  </li>
+  <li><strong>Wall Check</strong>:
+    <ul>
+      <li>If the next state is a wall, the agent stays in the current state.</li>
+    </ul>
+  </li>
+  <li><strong>Returns</strong>: The valid next state after applying the action.</li>
+</ol>
+
+<hr />
+
+<h4 id="reward-method"><strong><code class="language-plaintext highlighter-rouge">reward</code> Method</strong></h4>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">reward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">next_state</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">reward_map</span><span class="p">[</span><span class="n">next_state</span><span class="p">]</span>
+</code></pre></div></div>
+
+<ol>
+  <li><strong>Inputs</strong>:
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">state</code>: The current state.</li>
+      <li><code class="language-plaintext highlighter-rouge">action</code>: The action taken.</li>
+      <li><code class="language-plaintext highlighter-rouge">next_state</code>: The resulting state after the action.</li>
+    </ul>
+  </li>
+  <li><strong>Returns</strong>: The reward associated with the <code class="language-plaintext highlighter-rouge">next_state</code>, as defined in the <code class="language-plaintext highlighter-rouge">reward_map</code>.</li>
+</ol>
+
+<hr />
+
+<h3 id="summary-1">Summary</h3>
+<p>The <code class="language-plaintext highlighter-rouge">GridWorld</code> class provides a simple environment for reinforcement learning:</p>
+<ul>
+  <li>It defines the grid layout, including walls, rewards, and penalties.</li>
+  <li>It allows the agent to move within the grid while handling boundaries and obstacles.</li>
+  <li>It provides rewards based on the agent’s position.</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">env</span> <span class="o">=</span> <span class="nc">GridWorld</span><span class="p">()</span>
+<span class="n">env</span><span class="p">.</span><span class="nf">render_v</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div align="center">
+  <img src="/images/gridworld1.png" alt="gridworld" width="100%" />
+</div>
 
 						</div><!-- /.content -->
 					</div><!-- /.col -->
