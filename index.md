@@ -34,33 +34,33 @@ grid_navigation:
     - title: Deep Learning
       excerpt: Deep Learning from scratch
       cta: Read more
-      url: 'deep_learning'
+      url: '/page/deep_learning'
       category: AI
     - title: Reinforcement Learning
       excerpt: Reinforcement Learning from scratch
       cta: Read more
-      url: 'reinforce'
+      url: '/page/reinforce'
       category: AI
     - title:  QGIS tutorial
       excerpt: QGIS tutorial for beginners
       cta: Read more
-      url: 'qgis'
+      url: '/page/qgis'
       category: GIS
     - title: Optimized 3D Printing
       excerpt: Optimized 3D Printing build plate for enhanced performance and efficiency
       cta: Read more
-      url: 'o3p'
+      url: '/page/o3p'
       category: APP
     - title: Fullstack study
       excerpt: Fullstack Development from scratch
       cta: Read more
-      url: 'fullstack'
+      url: '/page/fullstack'
       category: APP
-    - title: Security
-      excerpt: Comming soon...
-      cta: None Page
-      url: 'gsat'
-      category: APP
+    # - title: Security
+    #   excerpt: Comming soon...
+    #   cta: None Page
+    #   url: '/page/gsat'
+    #   category: APP
 
 # Categories for navigation
 categories:

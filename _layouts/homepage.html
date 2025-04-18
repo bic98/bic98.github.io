@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html {% if page.lang %}lang="{{ page.lang }}"{% endif %}>
+	<head>
+		{% include site-head.html %}
+	</head>
+	<body class="{{ site.doks.color_theme }}">
+		<div class="hero-subheader{% if page.grid_navigation %} hero-subheader--before-out{% endif %}">
+			<div class="container">
+				<div class="row">
+					<div class="col-md-7">
+						<div class="align-container" data-mh>
+							<div class="align-inner">
+								{% if page.title %}
+									<h1 class="hero-subheader__title">{{ page.title }}</h1>
+								{% endif %}
+								{% if page.description %}
+									<p class="hero-subheader__desc">{{ page.description }}</p>
+								{% endif %}
+								{% for button in page.buttons %}
+									{% if button.external_url == true %}
+									<a href="{{ button.url }}" class="btn btn--dark btn--rounded btn--w-icon">
+										{% if button.icon %}<i class="icon icon--{{ button.icon }}"></i>{% endif %}
+										{{ button.content }}
+									</a>
+									{% else %}
+									<a href="{% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}{{ button.url }}" class="btn btn--dark btn--rounded btn--w-icon">
+										{% if button.icon %}<i class="icon icon--{{ button.icon }}"></i>{% endif %}
+										{{ button.content }}
+									</a>
+									{% endif %}
+								{% endfor %}
+								
+								{% if page.categories %}
+								<div class="hero-categories" style="margin-top: 18px; margin-left: -2px;">
+									{% for category in page.categories %}
+										<a href="#" class="btn btn--dark btn--rounded category-btn {% if category.active %}active{% endif %}" data-category="{{ category.name }}">
+											{{ category.name }}
+										</a>
+									{% endfor %}
+								</div>
+								{% endif %}
+							</div><!-- /.align-inner -->
+						</div><!-- /.align-container -->
+					</div><!-- /.col -->
+					{% if page.author.title and page.author.description and page.author.title_url %}
+						<div class="col-md-4 col-md-offset-1 hidden-xs hidden-sm">
+							<div class="align-container" data-mh>
+								<div class="align-inner">
+									<div class="hero-subheader__author">
+										<p class="hero-subheader__author-title">
+											{% if button.external_url == true %}
+											<a href="{{ page.author.title_url }}" class="btn btn--read-more">
+												{{ page.author.title }}
+												<i class="icon icon--arrow-right"></i>
+											</a>
+											{% else %}
+											<a href="{% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}{{ page.author.title_url }}" class="btn btn--read-more">
+												{{ page.author.title }}
+												<i class="icon icon--arrow-right"></i>
+											</a>
+											{% endif %}
+										</p><!-- /.hero-subheader__author-title -->
+										<p>{{ page.author.description }}</p>
+									</div><!-- /.hero-subheader__author -->
+								</div><!-- /.align-inner -->
+							</div><!-- /.align-container -->
+						</div><!-- /.col -->
+					{% endif %}
+				</div><!-- /.row -->
+			</div><!-- /.container -->
+		</div><!-- /.hero-subheader -->
+		
+		{% if page.grid_navigation %}
+			<div class="section section--darker-theme-color-bg">
+				<div class="container">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="nav-grid nav-grid--out">
+								<div class="row">
+									{% for item in page.grid_navigation %}
+										<div class="col-sm-6 col-lg-4 grid-item" data-category="{{ item.category }}">
+											<a href="{% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}{{ item.url }}" class="nav-grid__item">
+												<div class="nav-grid__content" data-mh>
+													<h2 class="nav-grid__title">{{ item.title }}</h2>
+													<p>{{ item.excerpt }}</p>
+												</div><!-- /.nav-grid__content -->
+												<p class="nav-grid__btn">
+													{{ item.cta }}
+													<i class="icon icon--arrow-right"></i>
+												</p>
+											</a><!-- /.nav-grid__item -->
+										</div><!-- /.col -->
+									{% endfor %}
+								</div><!-- /.row -->
+							</div><!-- /.nav-grid -->
+						</div><!-- /.col -->
+					</div><!-- /.row -->
+				</div><!-- /.container -->
+			</div><!-- /.section -->
+		{% endif %}
+		
+		{% include site-footer.html %}
+		
+		{% if page.categories %}
+		<script>
+			document.addEventListener('DOMContentLoaded', function() {
+				// Get all category links and grid items
+				const categoryLinks = document.querySelectorAll('.category-btn');
+				const gridItems = document.querySelectorAll('.grid-item');
+				
+				// Initialize all items as visible
+				gridItems.forEach(item => {
+					item.classList.add('visible');
+				});
+				
+				// Add click event listener to each category link
+				categoryLinks.forEach(link => {
+					link.addEventListener('click', function(e) {
+						e.preventDefault();
+						
+						// Simple click effect
+						this.style.transform = 'scale(0.97)';
+						setTimeout(() => {
+							this.style.transform = '';
+						}, 150);
+						
+						// Remove active class from all links - sync selection across all category links
+						const selectedCategory = this.getAttribute('data-category');
+						categoryLinks.forEach(l => {
+							if (l.getAttribute('data-category') === selectedCategory) {
+								l.classList.add('active');
+							} else {
+								l.classList.remove('active');
+							}
+						});
+						
+						// Animate grid items based on category
+						gridItems.forEach(item => {
+							const itemCategory = item.getAttribute('data-category');
+							
+							if (selectedCategory === 'All' || selectedCategory === itemCategory) {
+								// First remove hidden class if it exists
+								item.classList.remove('hidden');
+								// Short delay before adding visible class for smoother animation
+								setTimeout(() => {
+									item.classList.add('visible');
+									item.style.display = 'block';
+								}, 50);
+							} else {
+								// First remove visible class
+								item.classList.remove('visible');
+								item.classList.add('hidden');
+								// Hide after animation completes
+								setTimeout(() => {
+									item.style.display = 'none';
+								}, 400); // Match the transition duration from CSS
+							}
+						});
+						
+						// Smooth scroll to grid section if clicked from hero section
+						if (this.closest('.hero-categories')) {
+							const gridSection = document.querySelector('.section--darker-theme-color-bg');
+							if (gridSection) {
+								window.scrollTo({
+									top: gridSection.offsetTop - 50,
+									behavior: 'smooth'
+								});
+							}
+						}
+					});
+				});
+			});
+		</script>
+		{% endif %}
+	</body>
+</html>

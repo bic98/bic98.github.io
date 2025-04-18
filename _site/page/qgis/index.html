@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html >
+	<head>
+		
+
+<meta charset="UTF-8">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+<meta name="viewport" content="width=device-width, minimum-scale=1.0">
+<meta name="google-site-verification" content="googlef9130e9561130734.html" />
+<title>QGIS Tutorial for Beginners | InchanBaek Note - AI, Architecture & Technology</title>
+
+	<meta name="description" content="지리정보시스템의 기초부터 고급 분석 기법까지, 무료 오픈소스 GIS 소프트웨어인 QGIS를 활용하는 초보자를 위한 완벽 가이드입니다.">
+
+
+	<meta name="keywords" content="QGIS, GIS, 지리정보시스템, 지도, 공간정보, 인찬백, InchanBaek, 지오데이터, 지리공간정보, 공간분석, geographic information system, spatial analysis, geospatial data, mapping software, open source GIS, QGIS tutorial, QGIS beginners">
+
+<meta name="author" content="Inchan Baek">
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="http://localhost:4000/page/qgis/">
+<meta property="og:title" content="QGIS Tutorial for Beginners | InchanBaek Note - AI, Architecture & Technology">
+<meta property="og:description" content="지리정보시스템의 기초부터 고급 분석 기법까지, 무료 오픈소스 GIS 소프트웨어인 QGIS를 활용하는 초보자를 위한 완벽 가이드입니다.">
+<!-- Twitter -->
+<meta property="twitter:card" content="summary">
+<meta property="twitter:url" content="http://localhost:4000/page/qgis/">
+<meta property="twitter:title" content="QGIS Tutorial for Beginners | InchanBaek Note - AI, Architecture & Technology">
+<meta property="twitter:description" content="지리정보시스템의 기초부터 고급 분석 기법까지, 무료 오픈소스 GIS 소프트웨어인 QGIS를 활용하는 초보자를 위한 완벽 가이드입니다.">
+<link rel="icon" href="/favicon.ico" type="image/x-icon">
+<link rel="canonical" href="http://localhost:4000/page/qgis/">
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>QGIS Tutorial for Beginners</title>
+<meta name="generator" content="Jekyll v4.4.1" />
+<meta property="og:title" content="QGIS Tutorial for Beginners" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="지리정보시스템의 기초부터 고급 분석 기법까지, 무료 오픈소스 GIS 소프트웨어인 QGIS를 활용하는 초보자를 위한 완벽 가이드입니다." />
+<meta property="og:description" content="지리정보시스템의 기초부터 고급 분석 기법까지, 무료 오픈소스 GIS 소프트웨어인 QGIS를 활용하는 초보자를 위한 완벽 가이드입니다." />
+<link rel="canonical" href="http://localhost:4000/page/qgis/" />
+<meta property="og:url" content="http://localhost:4000/page/qgis/" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="QGIS Tutorial for Beginners" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"지리정보시스템의 기초부터 고급 분석 기법까지, 무료 오픈소스 GIS 소프트웨어인 QGIS를 활용하는 초보자를 위한 완벽 가이드입니다.","headline":"QGIS Tutorial for Beginners","url":"http://localhost:4000/page/qgis/"}</script>
+<!-- End Jekyll SEO tag -->
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:400,400i,500,500i,700,700i|Noto+Sans:400,400i,700,700i|Source+Code+Pro&amp;subset=latin-ext">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@1.0/nanumsquare.css">
+<link rel="stylesheet" href="/doks-theme/assets/css/style.css">
+<link rel="stylesheet" href="/doks-theme/assets/css/custom.css">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+    
+    // Find all pre blocks with mermaid class and render them
+    document.querySelectorAll('pre code.language-mermaid').forEach(function(element) {
+      // Get the mermaid code
+      const mermaidCode = element.textContent;
+      
+      // Create a new div for the mermaid diagram
+      const newDiv = document.createElement('div');
+      newDiv.className = 'mermaid';
+      newDiv.textContent = mermaidCode;
+      
+      // Replace the pre element with the new div
+      const preElement = element.parentElement;
+      preElement.parentElement.replaceChild(newDiv, preElement);
+    });
+    
+    // Trigger mermaid render
+    mermaid.init();
+  });
+</script>
+
+	</head>
+	<body class="blue" data-spy="scroll" data-target=".js-scrollspy">
+		
+		
+
+
+	<header class="site-header">
+		<div class="container">
+			<div class="row">
+				<div class="col-xs-12">
+					
+						<a href="/" class="site-header__logo">InchanBaek Note</a>
+					
+					
+				</div><!-- /.col -->
+			</div><!-- /.row -->
+		</div><!-- /.container -->
+	</header><!-- /.site-header -->
+
+
+		<div class="hero-subheader">
+			<div class="container">
+				<div class="row">
+					<div class="col-md-7">
+						<div class="align-container" data-mh>
+							<div class="align-inner">
+								
+									<h1 class="hero-subheader__title">QGIS Tutorial for Beginners</h1>
+								
+								
+									<p class="hero-subheader__desc">지리정보시스템의 기초부터 고급 분석 기법까지, 무료 오픈소스 GIS 소프트웨어인 QGIS를 활용하는 초보자를 위한 완벽 가이드입니다.</p>
+								
+								
+							</div><!-- /.align-inner -->
+						</div><!-- /.align-container -->
+					</div><!-- /.col -->
+					
+				</div><!-- /.row -->
+			</div><!-- /.container -->
+		</div><!-- /.hero-subheader -->
+		<div class="section">
+			<div class="container">
+				<div class="row">
+					<div class="col-md-7">
+						<div class="content">
+							<h2 id="gis란-무엇인가">GIS란 무엇인가?</h2>
+
+<ul>
+  <li>GIS는 지리정보시스템(Geographic Information System)의 약자로, 지리적 데이터를 수집, 저장, 관리, 분석, 표현하는 시스템을 말한다.</li>
+  <li>생활에 필요한 다양한 정보를 지도로 표현하여 제공하고, 이를 통해 지리적 정보를 분석하고 활용할 수 있다.</li>
+</ul>
+
+<h3 id="gis의-데이터-종류">GIS의 데이터 종류</h3>
+
+<ul>
+  <li><strong>벡터 데이터(Vector Data)</strong>
+    <ul>
+      <li>점(Point), 선(Line), 면(Polygon) 등의 기하학적 요소로 표현되는 데이터</li>
+      <li>지리적 데이터를 정확하게 표현할 수 있으며, 작은 데이터 용량으로 표현 가능</li>
+      <li>확대 및 축소에 따라 해상도가 변하지 않는다.</li>
+      <li>한국에서 제공하는 gis의 대부분은 벡터 데이터로 제공된다.</li>
+    </ul>
+  </li>
+  <li><strong>라스터 데이터(Raster Data)</strong>
+    <ul>
+      <li>픽셀(Pixel) 단위로 표현되는 데이터, 주로 위성사진이나 지도 등에 사용</li>
+      <li>지리적 데이터를 정확하게 표현하기 어렵지만, 다양한 정보를 표현할 수 있다.</li>
+      <li>확대 및 축소에 따라 해상도가 변한다. 따라서 해상도에 따라 이미지의 선명도가 달라진다.</li>
+    </ul>
+  </li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>데이터 유형</th>
+      <th>표현 방식</th>
+      <th>특징</th>
+      <th>사용 예시</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>벡터 (Vector)</strong></td>
+      <td>점, 선, 면</td>
+      <td>- 정확한 위치 표현 <br /> - 용량 작음 <br /> - 확대해도 선명</td>
+      <td>도로, 행정구역</td>
+    </tr>
+    <tr>
+      <td><strong>라스터 (Raster)</strong></td>
+      <td>픽셀</td>
+      <td>- 해상도 영향 받음 <br /> - 다양한 정보 포함</td>
+      <td>위성사진, 지형도</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="gis의-좌표계">GIS의 좌표계</h3>
+<p>좌표계는 지구상의 위치를 나타내기 위한 좌표계로, 지구는 3차원이지만, 지도는 2차원으로 표현된다. 따라서 지구상의 위치를 2차원 지도에 표현하기 위해 좌표계가 필요하다.
+좌표계는 크게 지리 좌표계와 투영 좌표계로 나뉜다.</p>
+
+<ul>
+  <li><strong>지리 좌표계(Geographic Coordinate System)</strong>
+    <ul>
+      <li>지구의 위경도를 사용하여 위치를 나타내는 좌표계</li>
+      <li>위도와 경도로 표현되며, 단위는 도, 분, 초로 표현된다.</li>
+      <li>WGS84, GRS80 등이 있다.</li>
+      <li>위도와 경도는 각각 90도, 180도까지 표현되며, 위도는 적도를 기준으로 북위와 남위로 나뉜다. 경도는 본초자오선을 기준으로 동경과 서경으로 나뉜다.</li>
+    </ul>
+  </li>
+</ul>
+
+<div align="center">
+    <img src="https://media.licdn.com/dms/image/v2/D5612AQGoitcDV2PdUw/article-inline_image-shrink_1500_2232/article-inline_image-shrink_1500_2232/0/1664039155968?e=1746662400&amp;v=beta&amp;t=GpsJb76-okrYenY61dDqib8ZdAO3rMY_036jyip_P24" alt="matrix multiplication" width="300" />
+</div>
+<p><br /></p>
+<ul>
+  <li><strong>투영 좌표계(Projection Coordinate System)</strong>
+    <ul>
+      <li>지구의 3차원 표면을 2차원 지도에 투영하는 좌표계</li>
+      <li>직각좌표계, 원통좌표계, 원뿔좌표계 등이 있다.</li>
+      <li>한국에서는 주로 UTM좌표계를 사용한다. UTM좌표계는 원뿔좌표계로 경도 6도 단위로 나누어 총 60개의 UTM존으로 구분한다. 한국을 6개의 존으로 나누어 표현한다. UTM좌표계는 1존에 대한 좌표계이므로, 한국은 52~53존에 걸쳐있으므로, 52존에 대한 좌표계와 53존에 대한 좌표계로 나뉜다.</li>
+    </ul>
+  </li>
+</ul>
+
+<p><br /></p>
+<div align="center">
+    <img src="https://www.usu.edu/geospatial/images/tutorials/core-concepts/projected-coordinate-systems/cc5-projection-surface.png" alt="matrix multiplication" width="400" />
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>좌표계 유형</th>
+      <th>설명</th>
+      <th>특징</th>
+      <th>사용 예시</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>지리 좌표계 (GCS)</strong></td>
+      <td>위도·경도로 위치 표현</td>
+      <td>- 단위: 도(°), 분(‘), 초(“) <br /> - 3차원 좌표 <br /> - WGS84, GRS80 사용</td>
+      <td>GPS, 위경도 기반 데이터</td>
+    </tr>
+    <tr>
+      <td><strong>투영 좌표계 (PCS)</strong></td>
+      <td>3D 지구를 2D로 투영</td>
+      <td>- 직각/원통/원뿔 투영 <br /> - 단위: 미터(m) <br /> - UTM 좌표계 사용</td>
+      <td>지도 제작, GIS 분석</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="언제-어떤-좌표계를-사용해야-하는가">언제 어떤 좌표계를 사용해야 하는가?</h3>
+
+<ul>
+  <li><strong>EPSG코드: 좌표계, 투영법, 변환법을 표준화</strong>
+    <ul>
+      <li>좌표계를 표현하기 위한 코드로, 좌표계의 정보를 담고 있다.</li>
+      <li>좌표계를 사용할 때, EPSG코드를 사용하여 좌표계를 지정할 수 있다.</li>
+      <li>한국에서는 주로 EPSG:5179를 사용한다. EPSG:5179는 UTM-K좌표계로, 한국을 표현하기 위한 좌표계이다.</li>
+    </ul>
+  </li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>EPSG 코드</th>
+      <th>좌표계 이름</th>
+      <th>설명</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>4326</strong></td>
+      <td>WGS 84</td>
+      <td>GPS에서 사용하는 지리 좌표계 (경도, 위도)</td>
+    </tr>
+    <tr>
+      <td><strong>3857</strong></td>
+      <td>Pseudo-Mercator</td>
+      <td>Google Maps에서 사용하는 웹 좌표계</td>
+    </tr>
+    <tr>
+      <td><strong>5179</strong></td>
+      <td>Korea 2000</td>
+      <td>한국 TM(Transverse Mercator) 좌표계</td>
+    </tr>
+    <tr>
+      <td><strong>32652</strong></td>
+      <td>UTM Zone 52N</td>
+      <td>UTM 52N 투영 좌표계 (미터 단위)</td>
+    </tr>
+    <tr>
+      <td><strong>4019</strong></td>
+      <td>GRS80</td>
+      <td>국제 측량 표준 타원체</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="gis-데이터-제공사이트">GIS 데이터 제공사이트</h3>
+
+<ul>
+  <li><strong>공공데이터포털</strong>
+    <ul>
+      <li><a href="https://www.data.go.kr/">공공데이터포털</a></li>
+      <li>한국에서 제공하는 공공데이터를 제공하는 사이트</li>
+      <li>행정구역, 지형도, 교통망, 위성사진 등 다양한 정보를 제공한다.</li>
+    </ul>
+  </li>
+  <li><strong>서울 열린데이터광장</strong>
+    <ul>
+      <li><a href="https://data.seoul.go.kr/">열린데이터광장</a></li>
+      <li>서울시에서 제공하는 열린데이터를 제공하는 사이트</li>
+      <li>서울시의 다양한 정보를 제공하며, API를 통해 데이터를 사용할 수 있다.</li>
+    </ul>
+  </li>
+  <li><strong>브이월드</strong>
+    <ul>
+      <li><a href="http://www.vworld.kr/">브이월드</a></li>
+      <li>한국지도를 제공하는 사이트</li>
+      <li>다양한 정보를 제공하며, API를 통해 지도를 사용할 수 있다.</li>
+    </ul>
+  </li>
+  <li><strong>국토지리정보원</strong>
+    <ul>
+      <li><a href="https://map.ngii.go.kr/ms/map/NlipMap.do">국토지리정보원</a></li>
+      <li>국토지리정보원에서 제공하는 지리정보를 제공하는 사이트</li>
+      <li>행정구역, 지형도, 교통망, 위성사진 등 다양한 정보를 제공한다.</li>
+    </ul>
+  </li>
+  <li><strong>AI Hub</strong>
+    <ul>
+      <li><a href="http://www.aihub.or.kr/">AI Hub</a></li>
+      <li>한국에서 제공하는 인공지능 데이터를 제공하는 사이트</li>
+      <li>음성, 이미지, 텍스트 등 다양한 데이터를 제공한다.</li>
+    </ul>
+  </li>
+  <li><strong>KOSIS국가통계포털</strong>
+    <ul>
+      <li><a href="http://kosis.kr/">KOSIS</a></li>
+      <li>국가통계를 제공하는 사이트</li>
+      <li>국가통계를 제공하며, 다양한 통계를 제공한다.</li>
+    </ul>
+  </li>
+  <li><strong>행정안전부 행정정보시스템</strong>
+    <ul>
+      <li><a href="https://jumin.mois.go.kr/#">행정정보시스템</a></li>
+      <li>행정정보를 제공하는 사이트</li>
+      <li>행정정보를 제공하며, 다양한 정보를 제공한다.</li>
+      <li>주민등록, 주소, 건물 등 다양한 정보를 제공한다.</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="python에서-gis-데이터-다루기">python에서 GIS 데이터 다루기</h2>
+
+<p>qgis에서 사용하는 데이터는 shp파일이다. shp파일은 벡터 데이터로, 지리정보를 다루는데 사용된다. python에서 shp파일을 다루기 위해서는 geopandas를 사용한다.</p>
+
+<p>QgsVectorLayer() 함수를 사용하여 shp파일을 불러올 수 있다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">qgis.core</span>
+
+<span class="c1"># shp파일을 불러온다.
+</span><span class="n">layer</span> <span class="o">=</span> <span class="nc">QgsVectorLayer</span><span class="p">(</span><span class="sh">'</span><span class="s">data/TL_SCCO_SIG.shp</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">layer_name</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">ogr</span><span class="sh">'</span><span class="p">)</span>
+
+<span class="c1"># 레이어를 추가한다.
+</span><span class="n">QgsProject</span><span class="p">.</span><span class="nf">instance</span><span class="p">().</span><span class="nf">addMapLayer</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li><strong>QgsVectorLayer()</strong>
+    <ul>
+      <li>shp파일을 불러오는 함수</li>
+      <li>shp파일의 경로, 레이어 이름, 데이터 포맷을 입력하여 shp파일을 불러온다.</li>
+      <li>shp파일의 경로는 절대경로나 상대경로로 입력할 수 있다.</li>
+      <li>레이어 이름은 레이어의 이름을 지정하는 것으로, 레이어 이름을 지정하지 않으면 shp파일의 이름으로 레이어 이름이 지정된다.</li>
+      <li>데이터 포맷은 shp파일의 데이터 포맷을 지정하는 것으로, ‘ogr’을 입력하면 shp파일을 불러올 수 있다.</li>
+    </ul>
+  </li>
+  <li><strong>QgsProject.instance().addMapLayer()</strong>
+    <ul>
+      <li>레이어를 추가하는 함수</li>
+      <li>레이어를 추가하면 qgis에 레이어가 추가된다.</li>
+      <li>레이어를 추가하면 qgis에서 레이어를 확인할 수 있다.</li>
+    </ul>
+  </li>
+</ul>
+
+<p>addVectorLayer() 함수를 사용하면 레이어를 생성하고 바로 맵에 추가할 수 있다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># shp파일을 불러온다.
+</span><span class="n">layer</span> <span class="o">=</span> <span class="n">iface</span><span class="p">.</span><span class="nf">addVectorLayer</span><span class="p">(</span><span class="sh">'</span><span class="s">data/TL_SCCO_SIG.shp</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">layer_name</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">ogr</span><span class="sh">'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li><strong>iface.addVectorLayer()</strong>
+    <ul>
+      <li>shp파일을 불러오는 함수</li>
+      <li>shp파일의 경로, 레이어 이름, 데이터 포맷을 입력하여 shp파일을 불러온다.</li>
+      <li>shp파일의 경로는 절대경로나 상대경로로 입력할 수 있다.</li>
+      <li>레이어 이름은 레이어의 이름을 지정하는 것으로, 레이어 이름을 지정하지 않으면 shp파일의 이름으로 레이어 이름이 지정된다.</li>
+      <li>데이터 포맷은 shp파일의 데이터 포맷을 지정하는 것으로, ‘ogr’을 입력하면 shp파일을 불러올 수 있다.</li>
+    </ul>
+  </li>
+</ul>
+
+<p><strong>ogr</strong>은 <strong>OGR Simple Feature Library</strong>의 약자로, 벡터 데이터를 다루는 라이브러리이다. <strong>ogr</strong>은 다양한 데이터 포맷을 지원하며, 벡터 데이터를 다루는데 사용된다.</p>
+
+<p>파일을 불러오면 레이어의 정보를 확인할 수 있다. 하지만 코드를 더할때마다 계속해서 레이어를 불러오게 되면, 레이어가 중복되어 레이어가 계속해서 추가된다. 따라서 레이어를 추가하기 전에 레이어가 이미 있는지 확인해야 한다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 경로 설정
+</span><span class="n">shp_path</span> <span class="o">=</span> <span class="sa">r</span><span class="sh">"</span><span class="s">C:\Users\@@@@@\Downloads\(B100)국토통계_인구정보-총 인구 수(전체)-읍면동경계_서울특별시_202410\nlsp_003001001.shp</span><span class="sh">"</span>
+<span class="n">layer_name</span> <span class="o">=</span> <span class="sh">'</span><span class="s">행정동별인구</span><span class="sh">'</span>
+
+<span class="c1"># 이미 해당 이름의 레이어가 있는지 확인
+</span><span class="n">layer_exists</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="n">layers</span> <span class="o">=</span> <span class="n">QgsProject</span><span class="p">.</span><span class="nf">instance</span><span class="p">().</span><span class="nf">mapLayersByName</span><span class="p">(</span><span class="n">layer_name</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">layers</span><span class="p">:</span>
+    <span class="n">layer_exists</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="c1"># 레이어가 없는 경우에만 추가
+</span><span class="k">if</span> <span class="ow">not</span> <span class="n">layer_exists</span><span class="p">:</span>
+    <span class="n">iface</span><span class="p">.</span><span class="nf">addVectorLayer</span><span class="p">(</span><span class="n">shp_path</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">,</span> <span class="sh">'</span><span class="s">ogr</span><span class="sh">'</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">레이어 </span><span class="sh">'</span><span class="si">{</span><span class="n">layer_name</span><span class="si">}</span><span class="sh">'</span><span class="s">이(가) 이미 존재합니다.</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div align="center">
+    <img src="/images/qgis_avl.png" alt="qgis" width="500" />
+</div>
+
+<hr />
+
+<h3 id="필드를-가지고-오는-방법">필드를 가지고 오는 방법</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 레이어를 불러온다.
+</span><span class="n">layer</span> <span class="o">=</span> <span class="n">iface</span><span class="p">.</span><span class="nf">addVectorLayer</span><span class="p">(</span><span class="sh">'</span><span class="s">data/TL_SCCO_SIG.shp</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">layer_name</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">ogr</span><span class="sh">'</span><span class="p">)</span>
+
+<span class="c1"># 필드를 가지고 온다.
+</span><span class="n">fields</span> <span class="o">=</span> <span class="n">layer</span><span class="p">.</span><span class="nf">fields</span><span class="p">()</span>
+
+<span class="c1"># 필드를 출력한다.
+</span><span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+    <span class="nf">print</span><span class="p">(</span><span class="n">field</span><span class="p">.</span><span class="nf">name</span><span class="p">())</span>
+</code></pre></div></div>
+
+<p>근데 위와 같이 addVectorLayer()를 사용하면 실행할때마다 레이어가 중복되어 추가된다. 그래서 QgsVectorLayer()를 사용하여 레이어를 불러온다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># shp파일을 불러온다.
+</span><span class="n">layer</span> <span class="o">=</span> <span class="nc">QgsVectorLayer</span><span class="p">(</span><span class="sh">'</span><span class="s">data/TL_SCCO_SIG.shp</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">layer_name</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">ogr</span><span class="sh">'</span><span class="p">)</span>
+
+<span class="n">fields</span> <span class="o">=</span> <span class="n">layer</span><span class="p">.</span><span class="nf">fields</span><span class="p">()</span>
+
+<span class="c1"># 필드를 출력한다.
+</span><span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+    <span class="nf">print</span><span class="p">(</span><span class="n">field</span><span class="p">.</span><span class="nf">name</span><span class="p">())</span>
+</code></pre></div></div>
+
+<h3 id="필드와-데이터를-판다스-데이터프레임으로-변환">필드와 데이터를 판다스 데이터프레임으로 변환</h3>
+
+<p>데이터 정제와 분석을 위해 필드와 데이터를 판다스 데이터프레임으로 변환할 수 있다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">([</span><span class="n">feat</span><span class="p">.</span><span class="nf">attributes</span><span class="p">()</span> <span class="k">for</span> <span class="n">feat</span> <span class="ow">in</span> <span class="n">vlayer</span><span class="p">.</span><span class="nf">getFeatures</span><span class="p">()],</span>
+                  <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">field</span><span class="p">.</span><span class="nf">name</span><span class="p">()</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">vlayer</span><span class="p">.</span><span class="nf">fields</span><span class="p">()])</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>위의 코드에서 feat.attributes()는 레이어의 속성을 리스트 형태로 반환한다.
+field.name()은 레이어의 필드 이름을 반환한다. 필드 이름을 데이터 프레임의 열 이름으로 사용한다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">print</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="n">gid</span>       <span class="n">lbl</span>      <span class="n">val</span>
+<span class="mi">0</span>    <span class="mi">11290110</span>   <span class="mf">2435.00</span>   <span class="mf">2435.0</span>
+<span class="mi">1</span>    <span class="mi">11140101</span>      <span class="mf">8.00</span>      <span class="mf">8.0</span>
+<span class="mi">2</span>    <span class="mi">11110152</span>     <span class="mf">54.00</span>     <span class="mf">54.0</span>
+<span class="mi">3</span>    <span class="mi">11410111</span>  <span class="mf">55081.00</span>  <span class="mf">55081.0</span>
+<span class="mi">4</span>    <span class="mi">11650109</span>   <span class="mf">7877.00</span>   <span class="mf">7877.0</span>
+<span class="p">..</span>                   <span class="bp">...</span>
+<span class="mi">462</span>  <span class="mi">11560131</span>      <span class="n">NULL</span>     <span class="n">NULL</span>
+<span class="mi">463</span>  <span class="mi">11170135</span>      <span class="n">NULL</span>     <span class="n">NULL</span>
+<span class="mi">464</span>  <span class="mi">11500111</span>      <span class="n">NULL</span>     <span class="n">NULL</span>
+<span class="mi">465</span>  <span class="mi">11110127</span>      <span class="n">NULL</span>     <span class="n">NULL</span>
+<span class="mi">466</span>  <span class="mi">11140106</span>      <span class="n">NULL</span>     <span class="n">NULL</span>
+</code></pre></div></div>
+<hr />
+
+<h3 id="데이터프레임에서-속성-타입-확인-및-변환">데이터프레임에서 속성 타입 확인 및 변환</h3>
+
+<p>데이터프레임(df)에서 속성들이 문자열인지 실수형인지 확인하고 변환하는 방법은 다음과 같다.</p>
+
+<ol>
+  <li>속성 타입 확인:
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">print</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">dtypes</span><span class="p">)</span>
+</code></pre></div>    </div>
+  </li>
+  <li>문자열을 실수형으로 변환:
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">속성명</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">속성명</span><span class="sh">'</span><span class="p">].</span><span class="nf">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+</code></pre></div>    </div>
+  </li>
+</ol>
+
+<p>예시:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+
+<span class="c1"># 예제 데이터프레임 생성
+</span>
+<span class="sb">``</span><span class="err">`</span><span class="n">python</span>
+<span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="sh">'</span><span class="s">gid</span><span class="sh">'</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>
+    <span class="sh">'</span><span class="s">lbl</span><span class="sh">'</span><span class="p">:</span> <span class="p">[</span><span class="sh">'</span><span class="s">11290110</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">11140101</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">11110152</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">11410111</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">11650109</span><span class="sh">'</span><span class="p">],</span>
+    <span class="sh">'</span><span class="s">val</span><span class="sh">'</span><span class="p">:</span> <span class="p">[</span><span class="sh">'</span><span class="s">2435.00</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">8.00</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">54.00</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">55081.00</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">7877.00</span><span class="sh">'</span><span class="p">]</span>
+<span class="p">}</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+<span class="c1"># 속성 타입 확인
+</span><span class="nf">print</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">dtypes</span><span class="p">)</span>
+
+<span class="c1"># 문자열을 실수형으로 변환
+</span><span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">val</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">val</span><span class="sh">'</span><span class="p">].</span><span class="nf">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+
+<span class="c1"># 변환 후 속성 타입 확인
+</span><span class="nf">print</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">dtypes</span><span class="p">)</span>
+
+<span class="nf">print</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>만약에 null값이 포함되어 있으면, null값을 0으로 변환하거나 null값을 제거해야 한다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># null값을 0으로 변환
+</span><span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">val</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">val</span><span class="sh">'</span><span class="p">].</span><span class="nf">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># null값을 제거
+</span><span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">dropna</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>하지만 그래도 오류가 나는 경우에는 다음과 같은 방법을 사용한다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+
+<span class="c1"># 먼저 null 값 확인
+</span><span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">변환 전 null 값 개수:</span><span class="sh">"</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="nf">isnull</span><span class="p">().</span><span class="nf">sum</span><span class="p">())</span>
+
+<span class="c1"># 문자열을 숫자로 변환 시도 (변환 불가능한 값은 NaN으로 처리)
+</span><span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">gid</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">to_numeric</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">gid</span><span class="sh">'</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="sh">'</span><span class="s">coerce</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">lbl</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">to_numeric</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">lbl</span><span class="sh">'</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="sh">'</span><span class="s">coerce</span><span class="sh">'</span><span class="p">)</span>
+
+<span class="c1"># 변환 후 null 값 확인
+</span><span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="se">\n</span><span class="s">변환 후 null 값 개수:</span><span class="sh">"</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="nf">isnull</span><span class="p">().</span><span class="nf">sum</span><span class="p">())</span>
+
+<span class="c1"># 방법 1: null 값을 0으로 치환
+</span><span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">gid</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">gid</span><span class="sh">'</span><span class="p">].</span><span class="nf">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">lbl</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">lbl</span><span class="sh">'</span><span class="p">].</span><span class="nf">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># 또는
+# 방법 2: null 값을 평균값으로 치환
+# df['gid'] = df['gid'].fillna(df['gid'].mean())
+# df['lbl'] = df['lbl'].fillna(df['lbl'].mean())
+</span>
+<span class="c1"># 최종 확인
+</span><span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="se">\n</span><span class="s">치환 후 데이터 타입:</span><span class="sh">"</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">dtypes</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="se">\n</span><span class="s">남은 null 값 개수:</span><span class="sh">"</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="nf">isnull</span><span class="p">().</span><span class="nf">sum</span><span class="p">())</span>
+</code></pre></div></div>
+
+<p>따라서 지금까지 모든 코드를 합치면 다음과 같다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 경로 설정
+</span><span class="n">shp_path</span> <span class="o">=</span> <span class="sa">r</span><span class="sh">"</span><span class="s">C:\Users\BaekInchan\Downloads\(B100)국토통계_인구정보-총 인구 수(전체)-읍면동경계_서울특별시_202410\nlsp_003001001.shp</span><span class="sh">"</span>
+<span class="n">layer_name</span> <span class="o">=</span> <span class="sh">'</span><span class="s">행정동별인구</span><span class="sh">'</span>
+
+<span class="c1"># 이미 해당 이름의 레이어가 있는지 확인
+</span><span class="n">layer_exists</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="n">layers</span> <span class="o">=</span> <span class="n">QgsProject</span><span class="p">.</span><span class="nf">instance</span><span class="p">().</span><span class="nf">mapLayersByName</span><span class="p">(</span><span class="n">layer_name</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">layers</span><span class="p">:</span>
+    <span class="n">layer_exists</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="c1"># 레이어가 없는 경우에만 추가
+</span><span class="k">if</span> <span class="ow">not</span> <span class="n">layer_exists</span><span class="p">:</span>
+    <span class="n">iface</span><span class="p">.</span><span class="nf">addVectorLayer</span><span class="p">(</span><span class="n">shp_path</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">,</span> <span class="sh">'</span><span class="s">ogr</span><span class="sh">'</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">레이어 </span><span class="sh">'</span><span class="si">{</span><span class="n">layer_name</span><span class="si">}</span><span class="sh">'</span><span class="s">이(가) 이미 존재합니다.</span><span class="sh">"</span><span class="p">)</span>
+
+<span class="c1">#레이어 필드 확인
+</span><span class="n">vlayer</span> <span class="o">=</span> <span class="nc">QgsVectorLayer</span><span class="p">(</span><span class="n">shp_path</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">,</span> <span class="sh">'</span><span class="s">ogr</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">fields</span> <span class="o">=</span> <span class="n">vlayer</span><span class="p">.</span><span class="nf">fields</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+    <span class="n">field_name</span> <span class="o">=</span> <span class="n">field</span><span class="p">.</span><span class="nf">name</span><span class="p">()</span>
+    <span class="n">field_type</span> <span class="o">=</span> <span class="n">field</span><span class="p">.</span><span class="nf">typeName</span><span class="p">()</span>
+    <span class="nf">print</span><span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">field_type</span><span class="p">)</span>
+    
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">([</span><span class="n">feat</span><span class="p">.</span><span class="nf">attributes</span><span class="p">()</span> <span class="k">for</span> <span class="n">feat</span> <span class="ow">in</span> <span class="n">vlayer</span><span class="p">.</span><span class="nf">getFeatures</span><span class="p">()],</span>
+                  <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">field</span><span class="p">.</span><span class="nf">name</span><span class="p">()</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">vlayer</span><span class="p">.</span><span class="nf">fields</span><span class="p">()])</span>
+
+<span class="c1">#print([feat.attributes() for feat in vlayer.getFeatures()])
+</span><span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">gid</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">to_numeric</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">gid</span><span class="sh">'</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="sh">'</span><span class="s">coerce</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">lbl</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">to_numeric</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">lbl</span><span class="sh">'</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="sh">'</span><span class="s">coerce</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">val</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">to_numeric</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">val</span><span class="sh">'</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="sh">'</span><span class="s">coerce</span><span class="sh">'</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">dtypes</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">val</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">val</span><span class="sh">'</span><span class="p">].</span><span class="nf">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">lbl</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">lbl</span><span class="sh">'</span><span class="p">].</span><span class="nf">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="nf">isna</span><span class="p">().</span><span class="nf">sum</span><span class="p">())</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+</code></pre></div></div>
+<h2 id="qgis-push-pull-방법">qgis push, pull 방법</h2>
+<p>shp파일을 불러오고, 엑셀이나 csv파일로 만들수 있지 않을까? 그 반대로 엑셀이나 csv파일을 불러와서 shp파일로 만들수 있지 않을까? 이때, qgis에서는 push, pull 방법을 사용한다.</p>
+
+<p>정식적인 명칭은 아니고, git에서 사용하는 push, pull 방법을 사용하여 데이터를 불러오고, 저장하는 방법이다. 이 방법을 비슷하게 가지고와서 만들어보았다.</p>
+
+<p>코드는 다음과 같다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">import</span> <span class="n">os</span>
+<span class="kn">from</span> <span class="n">functools</span> <span class="kn">import</span> <span class="n">singledispatch</span>
+<span class="kn">from</span> <span class="n">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">from</span> <span class="n">qgis.core</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">QgsProject</span><span class="p">,</span> <span class="n">QgsVectorLayer</span><span class="p">,</span> <span class="n">QgsField</span><span class="p">,</span> <span class="n">QgsFeature</span><span class="p">,</span> 
+    <span class="n">QgsGeometry</span><span class="p">,</span> <span class="n">QgsCoordinateReferenceSystem</span><span class="p">,</span> <span class="n">QgsVectorFileWriter</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="n">qgis.PyQt.QtCore</span> <span class="kn">import</span> <span class="n">QVariant</span>
+
+
+
+<span class="c1"># 모든 사용자에게 적용 가능한 경로 설정
+</span><span class="n">base_path</span> <span class="o">=</span> <span class="n">os</span><span class="p">.</span><span class="n">path</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="n">os</span><span class="p">.</span><span class="n">path</span><span class="p">.</span><span class="nf">expanduser</span><span class="p">(</span><span class="sh">"</span><span class="s">~</span><span class="sh">"</span><span class="p">),</span> <span class="sh">"</span><span class="s">AppData</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Roaming</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">QGIS</span><span class="sh">"</span><span class="p">)</span>
+
+<span class="c1"># 폴더가 없으면 자동 생성
+</span><span class="n">os</span><span class="p">.</span><span class="nf">makedirs</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="c1"># Default coordinate reference system
+</span><span class="n">GLOBAL_CRS</span> <span class="o">=</span> <span class="sh">"</span><span class="s">EPSG:5179</span><span class="sh">"</span>  <span class="c1"># Korean coordinate system
+</span>
+<span class="nd">@singledispatch</span>
+<span class="k">def</span> <span class="nf">push</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="sh">"""</span><span class="s">Base function for pushing data to QGIS layers.</span><span class="sh">"""</span>
+    <span class="k">raise</span> <span class="nc">NotImplementedError</span><span class="p">(</span><span class="sh">"</span><span class="s">지원하지 않는 데이터 타입입니다.</span><span class="sh">"</span><span class="p">)</span>
+
+
+<span class="nd">@push.register</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="n">shp_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">QgsVectorLayer</span><span class="p">]:</span>
+    <span class="sh">"""</span><span class="s">
+    Register a shapefile as a QGIS layer.
+    
+    Args:
+        shp_path: Path to the shapefile
+        layer_name: Name for the QGIS layer
+        
+    Returns:
+        QgsVectorLayer or None: The created/existing layer or None on failure
+    </span><span class="sh">"""</span>
+    <span class="c1"># Check if layer already exists
+</span>    <span class="n">existing</span> <span class="o">=</span> <span class="n">QgsProject</span><span class="p">.</span><span class="nf">instance</span><span class="p">().</span><span class="nf">mapLayersByName</span><span class="p">(</span><span class="n">layer_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">existing</span><span class="p">:</span>
+        <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">레이어 </span><span class="sh">'</span><span class="si">{</span><span class="n">layer_name</span><span class="si">}</span><span class="sh">'</span><span class="s"> 이미 존재 (재등록하지 않음)</span><span class="sh">"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">existing</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        
+    <span class="c1"># Create new layer from shapefile
+</span>    <span class="n">layer</span> <span class="o">=</span> <span class="nc">QgsVectorLayer</span><span class="p">(</span><span class="n">shp_path</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">,</span> <span class="sh">'</span><span class="s">ogr</span><span class="sh">'</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">layer</span><span class="p">.</span><span class="nf">isValid</span><span class="p">():</span>
+        <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">레이어 등록 실패: 경로 확인</span><span class="sh">"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">None</span>
+        
+    <span class="c1"># Set coordinate system and add to project
+</span>    <span class="n">layer</span><span class="p">.</span><span class="nf">setCrs</span><span class="p">(</span><span class="nc">QgsCoordinateReferenceSystem</span><span class="p">(</span><span class="n">GLOBAL_CRS</span><span class="p">))</span>
+    <span class="n">QgsProject</span><span class="p">.</span><span class="nf">instance</span><span class="p">().</span><span class="nf">addMapLayer</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Shapefile 레이어 </span><span class="sh">'</span><span class="si">{</span><span class="n">layer_name</span><span class="si">}</span><span class="sh">'</span><span class="s"> 등록 완료</span><span class="sh">"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">layer</span>
+
+
+<span class="nd">@push.register</span><span class="p">(</span><span class="n">pd</span><span class="p">.</span><span class="n">DataFrame</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">_</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="p">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">QgsVectorLayer</span><span class="p">]:</span>
+    <span class="sh">"""</span><span class="s">
+    Register a pandas DataFrame as a QGIS layer with geometry support.
+    If geometry column (WKT) exists, saves as shapefile, otherwise as CSV.
+    
+    Args:
+        df: DataFrame containing data and optional WKT geometry column
+        layer_name: Name for the QGIS layer
+        
+    Returns:
+        QgsVectorLayer or None: The created layer or None on failure
+    </span><span class="sh">"""</span>
+    <span class="c1"># Check if layer already exists
+</span>    <span class="n">existing</span> <span class="o">=</span> <span class="n">QgsProject</span><span class="p">.</span><span class="nf">instance</span><span class="p">().</span><span class="nf">mapLayersByName</span><span class="p">(</span><span class="n">layer_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">existing</span><span class="p">:</span>
+        <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">레이어 </span><span class="sh">'</span><span class="si">{</span><span class="n">layer_name</span><span class="si">}</span><span class="sh">'</span><span class="s"> 이미 존재 (재등록하지 않음)</span><span class="sh">"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">existing</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    
+    <span class="c1"># Detect geometry column and type
+</span>    <span class="n">geom_col</span> <span class="o">=</span> <span class="sh">'</span><span class="s">WKT</span><span class="sh">'</span> <span class="k">if</span> <span class="sh">'</span><span class="s">WKT</span><span class="sh">'</span> <span class="ow">in</span> <span class="n">df</span><span class="p">.</span><span class="n">columns</span> <span class="k">else</span> <span class="bp">None</span>
+    <span class="n">geometry_type</span> <span class="o">=</span> <span class="sh">"</span><span class="s">None</span><span class="sh">"</span>
+    
+    <span class="k">if</span> <span class="n">geom_col</span><span class="p">:</span>
+        <span class="c1"># Get first valid geometry to determine type
+</span>        <span class="n">valid_geoms</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="n">geom_col</span><span class="p">].</span><span class="nf">notnull</span><span class="p">(),</span> <span class="n">geom_col</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">valid_geoms</span><span class="p">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="n">sample_geom</span> <span class="o">=</span> <span class="n">QgsGeometry</span><span class="p">.</span><span class="nf">fromWkt</span><span class="p">(</span><span class="n">valid_geoms</span><span class="p">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">geometry_type</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="mi">0</span><span class="p">:</span> <span class="sh">"</span><span class="s">Point</span><span class="sh">"</span><span class="p">,</span>
+                <span class="mi">1</span><span class="p">:</span> <span class="sh">"</span><span class="s">LineString</span><span class="sh">"</span><span class="p">,</span>               <span class="mi">2</span><span class="p">:</span> <span class="sh">"</span><span class="s">Polygon</span><span class="sh">"</span>
+            <span class="p">}.</span><span class="nf">get</span><span class="p">(</span><span class="n">sample_geom</span><span class="p">.</span><span class="nf">type</span><span class="p">(),</span> <span class="sh">"</span><span class="s">Unknown</span><span class="sh">"</span><span class="p">)</span>
+    
+    <span class="c1"># 공간 데이터가 있는 경우 Shapefile로 저장
+</span>    <span class="k">if</span> <span class="n">geom_col</span> <span class="ow">and</span> <span class="n">geometry_type</span> <span class="o">!=</span> <span class="sh">"</span><span class="s">None</span><span class="sh">"</span> <span class="ow">and</span> <span class="n">geometry_type</span> <span class="o">!=</span> <span class="sh">"</span><span class="s">Unknown</span><span class="sh">"</span><span class="p">:</span>
+        <span class="c1"># Create memory layer with appropriate geometry type
+</span>        <span class="n">uri</span> <span class="o">=</span> <span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">geometry_type</span><span class="si">}</span><span class="s">?crs=</span><span class="si">{</span><span class="n">GLOBAL_CRS</span><span class="si">}</span><span class="sh">"</span>
+        <span class="n">mem_layer</span> <span class="o">=</span> <span class="nc">QgsVectorLayer</span><span class="p">(</span><span class="n">uri</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">,</span> <span class="sh">"</span><span class="s">memory</span><span class="sh">"</span><span class="p">)</span>
+        <span class="n">mem_layer</span><span class="p">.</span><span class="nf">setCrs</span><span class="p">(</span><span class="nc">QgsCoordinateReferenceSystem</span><span class="p">(</span><span class="n">GLOBAL_CRS</span><span class="p">))</span>
+        <span class="n">provider</span> <span class="o">=</span> <span class="n">mem_layer</span><span class="p">.</span><span class="nf">dataProvider</span><span class="p">()</span>
+
+        <span class="c1"># Define fields (excluding geometry column)
+</span>        <span class="n">fields</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="p">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">col</span> <span class="o">!=</span> <span class="n">geom_col</span><span class="p">:</span>
+                <span class="n">field_type</span> <span class="o">=</span> <span class="n">QVariant</span><span class="p">.</span><span class="n">Double</span> <span class="k">if</span> <span class="n">pd</span><span class="p">.</span><span class="n">api</span><span class="p">.</span><span class="n">types</span><span class="p">.</span><span class="nf">is_numeric_dtype</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">])</span> <span class="k">else</span> <span class="n">QVariant</span><span class="p">.</span><span class="n">String</span>
+                <span class="n">fields</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="nc">QgsField</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="n">field_type</span><span class="p">))</span>
+
+        <span class="n">provider</span><span class="p">.</span><span class="nf">addAttributes</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span>
+        <span class="n">mem_layer</span><span class="p">.</span><span class="nf">updateFields</span><span class="p">()</span>
+
+        <span class="c1"># Prepare features in batch (more efficient than one by one)
+</span>        <span class="n">features</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">df_fields</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="p">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">col</span> <span class="o">!=</span> <span class="n">geom_col</span><span class="p">]</span>
+
+        <span class="c1"># Pre-compute indices for performance
+</span>        <span class="n">has_geom_mask</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">geom_col</span><span class="p">].</span><span class="nf">notnull</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="nf">enumerate</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">df_fields</span><span class="p">].</span><span class="n">values</span><span class="p">):</span>
+            <span class="n">feat</span> <span class="o">=</span> <span class="nc">QgsFeature</span><span class="p">()</span>
+            <span class="n">feat</span><span class="p">.</span><span class="nf">setFields</span><span class="p">(</span><span class="n">mem_layer</span><span class="p">.</span><span class="nf">fields</span><span class="p">())</span>
+            <span class="n">feat</span><span class="p">.</span><span class="nf">setAttributes</span><span class="p">(</span><span class="n">row</span><span class="p">.</span><span class="nf">tolist</span><span class="p">())</span>
+
+            <span class="c1"># Set geometry if available and valid
+</span>            <span class="k">if</span> <span class="n">has_geom_mask</span><span class="p">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                <span class="n">wkt</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">geom_col</span><span class="p">].</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">feat</span><span class="p">.</span><span class="nf">setGeometry</span><span class="p">(</span><span class="n">QgsGeometry</span><span class="p">.</span><span class="nf">fromWkt</span><span class="p">(</span><span class="n">wkt</span><span class="p">))</span>
+
+            <span class="n">features</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">feat</span><span class="p">)</span>
+
+        <span class="c1"># Add features in batch
+</span>        <span class="n">provider</span><span class="p">.</span><span class="nf">addFeatures</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+        <span class="n">mem_layer</span><span class="p">.</span><span class="nf">updateExtents</span><span class="p">()</span>
+
+        <span class="n">save_path</span> <span class="o">=</span> <span class="n">os</span><span class="p">.</span><span class="n">path</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">layer_name</span><span class="si">}</span><span class="s">.shp</span><span class="sh">"</span><span class="p">)</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="n">QgsVectorFileWriter</span><span class="p">.</span><span class="nf">writeAsVectorFormat</span><span class="p">(</span>
+            <span class="n">mem_layer</span><span class="p">,</span> <span class="n">save_path</span><span class="p">,</span> <span class="sh">"</span><span class="s">UTF-8</span><span class="sh">"</span><span class="p">,</span> <span class="n">mem_layer</span><span class="p">.</span><span class="nf">crs</span><span class="p">(),</span> <span class="sh">"</span><span class="s">ESRI Shapefile</span><span class="sh">"</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">error</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">QgsVectorFileWriter</span><span class="p">.</span><span class="n">NoError</span><span class="p">:</span>
+            <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">파일 저장 중 오류 발생:</span><span class="sh">"</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">레이어가 </span><span class="sh">'</span><span class="si">{</span><span class="n">save_path</span><span class="si">}</span><span class="sh">'</span><span class="s">에 저장되었습니다.</span><span class="sh">"</span><span class="p">)</span>
+
+        <span class="c1"># 저장된 파일을 다시 불러오기
+</span>        <span class="n">saved_layer</span> <span class="o">=</span> <span class="nc">QgsVectorLayer</span><span class="p">(</span><span class="n">save_path</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">,</span> <span class="sh">"</span><span class="s">ogr</span><span class="sh">"</span><span class="p">)</span>
+        <span class="n">QgsProject</span><span class="p">.</span><span class="nf">instance</span><span class="p">().</span><span class="nf">addMapLayer</span><span class="p">(</span><span class="n">saved_layer</span><span class="p">)</span>
+        <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">레이어 </span><span class="sh">'</span><span class="si">{</span><span class="n">layer_name</span><span class="si">}</span><span class="sh">'</span><span class="s">이(가) 공간 데이터로 등록됨. 피처 수: </span><span class="si">{</span><span class="n">saved_layer</span><span class="p">.</span><span class="nf">featureCount</span><span class="p">()</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">saved_layer</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># 공간 데이터가 없는 경우 CSV로 저장
+</span>        <span class="n">csv_path</span> <span class="o">=</span> <span class="n">os</span><span class="p">.</span><span class="n">path</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">layer_name</span><span class="si">}</span><span class="s">.csv</span><span class="sh">"</span><span class="p">)</span>
+        <span class="n">df</span><span class="p">.</span><span class="nf">to_csv</span><span class="p">(</span><span class="n">csv_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="sh">'</span><span class="s">utf-8</span><span class="sh">'</span><span class="p">)</span>
+        <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">데이터가 </span><span class="sh">'</span><span class="si">{</span><span class="n">csv_path</span><span class="si">}</span><span class="sh">'</span><span class="s">에 CSV로 저장되었습니다.</span><span class="sh">"</span><span class="p">)</span>
+
+        <span class="c1"># 경로 슬래시 방향 통일 (Windows 백슬래시 문제 해결)
+</span>        <span class="n">csv_path_uri</span> <span class="o">=</span> <span class="n">csv_path</span><span class="p">.</span><span class="nf">replace</span><span class="p">(</span><span class="sh">'</span><span class="se">\\</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">/</span><span class="sh">'</span><span class="p">)</span>
+
+        <span class="c1"># CSV 파일을 레이어로 불러오기 - URI 형식 수정
+</span>        <span class="n">uri</span> <span class="o">=</span> <span class="sa">f</span><span class="sh">"</span><span class="s">file:///</span><span class="si">{</span><span class="n">csv_path_uri</span><span class="si">}</span><span class="s">?delimiter=,&amp;encoding=UTF-8&amp;type=csv&amp;detectTypes=yes</span><span class="sh">"</span>
+
+        <span class="c1"># 디버깅 정보 출력
+</span>        <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">CSV 레이어 URI: </span><span class="si">{</span><span class="n">uri</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+
+        <span class="n">csv_layer</span> <span class="o">=</span> <span class="nc">QgsVectorLayer</span><span class="p">(</span><span class="n">uri</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">,</span> <span class="sh">"</span><span class="s">delimitedtext</span><span class="sh">"</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">csv_layer</span><span class="p">.</span><span class="nf">isValid</span><span class="p">():</span>
+            <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">CSV 레이어를 생성할 수 없습니다. 오류 메시지:</span><span class="sh">"</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="nf">print</span><span class="p">(</span><span class="n">csv_layer</span><span class="p">.</span><span class="nf">error</span><span class="p">().</span><span class="nf">summary</span><span class="p">())</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">상세 오류 정보를 가져올 수 없습니다.</span><span class="sh">"</span><span class="p">)</span>
+                
+            <span class="c1"># 대안: 테이블 레이어로 직접 생성 시도
+</span>            <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">대안 방법으로 데이터프레임을 메모리 테이블로 직접 등록합니다.</span><span class="sh">"</span><span class="p">)</span>
+            <span class="n">uri</span> <span class="o">=</span> <span class="sh">"</span><span class="s">none</span><span class="sh">"</span>
+            <span class="n">table_layer</span> <span class="o">=</span> <span class="nc">QgsVectorLayer</span><span class="p">(</span><span class="n">uri</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">,</span> <span class="sh">"</span><span class="s">memory</span><span class="sh">"</span><span class="p">)</span>
+            <span class="n">provider</span> <span class="o">=</span> <span class="n">table_layer</span><span class="p">.</span><span class="nf">dataProvider</span><span class="p">()</span>
+
+            <span class="c1"># 필드 정의
+</span>            <span class="n">fields</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="p">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="n">field_type</span> <span class="o">=</span> <span class="n">QVariant</span><span class="p">.</span><span class="n">Double</span> <span class="k">if</span> <span class="n">pd</span><span class="p">.</span><span class="n">api</span><span class="p">.</span><span class="n">types</span><span class="p">.</span><span class="nf">is_numeric_dtype</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">])</span> <span class="k">else</span> <span class="n">QVariant</span><span class="p">.</span><span class="n">String</span>
+                <span class="n">fields</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="nc">QgsField</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="n">field_type</span><span class="p">))</span>
+
+            <span class="n">provider</span><span class="p">.</span><span class="nf">addAttributes</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span>
+            <span class="n">table_layer</span><span class="p">.</span><span class="nf">updateFields</span><span class="p">()</span>
+
+            <span class="c1"># 데이터 추가
+</span>            <span class="n">features</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">df</span><span class="p">.</span><span class="nf">iterrows</span><span class="p">():</span>
+                <span class="n">feat</span> <span class="o">=</span> <span class="nc">QgsFeature</span><span class="p">()</span>
+                <span class="n">feat</span><span class="p">.</span><span class="nf">setFields</span><span class="p">(</span><span class="n">table_layer</span><span class="p">.</span><span class="nf">fields</span><span class="p">())</span>
+                <span class="n">feat</span><span class="p">.</span><span class="nf">setAttributes</span><span class="p">(</span><span class="n">row</span><span class="p">.</span><span class="nf">tolist</span><span class="p">())</span>
+                <span class="n">features</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">feat</span><span class="p">)</span>
+
+            <span class="n">provider</span><span class="p">.</span><span class="nf">addFeatures</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+            <span class="n">QgsProject</span><span class="p">.</span><span class="nf">instance</span><span class="p">().</span><span class="nf">addMapLayer</span><span class="p">(</span><span class="n">table_layer</span><span class="p">)</span>
+            <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">레이어 </span><span class="sh">'</span><span class="si">{</span><span class="n">layer_name</span><span class="si">}</span><span class="sh">'</span><span class="s">이(가) 메모리 테이블로 등록됨. 행 수: </span><span class="si">{</span><span class="n">table_layer</span><span class="p">.</span><span class="nf">featureCount</span><span class="p">()</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">table_layer</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">QgsProject</span><span class="p">.</span><span class="nf">instance</span><span class="p">().</span><span class="nf">addMapLayer</span><span class="p">(</span><span class="n">csv_layer</span><span class="p">)</span>
+            <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">레이어 </span><span class="sh">'</span><span class="si">{</span><span class="n">layer_name</span><span class="si">}</span><span class="sh">'</span><span class="s">이(가) CSV 테이블 데이터로 등록됨. 행 수: </span><span class="si">{</span><span class="n">csv_layer</span><span class="p">.</span><span class="nf">featureCount</span><span class="p">()</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">csv_layer</span>
+
+<span class="k">def</span> <span class="nf">pull</span><span class="p">(</span><span class="n">layer_name</span><span class="p">):</span>
+    <span class="n">existing</span> <span class="o">=</span> <span class="n">QgsProject</span><span class="p">.</span><span class="nf">instance</span><span class="p">().</span><span class="nf">mapLayersByName</span><span class="p">(</span><span class="n">layer_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">existing</span><span class="p">:</span>
+        <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">레이어 </span><span class="sh">'</span><span class="si">{</span><span class="n">layer_name</span><span class="si">}</span><span class="sh">'</span><span class="s">가 존재하지 않습니다.</span><span class="sh">"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">None</span>
+    <span class="n">layer</span> <span class="o">=</span> <span class="n">existing</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="n">layer</span><span class="p">.</span><span class="nf">fields</span><span class="p">()</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">필드 정보:</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s"> | </span><span class="sh">"</span><span class="p">.</span><span class="nf">join</span><span class="p">([</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">f</span><span class="p">.</span><span class="nf">name</span><span class="p">()</span><span class="si">}</span><span class="s"> (</span><span class="si">{</span><span class="n">f</span><span class="p">.</span><span class="nf">typeName</span><span class="p">()</span><span class="si">}</span><span class="s">)</span><span class="sh">"</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">]))</span>
+    
+    <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">feat</span> <span class="ow">in</span> <span class="n">layer</span><span class="p">.</span><span class="nf">getFeatures</span><span class="p">():</span>
+        <span class="n">attrs</span> <span class="o">=</span> <span class="n">feat</span><span class="p">.</span><span class="nf">attributes</span><span class="p">()</span>
+        <span class="n">wkt</span> <span class="o">=</span> <span class="n">feat</span><span class="p">.</span><span class="nf">geometry</span><span class="p">().</span><span class="nf">asWkt</span><span class="p">()</span> <span class="k">if</span> <span class="n">feat</span><span class="p">.</span><span class="nf">geometry</span><span class="p">()</span> <span class="k">else</span> <span class="bp">None</span>
+        <span class="n">attrs</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">wkt</span><span class="p">)</span>
+        <span class="n">data</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">attrs</span><span class="p">)</span>
+    
+    <span class="n">col_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span><span class="p">.</span><span class="nf">name</span><span class="p">()</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="sh">'</span><span class="s">WKT</span><span class="sh">'</span><span class="p">]</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">col_names</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">df</span>
+
+<span class="k">def</span> <span class="nf">change_color</span><span class="p">(</span><span class="n">layer_name</span><span class="p">,</span> <span class="n">color</span><span class="p">):</span>
+    <span class="sh">"""</span><span class="s">
+    레이어 이름을 받아 QGIS 프로젝트에서 해당 레이어를 찾아 심볼 색상을 변경합니다.
+    레이어 패널의 심볼 캐시도 함께 업데이트합니다.
+    
+    Args:
+        layer_name (str): 변경할 레이어의 이름.
+        color (str or QColor): 새 색상. 예: </span><span class="sh">"</span><span class="s">#FF0000</span><span class="sh">"</span><span class="s"> 또는 QColor 객체.
+    </span><span class="sh">"""</span>
+    <span class="kn">from</span> <span class="n">qgis.PyQt.QtGui</span> <span class="kn">import</span> <span class="n">QColor</span>
+    <span class="kn">from</span> <span class="n">qgis.core</span> <span class="kn">import</span> <span class="n">QgsProject</span>
+    <span class="kn">from</span> <span class="n">qgis.utils</span> <span class="kn">import</span> <span class="n">iface</span>
+    
+    <span class="c1"># color가 문자열이면 QColor로 변환
+</span>    <span class="k">if</span> <span class="nf">isinstance</span><span class="p">(</span><span class="n">color</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">color</span> <span class="o">=</span> <span class="nc">QColor</span><span class="p">(</span><span class="n">color</span><span class="p">)</span>
+    
+    <span class="c1"># QgsProject에서 레이어 검색
+</span>    <span class="n">layers</span> <span class="o">=</span> <span class="n">QgsProject</span><span class="p">.</span><span class="nf">instance</span><span class="p">().</span><span class="nf">mapLayersByName</span><span class="p">(</span><span class="n">layer_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">layers</span><span class="p">:</span>
+        <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">레이어 </span><span class="sh">'</span><span class="si">{</span><span class="n">layer_name</span><span class="si">}</span><span class="sh">'</span><span class="s">을(를) 찾을 수 없습니다.</span><span class="sh">"</span><span class="p">)</span>
+        <span class="k">return</span>
+    <span class="n">layer</span> <span class="o">=</span> <span class="n">layers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    
+    <span class="n">renderer</span> <span class="o">=</span> <span class="n">layer</span><span class="p">.</span><span class="nf">renderer</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">renderer</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">레이어에 렌더러가 없습니다.</span><span class="sh">"</span><span class="p">)</span>
+        <span class="k">return</span>
+    
+    <span class="n">symbol</span> <span class="o">=</span> <span class="n">renderer</span><span class="p">.</span><span class="nf">symbol</span><span class="p">()</span>
+    <span class="n">symbol</span><span class="p">.</span><span class="nf">setColor</span><span class="p">(</span><span class="n">color</span><span class="p">)</span>
+    
+    <span class="c1"># 레이어 다시 그리기
+</span>    <span class="n">layer</span><span class="p">.</span><span class="nf">triggerRepaint</span><span class="p">()</span>
+    
+    <span class="c1"># 레이어 패널의 심볼 캐시 업데이트
+</span>    <span class="n">iface</span><span class="p">.</span><span class="nf">layerTreeView</span><span class="p">().</span><span class="nf">refreshLayerSymbology</span><span class="p">(</span><span class="n">layer</span><span class="p">.</span><span class="nf">id</span><span class="p">())</span>
+    
+    <span class="c1"># 레이어 범례 업데이트
+</span>    <span class="k">if</span> <span class="nf">hasattr</span><span class="p">(</span><span class="n">iface</span><span class="p">,</span> <span class="sh">'</span><span class="s">legendInterface</span><span class="sh">'</span><span class="p">):</span>
+        <span class="n">iface</span><span class="p">.</span><span class="nf">legendInterface</span><span class="p">().</span><span class="nf">refreshLayerSymbology</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span>
+    
+    <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">레이어 </span><span class="sh">'</span><span class="si">{</span><span class="n">layer</span><span class="p">.</span><span class="nf">name</span><span class="p">()</span><span class="si">}</span><span class="sh">'</span><span class="s">의 색상이 </span><span class="si">{</span><span class="n">color</span><span class="p">.</span><span class="nf">name</span><span class="p">()</span><span class="si">}</span><span class="s">(으)로 변경되었습니다.</span><span class="sh">"</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="n">layer_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="sh">"""</span><span class="s">
+    QGIS 프로젝트에서 지정한 이름의 레이어를 모두 제거합니다.
+    
+    Args:
+        layer_name (str): 제거할 레이어의 이름.
+    </span><span class="sh">"""</span>
+    <span class="n">layers</span> <span class="o">=</span> <span class="n">QgsProject</span><span class="p">.</span><span class="nf">instance</span><span class="p">().</span><span class="nf">mapLayersByName</span><span class="p">(</span><span class="n">layer_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">layers</span><span class="p">:</span>
+        <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">레이어 </span><span class="sh">'</span><span class="si">{</span><span class="n">layer_name</span><span class="si">}</span><span class="sh">'</span><span class="s">가 존재하지 않습니다.</span><span class="sh">"</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">:</span>
+        <span class="n">QgsProject</span><span class="p">.</span><span class="nf">instance</span><span class="p">().</span><span class="nf">removeMapLayer</span><span class="p">(</span><span class="n">layer</span><span class="p">.</span><span class="nf">id</span><span class="p">())</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">레이어 </span><span class="sh">'</span><span class="si">{</span><span class="n">layer_name</span><span class="si">}</span><span class="sh">'</span><span class="s">가 제거되었습니다.</span><span class="sh">"</span><span class="p">)</span>
+
+</code></pre></div></div>
+
+<p>사용하는 방법은 다음과 같다.</p>
+
+<p>C:\Users\XXXXXXXXXX<br />
+AppData\Roaming\QGIS<br />
+QGIS3\profiles\default<br />
+python\plugins</p>
+
+<p>위의 경로에 코드를 저장하고, qgis를 실행하면, push, pull, remove, change_color 함수를 사용할 수 있다.</p>
+
+<p>필자는 본인의 이름을 따서 inchan.py로 저장하였다.</p>
+
+<p>그럼 qgis 파이썬 플로그인에서</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">inchan</span>
+<span class="c1">#inchan.GLOBAL_CRS = "EPSG:5179"(기본값) -&gt; 한국 좌표계(필요에 따라 변경 가능)
+#inchan.push("data/TL_SCCO_SIG.shp", "layer_name")
+#inchan.push(df, "layer_name")
+#inchan.pull("layer_name")
+#inchan.remove("layer_name")
+#inchan.change_color("layer_name", "#FF0000")
+</span></code></pre></div></div>
+<p>push 함수는 shp파일을 불러오거나, 데이터프레임을 레이어로 만들어준다.
+shp파일과 엑셀, csv파일의 차이점은 wkt라는 컬럼이 있는지 없는지이다. wkt라는 컬럼이 있으면 shp파일로 저장하고, 없으면 csv파일로 저장한다.</p>
+
+<p>pull 함수는 레이어의 정보를 데이터프레임으로 변환한다.
+판다스 데이터프레임으로 변환하면, 데이터를 분석하거나, 시각화할 수 있기 때문이다. 즉, shp파일의 정보를 판다스 데이터 프레임으로 변환하여 데이터를 정제, 분석, 조인등을 쉽게 하여 다시 푸쉬하면 일을 정말 쉽게 할 수 있다.</p>
+
+<p>remove 함수는 레이어를 제거한다.</p>
+
+<p>change_color 함수는 레이어의 색상을 변경한다.</p>
+
+<p>이렇게 사용하면 된다.</p>
+
+<h2 id="행정동-코드를-행정동-이름-변환">행정동 코드를 행정동 이름 변환</h2>
+
+<p>gid는 행정동 코드로 되어있다. 우리가 사용하기에는 코드번호보다는 문자열로된 행정동 이름이 더 편리하다. 따라서 gid를 행정동 이름으로 변환해야 한다. 이때, 행정동 코드와 행정동 이름이 매칭된 데이터를 사용하면 된다.</p>
+
+						</div><!-- /.content -->
+					</div><!-- /.col -->
+					<div class="col-md-4 col-md-offset-1">
+						<div class="sections-list-wrapper">
+							<div class="sections-list js-sections js-affix js-scrollspy hidden-xs hidden-sm"></div><!-- /.sections-list -->
+						</div>
+					</div><!-- /.col -->
+				</div><!-- /.row -->
+			</div><!-- /.container -->
+		</div><!-- /.section -->
+		
+			<div class="section section--grey">
+				<div class="container">
+					<div class="row">
+						<div class="col-md-7">
+							<div class="comments-area">
+  <h3 class="comments-title">Comments</h3>
+  <div id="comments-list" class="comments-list">
+    <!-- Comments will be populated here -->
+  </div>
+  
+  <div class="comment-respond">
+    <h4 class="comment-reply-title">Leave a Comment</h4>
+    <form id="comment-form" class="comment-form">
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" required class="form-control">
+      </div>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required class="form-control">
+      </div>
+      <div class="form-group">
+        <label for="comment">Comment</label>
+        <textarea id="comment" name="comment" required class="form-control" rows="5"></textarea>
+      </div>
+      <div class="form-group admin-field">
+        <label for="password">Admin Password</label>
+        <input type="password" id="password" name="password" class="form-control" placeholder="For comment moderation">
+      </div>
+      <div class="form-submit">
+        <button type="submit" class="btn btn--dark btn--rounded">Submit Comment</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // Simple storage for comments using localStorage
+    const COMMENTS_STORAGE_KEY = 'page_comments_/page/qgis/';
+    
+    // Load comments from storage
+    function loadComments() {
+      const comments = JSON.parse(localStorage.getItem(COMMENTS_STORAGE_KEY) || '[]');
+      const commentsList = document.getElementById('comments-list');
+      commentsList.innerHTML = '';
+      
+      if (comments.length === 0) {
+        commentsList.innerHTML = '<div class="no-comments">No comments yet. Be the first to comment!</div>';
+        return;
+      }
+      
+      comments.forEach((comment, index) => {
+        const commentDiv = document.createElement('div');
+        commentDiv.className = 'comment';
+        commentDiv.dataset.id = index;
+        
+        const commentHTML = `
+          <div class="comment-meta">
+            <div class="comment-author">
+              <strong>${comment.name}</strong>
+            </div>
+            <div class="comment-metadata">
+              <span>${new Date(comment.date).toLocaleDateString()} ${new Date(comment.date).toLocaleTimeString()}</span>
+            </div>
+          </div>
+          <div class="comment-content">
+            <p>${comment.text}</p>
+          </div>
+          <div class="comment-actions">
+            <button class="btn-link reply-btn" data-id="${index}">
+              <i class="icon icon--arrow-right"></i> Reply
+            </button>
+            <button class="btn-link delete-btn" data-id="${index}">
+              <i class="icon icon--cross"></i> Delete
+            </button>
+          </div>
+          <div class="reply-form-wrapper" id="reply-form-${index}" style="display: none;">
+            <form class="reply-form" data-parent="${index}">
+              <div class="form-group">
+                <label for="reply-name-${index}">Name</label>
+                <input type="text" id="reply-name-${index}" name="name" required class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="reply-comment-${index}">Reply</label>
+                <textarea id="reply-comment-${index}" name="comment" required class="form-control" rows="3"></textarea>
+              </div>
+              <div class="form-submit">
+                <button type="submit" class="btn btn--dark btn--rounded btn--sm">Submit Reply</button>
+              </div>
+            </form>
+          </div>
+          <div class="children" id="replies-${index}">
+            ${renderReplies(comment.replies || [])}
+          </div>
+        `;
+        
+        commentDiv.innerHTML = commentHTML;
+        commentsList.appendChild(commentDiv);
+      });
+      
+      // Add event listeners to reply buttons
+      document.querySelectorAll('.reply-btn').forEach(button => {
+        button.addEventListener('click', function() {
+          const commentId = this.dataset.id;
+          const replyForm = document.getElementById(`reply-form-${commentId}`);
+          replyForm.style.display = replyForm.style.display === 'none' ? 'block' : 'none';
+        });
+      });
+      
+      // Add event listeners to delete buttons
+      document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', function() {
+          const commentId = this.dataset.id;
+          const password = prompt('Enter admin password to delete:');
+          
+          if (password === 'admin123') { // Simple password for demo
+            deleteComment(parseInt(commentId));
+          } else {
+            alert('Incorrect password');
+          }
+        });
+      });
+      
+      // Add event listeners to reply forms
+      document.querySelectorAll('.reply-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          const parentId = parseInt(this.dataset.parent);
+          const replyName = this.querySelector('[name="name"]').value;
+          const replyText = this.querySelector('[name="comment"]').value;
+          
+          addReply(parentId, replyName, replyText);
+          this.reset();
+          document.getElementById(`reply-form-${parentId}`).style.display = 'none';
+        });
+      });
+    }
+    
+    // Render replies
+    function renderReplies(replies) {
+      if (!replies || replies.length === 0) return '';
+      
+      let html = '';
+      replies.forEach((reply, replyIndex) => {
+        html += `
+          <div class="comment child-comment" data-id="${replyIndex}">
+            <div class="comment-meta">
+              <div class="comment-author">
+                <strong>${reply.name}</strong>
+              </div>
+              <div class="comment-metadata">
+                <span>${new Date(reply.date).toLocaleDateString()} ${new Date(reply.date).toLocaleTimeString()}</span>
+              </div>
+            </div>
+            <div class="comment-content">
+              <p>${reply.text}</p>
+            </div>
+            <div class="comment-actions">
+              <button class="btn-link delete-reply-btn" data-parent="${replyIndex}">
+                <i class="icon icon--cross"></i> Delete
+              </button>
+            </div>
+          </div>
+        `;
+      });
+      return html;
+    }
+    
+    // Add a new comment
+    function addComment(name, email, text) {
+      const comments = JSON.parse(localStorage.getItem(COMMENTS_STORAGE_KEY) || '[]');
+      comments.push({
+        name: name,
+        email: email,
+        text: text,
+        date: new Date().toISOString(),
+        replies: []
+      });
+      localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(comments));
+      loadComments();
+    }
+    
+    // Add a reply to a comment
+    function addReply(parentId, name, text) {
+      const comments = JSON.parse(localStorage.getItem(COMMENTS_STORAGE_KEY) || '[]');
+      if (!comments[parentId].replies) {
+        comments[parentId].replies = [];
+      }
+      
+      comments[parentId].replies.push({
+        name: name,
+        text: text,
+        date: new Date().toISOString()
+      });
+      
+      localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(comments));
+      loadComments();
+    }
+    
+    // Delete a comment
+    function deleteComment(commentId) {
+      const comments = JSON.parse(localStorage.getItem(COMMENTS_STORAGE_KEY) || '[]');
+      comments.splice(commentId, 1);
+      localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(comments));
+      loadComments();
+    }
+    
+    // Event listener for comment form
+    document.getElementById('comment-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const comment = document.getElementById('comment').value;
+      
+      addComment(name, email, comment);
+      this.reset();
+    });
+    
+    // Initial load
+    document.addEventListener('DOMContentLoaded', loadComments);
+  })();
+</script>
+
+<style>
+  /* Comments styling that matches Doks theme */
+  .comments-area {
+    margin-top: 2.5rem;
+    font-family: 'Noto Sans', sans-serif;
+  }
+  
+  .comments-title {
+    margin-bottom: 1.5rem;
+    font-size: 1.75em;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .comment {
+    margin-bottom: 1.5rem;
+    padding: 1.25rem;
+    background-color: #fff;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    border-left: 4px solid #253951;
+    transition: all .2s ease;
+  }
+  
+  .comment:hover {
+    box-shadow: 0 1px 10px rgba(0,0,0,.08);
+  }
+  
+  .comment-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+  
+  .comment-author {
+    font-weight: 600;
+  }
+  
+  .comment-metadata {
+    font-size: 0.75em;
+    color: #8a8a8a;
+  }
+  
+  .comment-content {
+    line-height: 1.6;
+    color: #333;
+  }
+  
+  .comment-content p {
+    margin-bottom: 0.5rem;
+  }
+  
+  .comment-actions {
+    margin-top: 0.75rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #f5f5f5;
+  }
+  
+  .btn-link {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #253951;
+    cursor: pointer;
+    font-size: 0.85em;
+    text-decoration: none;
+    margin-right: 1rem;
+    transition: color .2s ease;
+  }
+  
+  .btn-link:hover {
+    color: #0056b3;
+    text-decoration: underline;
+  }
+  
+  .reply-form-wrapper {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+  }
+  
+  .children {
+    margin-top: 1rem;
+    margin-left: 1.5rem;
+    padding-left: 1rem;
+    border-left: 1px solid #eaeaea;
+  }
+  
+  .child-comment {
+    margin-bottom: 1rem;
+    border-left: 3px solid #6c757d;
+  }
+  
+  .no-comments {
+    padding: 1rem;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    font-style: italic;
+    color: #666;
+  }
+  
+  /* Form styling */
+  .comment-respond {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+  }
+  
+  .comment-reply-title {
+    margin-bottom: 1.25rem;
+    font-size: 1.25em;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .comment-form .form-group {
+    margin-bottom: 1rem;
+  }
+  
+  .comment-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .comment-form .form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background-color: #fff;
+    font-family: inherit;
+    font-size: 0.95em;
+    transition: border-color .2s ease;
+  }
+  
+  .comment-form .form-control:focus {
+    border-color: #253951;
+    outline: none;
+  }
+  
+  .admin-field {
+    opacity: 0.8;
+  }
+  
+  .form-submit {
+    margin-top: 1.5rem;
+  }
+  
+  /* Match the Doks buttons */
+  .btn {
+    display: inline-block;
+    font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    user-select: none;
+    padding: 0.75rem 1.25rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    border-radius: 4px;
+    transition: all .2s ease-in-out;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  
+  .btn--dark {
+    background-color: #253951;
+    border-color: #253951;
+    color: #fff;
+  }
+  
+  .btn--dark:hover {
+    background-color: #1a2a3c;
+    border-color: #1a2a3c;
+  }
+  
+  .btn--rounded {
+    border-radius: 100px;
+  }
+  
+  .btn--sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+</style>
+
+						</div><!-- /.col -->
+					</div><!-- /.row -->
+				</div><!-- /.container -->
+			</div><!-- /.section -->
+		
+		<div class="js-footer-area">
+			
+			
+				<div class="micro-nav">
+	<div class="container">
+		<div class="row">
+			<div class="col-xs-12">
+				<a href="/" class="micro-nav__back">
+					<i class="icon icon--arrow-left"></i>
+					Back to homepage
+				</a><!-- /.micro-nav__back -->
+			</div><!-- /.col -->
+		</div><!-- /.row -->
+	</div><!-- /.container -->
+</div><!-- /.micro-nav -->
+
+			
+			
+	<footer class="site-footer">
+		<div class="container">
+			<div class="row">
+				<div class="col-sm-6">
+					
+						<a href="/" class="site-footer__logo">InchanBaek Note</a>
+					
+					
+						<hr>
+						<p class="site-footer__copyright">Copyright &copy; 2017. - InchanBaek Note <br>All rights reserved.</p>
+					
+				</div><!-- /.col -->
+				
+					<div class="col-sm-6 align-right">
+						<ul class="social-list">
+							
+								<li>
+									<a href="https://www.linkedin.com/in/inchan-baek-728197265/" target="_blank" class="social-list__item social-list__item--linkedin">
+										<i class="icon icon--linkedin"></i>
+									</a>
+								</li>
+							
+								<li>
+									<a href="https://www.instagram.com/in_chanchan/" target="_blank" class="social-list__item social-list__item--instagram">
+										<i class="icon icon--instagram"></i>
+									</a>
+								</li>
+							
+								<li>
+									<a href="https://www.youtube.com/@icb6048" target="_blank" class="social-list__item social-list__item--youtube">
+										<i class="icon icon--youtube"></i>
+									</a>
+								</li>
+							
+						</ul><!-- /.social-list -->
+					</div><!-- /.col -->
+				
+			</div><!-- /.row -->
+		</div><!-- /.container -->
+	</footer><!-- /.site-footer -->
+
+
+<script src="/doks-theme/assets/js/vendor/jquery.min.js"></script>
+<script type="text/javascript" src="/doks-theme/assets/js/vendor/bootstrap/affix.min.js"></script>
+<script type="text/javascript" src="/doks-theme/assets/js/vendor/bootstrap/scrollspy.min.js"></script>
+<script type="text/javascript" src="/doks-theme/assets/js/vendor/matchHeight.min.js"></script>
+<script type="text/javascript" src="/doks-theme/assets/js/scripts.min.js"></script>
+
+
+
+
+
+		</div><!-- /.js-footer-area -->
+	</body>
+</html>

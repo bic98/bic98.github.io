@@ -1,3 +1,0 @@
-User-agent: *
-Allow: /
-Sitemap: https://bic98.github.io/sitemap.xml

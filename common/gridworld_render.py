@@ -1,6 +1,6 @@
 import numpy as np
-import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib
 
 
 class Renderer:
@@ -20,7 +20,8 @@ class Renderer:
         self.ax = fig.add_subplot(111)
         ax = self.ax
         ax.clear()
-        ax.tick_params(labelbottom=False, labelleft=False, labelright=False, labeltop=False)
+        ax.tick_params(labelbottom=False, labelleft=False,
+                       labelright=False, labeltop=False)
         ax.set_xticks(range(self.xs))
         ax.set_yticks(range(self.ys))
         ax.set_xlim(0, self.xs)
@@ -32,7 +33,6 @@ class Renderer:
 
         ys, xs = self.ys, self.xs
         ax = self.ax
-
         if v is not None:
             color_list = ['red', 'white', 'green']
             cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
@@ -66,13 +66,16 @@ class Renderer:
                     if print_value:
                         offsets = [(0.4, -0.15), (-0.15, -0.3)]
                         key = 0
-                        if v.shape[0] > 7: key = 1
+                        if v.shape[0] > 7:
+                            key = 1
                         offset = offsets[key]
-                        ax.text(x+offset[0], ys-y+offset[1], "{:12.2f}".format(v[y, x]))
+                        ax.text(x+offset[0], ys-y+offset[1],
+                                "{:12.2f}".format(v[y, x]))
 
                 if policy is not None and state != self.wall_state:
                     actions = policy[state]
-                    max_actions = [kv[0] for kv in actions.items() if kv[1] == max(actions.values())]
+                    max_actions = [kv[0] for kv in actions.items(
+                    ) if kv[1] == max(actions.values())]
 
                     arrows = ["↑", "↓", "←", "→"]
                     offsets = [(0, 0.1), (0, -0.1), (-0.1, 0), (0.1, 0)]
@@ -84,7 +87,8 @@ class Renderer:
                         ax.text(x+0.45+offset[0], ys-y-0.5+offset[1], arrow)
 
                 if state == self.wall_state:
-                    ax.add_patch(plt.Rectangle((x,ys-y-1), 1, 1, fc=(0.4, 0.4, 0.4, 1.)))
+                    ax.add_patch(plt.Rectangle(
+                        (x, ys-y-1), 1, 1, fc=(0.4, 0.4, 0.4, 1.)))
         plt.show()
 
     def render_q(self, q, show_greedy_policy=True):
@@ -99,7 +103,6 @@ class Renderer:
         qmin = -1 * qmax
         qmax = 1 if qmax < 1 else qmax
         qmin = -1 if qmin > -1 else qmin
-
 
         color_list = ['red', 'white', 'green']
         cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
@@ -134,19 +137,24 @@ class Renderer:
                         3: (0.4, 0.4),
                     }
                     if state == self.wall_state:
-                        ax.add_patch(plt.Rectangle((tx, ty), 1, 1, fc=(0.4, 0.4, 0.4, 1.)))
+                        ax.add_patch(plt.Rectangle(
+                            (tx, ty), 1, 1, fc=(0.4, 0.4, 0.4, 1.)))
                     elif state in self.goal_state:
-                        ax.add_patch(plt.Rectangle((tx, ty), 1, 1, fc=(0., 1., 0., 1.)))
+                        ax.add_patch(plt.Rectangle(
+                            (tx, ty), 1, 1, fc=(0., 1., 0., 1.)))
                     else:
 
                         tq = q[(state, action)]
-                        color_scale = 0.5 + (tq / qmax) / 2  # normalize: 0.0-1.0
+                        color_scale = 0.5 + (tq / qmax) / \
+                            2  # normalize: 0.0-1.0
 
-                        poly = plt.Polygon(action_map[action],fc=cmap(color_scale))
+                        poly = plt.Polygon(
+                            action_map[action], fc=cmap(color_scale))
                         ax.add_patch(poly)
 
-                        offset= offset_map[action]
-                        ax.text(tx+offset[0], ty+offset[1], "{:12.2f}".format(tq))
+                        offset = offset_map[action]
+                        ax.text(tx+offset[0], ty+offset[1],
+                                "{:12.2f}".format(tq))
         plt.show()
 
         if show_greedy_policy:
@@ -154,9 +162,10 @@ class Renderer:
             for y in range(self.ys):
                 for x in range(self.xs):
                     state = (y, x)
-                    qs = [q[state, action] for action in range(4)]  # action_size
+                    qs = [q[state, action]
+                          for action in range(4)]  # action_size
                     max_action = np.argmax(qs)
-                    probs = {0:0.0, 1:0.0, 2:0.0, 3:0.0}
+                    probs = {0: 0.0, 1: 0.0, 2: 0.0, 3: 0.0}
                     probs[max_action] = 1
                     policy[state] = probs
             self.render_v(None, policy)

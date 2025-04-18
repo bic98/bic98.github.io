@@ -1,17 +1,58 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    {% for page in site.pages %}
-    {% if page.url != '/404.html' and page.url != '/search.json' and page.url != '/sitemap.xml' and page.url != '/robots.txt' %}
-    <url>
-        <loc>{{ site.doks.url }}{{ page.url }}</loc>
-        {% if page.date %}
-        <lastmod>{{ page.date | date_to_xmlschema }}</lastmod>
-        {% else %}
-        <lastmod>{{ site.time | date_to_xmlschema }}</lastmod>
-        {% endif %}
-        <changefreq>monthly</changefreq>
-        <priority>0.8</priority>
-    </url>
-    {% endif %}
-    {% endfor %}
+<urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url>
+<loc>http://localhost:4000/page/404/</loc>
+</url>
+<url>
+<loc>http://localhost:4000/page/deep_learning/</loc>
+</url>
+<url>
+<loc>http://localhost:4000/page/default/</loc>
+</url>
+<url>
+<loc>http://localhost:4000/page/fullstack/</loc>
+</url>
+<url>
+<loc>http://localhost:4000/page/gsat/</loc>
+</url>
+<url>
+<loc>http://localhost:4000/</loc>
+</url>
+<url>
+<loc>http://localhost:4000/page/o3p/</loc>
+</url>
+<url>
+<loc>http://localhost:4000/page/qgis/</loc>
+</url>
+<url>
+<loc>http://localhost:4000/page/reinforce/</loc>
+</url>
+<url>
+<loc>http://localhost:4000/documentation/404/</loc>
+<lastmod>2024-11-08T17:10:41+09:00</lastmod>
+</url>
+<url>
+<loc>http://localhost:4000/documentation/configuration/</loc>
+<lastmod>2024-11-08T17:10:41+09:00</lastmod>
+</url>
+<url>
+<loc>http://localhost:4000/documentation/deployment/</loc>
+<lastmod>2024-11-08T17:10:41+09:00</lastmod>
+</url>
+<url>
+<loc>http://localhost:4000/documentation/getting-started/</loc>
+<lastmod>2025-01-08T16:21:37+09:00</lastmod>
+</url>
+<url>
+<loc>http://localhost:4000/documentation/</loc>
+<lastmod>2024-11-08T17:10:41+09:00</lastmod>
+</url>
+<url>
+<loc>http://localhost:4000/documentation/manage-content/</loc>
+<lastmod>2024-11-08T17:10:41+09:00</lastmod>
+</url>
+<url>
+<loc>http://localhost:4000/documentation/theme-updates/</loc>
+<lastmod>2024-11-08T17:10:41+09:00</lastmod>
+</url>
 </urlset>
