@@ -1211,4 +1211,195 @@ $$
 $$
 </div>
 
+What do we call the process of finding the optimal policy through repeated evaluation and greedification?
 
+Policy Iteration is an algorithm for findings the optmal policy in a MDPs by alternating between two phase. 
+
+- 1 **Policy Evaluation**: calculate the value function for the current policy by iteratively applying the Bellman expectation equation until convergence. 
+
+- 2 **Policy Improvement**: update the policy to be greedy with respect to the current value function. This means for each state, selecting the action that maximizes expected value. 
+
+
+By repeating these two steps until the policy no longer changes, we can find the optimal policy. This approach is guaranteed to converge to the optimal policy in finite MDPs. 
+
+In gridworld, since states transition uniquely, we can define greedification as follows. 
+
+<div style="overflow-x: auto;">
+$$
+\mu^*(s) = \arg \max_a \sum_{s'} P(s' | s, a) \left[ R(s, a, s') + \gamma V^*(s') \right]
+= \arg \max_a \left[ R(s, a, s') + \gamma V^*(s') \right]
+$$
+</div>
+
+```python
+def greedy_policy(V, env, gamma=0.9):
+    pi = {}
+    for state in env.states():
+        action_values = {}
+        for action in env.actions():
+            next_state = env.next_state(state, action)
+            r = env.reward(state, action, next_state)
+            action_values[action] = r + gamma * V[next_state]
+        max_action = max(action_values, key=lambda a: action_values[a])
+        action_probs = {a: 0.0 for a in env.actions()}
+        action_probs[max_action] = 1.0
+        pi[state] = action_probs
+    return pi
+
+def policy_iter(env, gamma, threshold = 1e-4, is_render = False):
+    pi = defaultdict(lambda: {0: 0.25, 1: 0.25, 2: 0.25, 3: 0.25})
+    V = defaultdict(lambda: 0.0)
+    while True:
+        V = policy_eval(pi, V, env, gamma, threshold)
+        new_pi = greedy_policy(V, env, gamma)
+        if is_render:
+            env.render_v(V, pi)
+        if new_pi == pi:
+            break
+        pi = new_pi
+    return pi, V
+
+if __name__ == "__main__":
+    env = GridWorld()
+    gamma = 0.9
+    pi = policy_iter(env, gamma, is_render=True)
+```
+
+this result is two step of the policy iteration.
+
+<div align="center">
+  <img src="/images/gridworld4.png" alt="gridworld" width="100%">
+</div>
+
+Four steps of the policy iteration are as follows.
+
+<div align="center">
+  <img src="/images/gridworld5.png" alt="gridworld" width="100%">
+</div>
+
+By implementing it this way, the value function of all states is updated multiple times. It's too slow. Is there a way to update only one state's value function and proceed?
+
+
+### Value Iteration Method
+
+#### Why Value Iteration Works
+
+Policy Iteration has two separate steps - policy evaluation (which runs until convergence) and policy improvement. This is computationally expensive because we're repeatedly evaluating the entire state space multiple times before making a single policy improvement.
+
+Value Iteration addresses this inefficiency by recognizing that:
+
+- **Similar Calculations** - Both policy evaluation and improvement use the Bellman equation structure
+- **Partial Convergence** - We can improve the policy before the value function fully converges
+- **Combined Steps** - We can directly incorporate the max operation into the value update
+
+#### How Value Iteration Works
+
+Value Iteration combines policy evaluation and improvement into a single update:
+
+$$V(s) \leftarrow \max_a \left[R(s,a) + \gamma \sum_{s'} P(s'|s,a) \cdot V(s') \right]$$
+
+This update directly finds the value of the best action for each state, effectively:
+
+- Assuming a greedy policy at each step
+- Skipping the explicit policy representation
+- Performing only one sweep through the state space per iteration
+
+#### Value Iteration Algorithm
+
+1. Initialize $$V(s) = 0$$ for all states
+2. Repeat until convergence:
+   - For each state $$s$$:
+    <div style="overflow-x: auto;">
+         $$V(s) \leftarrow \max_a \left[R(s,a) + \gamma \sum_{s'} P(s'|s,a) \cdot V(s') \right]$$
+    </div>
+
+3. Extract the final policy:
+<div style="overflow-x: auto;"> 
+   $$\pi(s) = \arg\max_a \left[R(s,a) + \gamma \sum_{s'} P(s'|s,a) \cdot V(s') \right]$$
+</div>
+
+#### Advantages Over Policy Iteration
+
+- **Computational Efficiency** - No need to perform full policy evaluation at each step
+- **Fewer Iterations** - Usually converges in fewer sweeps through the state space
+- **Simplicity** - Only need to maintain a value function, not an explicit policy
+- **Direct Optimization** - Works towards optimal values from the start
+
+For deterministic environments like our grid world example, the update becomes even simpler:
+
+<div style="overflow-x: auto;">
+$$V(s) \leftarrow \max_a \left[R(s,a) + \gamma \cdot V(\text{next_state}(s,a)) \right]$$
+</div>
+
+This makes Value Iteration particularly efficient for deterministic problems.
+
+```python
+def value_iter_onestep(V, env, gamma=0.9):
+    for state in env.states():
+        if state == env.goal_state:
+            V[state] = 0.0
+            continue
+        action_values = []
+        for action in env.actions():
+            next_state = env.next_state(state, action)
+            r = env.reward(state, action, next_state)
+            value = r + gamma * V[next_state]
+            action_values.append(value)
+        V[state] = max(action_values)
+    return V
+
+def value_iter(V, env, gamma, threshold=1e-3, is_render=True):
+    while True:
+        if is_render:
+            env.render_v(V)
+        old_V = V.copy()
+        V = value_iter_onestep(V, env, gamma)
+        delta = 0
+        for state in V.keys():
+            t = abs(old_V[state] - V[state])
+            if delta < t:
+                delta = t
+        if delta < threshold:
+            break
+    return V
+
+if __name__ == "__main__":
+    env = GridWorld()
+    V = defaultdict(lambda: 0.0)
+    gamma = 0.9
+    V = value_iter(V, env, gamma, threshold=1e-3, is_render=True)
+    pi = greedy_policy(V, env, gamma)
+    env.render_v(V, pi)
+```
+
+1. one step of the value iteration
+
+<div align="center">
+  <img src="/images/gridworld6.png" alt="gridworld" width="100%">
+</div>
+
+2. two step of the value iteration
+
+<div align="center">
+  <img src="/images/gridworld7.png" alt="gridworld" width="100%">
+</div>
+
+
+3. three step of the value iteration
+
+<div align="center">
+  <img src="/images/gridworld8.png" alt="gridworld" width="100%">
+</div>
+4. four step of the value iteration
+
+<div align="center">
+  <img src="/images/gridworld9.png" alt="gridworld" width="100%">
+</div>
+
+So, the result of optimal policy is as follows.
+
+<div align="center">
+  <img src="/images/gridworld10.png" alt="gridworld" width="100%">
+</div>
+
+## Monte Carlo Method
