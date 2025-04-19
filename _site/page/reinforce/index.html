@@ -1330,6 +1330,216 @@ $$
 $$
 </div>
 
+<p>What do we call the process of finding the optimal policy through repeated evaluation and greedification?</p>
+
+<p>Policy Iteration is an algorithm for findings the optmal policy in a MDPs by alternating between two phase.</p>
+
+<ul>
+  <li>
+    <p>1 <strong>Policy Evaluation</strong>: calculate the value function for the current policy by iteratively applying the Bellman expectation equation until convergence.</p>
+  </li>
+  <li>
+    <p>2 <strong>Policy Improvement</strong>: update the policy to be greedy with respect to the current value function. This means for each state, selecting the action that maximizes expected value.</p>
+  </li>
+</ul>
+
+<p>By repeating these two steps until the policy no longer changes, we can find the optimal policy. This approach is guaranteed to converge to the optimal policy in finite MDPs.</p>
+
+<p>In gridworld, since states transition uniquely, we can define greedification as follows.</p>
+
+<div style="overflow-x: auto;">
+$$
+\mu^*(s) = \arg \max_a \sum_{s'} P(s' | s, a) \left[ R(s, a, s') + \gamma V^*(s') \right]
+= \arg \max_a \left[ R(s, a, s') + \gamma V^*(s') \right]
+$$
+</div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">greedy_policy</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">gamma</span><span class="o">=</span><span class="mf">0.9</span><span class="p">):</span>
+    <span class="n">pi</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">env</span><span class="p">.</span><span class="nf">states</span><span class="p">():</span>
+        <span class="n">action_values</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="n">env</span><span class="p">.</span><span class="nf">actions</span><span class="p">():</span>
+            <span class="n">next_state</span> <span class="o">=</span> <span class="n">env</span><span class="p">.</span><span class="nf">next_state</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">env</span><span class="p">.</span><span class="nf">reward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">next_state</span><span class="p">)</span>
+            <span class="n">action_values</span><span class="p">[</span><span class="n">action</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span> <span class="o">+</span> <span class="n">gamma</span> <span class="o">*</span> <span class="n">V</span><span class="p">[</span><span class="n">next_state</span><span class="p">]</span>
+        <span class="n">max_action</span> <span class="o">=</span> <span class="nf">max</span><span class="p">(</span><span class="n">action_values</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="n">action_values</span><span class="p">[</span><span class="n">a</span><span class="p">])</span>
+        <span class="n">action_probs</span> <span class="o">=</span> <span class="p">{</span><span class="n">a</span><span class="p">:</span> <span class="mf">0.0</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">env</span><span class="p">.</span><span class="nf">actions</span><span class="p">()}</span>
+        <span class="n">action_probs</span><span class="p">[</span><span class="n">max_action</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="n">pi</span><span class="p">[</span><span class="n">state</span><span class="p">]</span> <span class="o">=</span> <span class="n">action_probs</span>
+    <span class="k">return</span> <span class="n">pi</span>
+
+<span class="k">def</span> <span class="nf">policy_iter</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">threshold</span> <span class="o">=</span> <span class="mf">1e-4</span><span class="p">,</span> <span class="n">is_render</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
+    <span class="n">pi</span> <span class="o">=</span> <span class="nf">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">})</span>
+    <span class="n">V</span> <span class="o">=</span> <span class="nf">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">V</span> <span class="o">=</span> <span class="nf">policy_eval</span><span class="p">(</span><span class="n">pi</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
+        <span class="n">new_pi</span> <span class="o">=</span> <span class="nf">greedy_policy</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">gamma</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">is_render</span><span class="p">:</span>
+            <span class="n">env</span><span class="p">.</span><span class="nf">render_v</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">pi</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">new_pi</span> <span class="o">==</span> <span class="n">pi</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">pi</span> <span class="o">=</span> <span class="n">new_pi</span>
+    <span class="k">return</span> <span class="n">pi</span><span class="p">,</span> <span class="n">V</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="sh">"</span><span class="s">__main__</span><span class="sh">"</span><span class="p">:</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="nc">GridWorld</span><span class="p">()</span>
+    <span class="n">gamma</span> <span class="o">=</span> <span class="mf">0.9</span>
+    <span class="n">pi</span> <span class="o">=</span> <span class="nf">policy_iter</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">is_render</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>this result is two step of the policy iteration.</p>
+
+<div align="center">
+  <img src="/images/gridworld4.png" alt="gridworld" width="100%" />
+</div>
+
+<p>Four steps of the policy iteration are as follows.</p>
+
+<div align="center">
+  <img src="/images/gridworld5.png" alt="gridworld" width="100%" />
+</div>
+
+<p>By implementing it this way, the value function of all states is updated multiple times. It’s too slow. Is there a way to update only one state’s value function and proceed?</p>
+
+<h3 id="value-iteration-method">Value Iteration Method</h3>
+
+<h4 id="why-value-iteration-works">Why Value Iteration Works</h4>
+
+<p>Policy Iteration has two separate steps - policy evaluation (which runs until convergence) and policy improvement. This is computationally expensive because we’re repeatedly evaluating the entire state space multiple times before making a single policy improvement.</p>
+
+<p>Value Iteration addresses this inefficiency by recognizing that:</p>
+
+<ul>
+  <li><strong>Similar Calculations</strong> - Both policy evaluation and improvement use the Bellman equation structure</li>
+  <li><strong>Partial Convergence</strong> - We can improve the policy before the value function fully converges</li>
+  <li><strong>Combined Steps</strong> - We can directly incorporate the max operation into the value update</li>
+</ul>
+
+<h4 id="how-value-iteration-works">How Value Iteration Works</h4>
+
+<p>Value Iteration combines policy evaluation and improvement into a single update:</p>
+
+\[V(s) \leftarrow \max_a \left[R(s,a) + \gamma \sum_{s'} P(s'|s,a) \cdot V(s') \right]\]
+
+<p>This update directly finds the value of the best action for each state, effectively:</p>
+
+<ul>
+  <li>Assuming a greedy policy at each step</li>
+  <li>Skipping the explicit policy representation</li>
+  <li>Performing only one sweep through the state space per iteration</li>
+</ul>
+
+<h4 id="value-iteration-algorithm">Value Iteration Algorithm</h4>
+
+<ol>
+  <li>Initialize \(V(s) = 0\) for all states</li>
+  <li>Repeat until convergence:
+    <ul>
+      <li>For each state \(s\):</li>
+    </ul>
+    <div style="overflow-x: auto;">
+      $$V(s) \leftarrow \max_a \left[R(s,a) + \gamma \sum_{s'} P(s'|s,a) \cdot V(s') \right]$$
+ </div>
+  </li>
+  <li>Extract the final policy:</li>
+</ol>
+<div style="overflow-x: auto;"> 
+   $$\pi(s) = \arg\max_a \left[R(s,a) + \gamma \sum_{s'} P(s'|s,a) \cdot V(s') \right]$$
+</div>
+
+<h4 id="advantages-over-policy-iteration">Advantages Over Policy Iteration</h4>
+
+<ul>
+  <li><strong>Computational Efficiency</strong> - No need to perform full policy evaluation at each step</li>
+  <li><strong>Fewer Iterations</strong> - Usually converges in fewer sweeps through the state space</li>
+  <li><strong>Simplicity</strong> - Only need to maintain a value function, not an explicit policy</li>
+  <li><strong>Direct Optimization</strong> - Works towards optimal values from the start</li>
+</ul>
+
+<p>For deterministic environments like our grid world example, the update becomes even simpler:</p>
+
+<div style="overflow-x: auto;">
+$$V(s) \leftarrow \max_a \left[R(s,a) + \gamma \cdot V(\text{next_state}(s,a)) \right]$$
+</div>
+
+<p>This makes Value Iteration particularly efficient for deterministic problems.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">value_iter_onestep</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">gamma</span><span class="o">=</span><span class="mf">0.9</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">env</span><span class="p">.</span><span class="nf">states</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="n">env</span><span class="p">.</span><span class="n">goal_state</span><span class="p">:</span>
+            <span class="n">V</span><span class="p">[</span><span class="n">state</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">continue</span>
+        <span class="n">action_values</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="n">env</span><span class="p">.</span><span class="nf">actions</span><span class="p">():</span>
+            <span class="n">next_state</span> <span class="o">=</span> <span class="n">env</span><span class="p">.</span><span class="nf">next_state</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">env</span><span class="p">.</span><span class="nf">reward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">next_state</span><span class="p">)</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">r</span> <span class="o">+</span> <span class="n">gamma</span> <span class="o">*</span> <span class="n">V</span><span class="p">[</span><span class="n">next_state</span><span class="p">]</span>
+            <span class="n">action_values</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">V</span><span class="p">[</span><span class="n">state</span><span class="p">]</span> <span class="o">=</span> <span class="nf">max</span><span class="p">(</span><span class="n">action_values</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">V</span>
+
+<span class="k">def</span> <span class="nf">value_iter</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">is_render</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_render</span><span class="p">:</span>
+            <span class="n">env</span><span class="p">.</span><span class="nf">render_v</span><span class="p">(</span><span class="n">V</span><span class="p">)</span>
+        <span class="n">old_V</span> <span class="o">=</span> <span class="n">V</span><span class="p">.</span><span class="nf">copy</span><span class="p">()</span>
+        <span class="n">V</span> <span class="o">=</span> <span class="nf">value_iter_onestep</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">gamma</span><span class="p">)</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">V</span><span class="p">.</span><span class="nf">keys</span><span class="p">():</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="nf">abs</span><span class="p">(</span><span class="n">old_V</span><span class="p">[</span><span class="n">state</span><span class="p">]</span> <span class="o">-</span> <span class="n">V</span><span class="p">[</span><span class="n">state</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">delta</span> <span class="o">&lt;</span> <span class="n">t</span><span class="p">:</span>
+                <span class="n">delta</span> <span class="o">=</span> <span class="n">t</span>
+        <span class="k">if</span> <span class="n">delta</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span>
+            <span class="k">break</span>
+    <span class="k">return</span> <span class="n">V</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="sh">"</span><span class="s">__main__</span><span class="sh">"</span><span class="p">:</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="nc">GridWorld</span><span class="p">()</span>
+    <span class="n">V</span> <span class="o">=</span> <span class="nf">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">gamma</span> <span class="o">=</span> <span class="mf">0.9</span>
+    <span class="n">V</span> <span class="o">=</span> <span class="nf">value_iter</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">is_render</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">pi</span> <span class="o">=</span> <span class="nf">greedy_policy</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">gamma</span><span class="p">)</span>
+    <span class="n">env</span><span class="p">.</span><span class="nf">render_v</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">pi</span><span class="p">)</span>
+</code></pre></div></div>
+
+<ol>
+  <li>one step of the value iteration</li>
+</ol>
+
+<div align="center">
+  <img src="/images/gridworld6.png" alt="gridworld" width="100%" />
+</div>
+
+<ol>
+  <li>two step of the value iteration</li>
+</ol>
+
+<div align="center">
+  <img src="/images/gridworld7.png" alt="gridworld" width="100%" />
+</div>
+
+<ol>
+  <li>three step of the value iteration</li>
+</ol>
+
+<div align="center">
+  <img src="/images/gridworld8.png" alt="gridworld" width="100%" />
+</div>
+<ol>
+  <li>four step of the value iteration</li>
+</ol>
+
+<div align="center">
+  <img src="/images/gridworld9.png" alt="gridworld" width="100%" />
+</div>
+
+<p>So, the result of optimal policy is as follows.</p>
+
+<div align="center">
+  <img src="/images/gridworld10.png" alt="gridworld" width="100%" />
+</div>
+
+<h2 id="monte-carlo-method">Monte Carlo Method</h2>
 
 						</div><!-- /.content -->
 					</div><!-- /.col -->
