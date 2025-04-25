@@ -1403,3 +1403,252 @@ So, the result of optimal policy is as follows.
 </div>
 
 ## Monte Carlo Method
+
+We know the transition probabilities $$ P( s, a) $$ and the reward function $$ R $$, which allows us to apply Dynamic Programming.
+
+Also, using dynamic programming (DP) is too complex to calculate the entire problem.
+
+**What is Monte Carlo method?**
+
+It assumes a value function for the agent to gain experience in an environment.
+The experience mentioned here refers to the data (state, action, reward) obtained through the interaction between the environment and the agent.
+
+
+
+
+The following situation can be considered: Think about all possible outcomes when rolling a dice twice.
+
+<div align="center">
+  <div class = 'mermaid'>
+graph TD
+    Start((Start))
+    Start --> D1((Die 1: 1))
+    Start --> D2((Die 1: 2))
+    Start --> D3((Die 1: 3))
+    Start --> D4((Die 1: 4))
+    Start --> D5((Die 1: 5))
+    Start --> D6((Die 1: 6))
+
+    D1 --> D1_1((Die 2: 1))
+    D1 --> D1_2((Die 2: 2))
+    D1 --> D1_3((Die 2: 3))
+    D1 --> D1_4((Die 2: 4))
+    D1 --> D1_5((Die 2: 5))
+    D1 --> D1_6((Die 2: 6))
+
+    D2 --> D2_1((Die 2: 1))
+    D2 --> D2_2((Die 2: 2))
+    D2 --> D2_3((Die 2: 3))
+    D2 --> D2_4((Die 2: 4))
+    D2 --> D2_5((Die 2: 5))
+    D2 --> D2_6((Die 2: 6))
+
+    D3 --> D3_1((Die 2: 1))
+    D3 --> D3_2((Die 2: 2))
+    D3 --> D3_3((Die 2: 3))
+    D3 --> D3_4((Die 2: 4))
+    D3 --> D3_5((Die 2: 5))
+    D3 --> D3_6((Die 2: 6))
+
+    D4 --> D4_1((Die 2: 1))
+    D4 --> D4_2((Die 2: 2))
+    D4 --> D4_3((Die 2: 3))
+    D4 --> D4_4((Die 2: 4))
+    D4 --> D4_5((Die 2: 5))
+    D4 --> D4_6((Die 2: 6))
+
+    D5 --> D5_1((Die 2: 1))
+    D5 --> D5_2((Die 2: 2))
+    D5 --> D5_3((Die 2: 3))
+    D5 --> D5_4((Die 2: 4))
+    D5 --> D5_5((Die 2: 5))
+    D5 --> D5_6((Die 2: 6))
+
+    D6 --> D6_1((Die 2: 1))
+    D6 --> D6_2((Die 2: 2))
+    D6 --> D6_3((Die 2: 3))
+    D6 --> D6_4((Die 2: 4))
+    D6 --> D6_5((Die 2: 5))
+    D6 --> D6_6((Die 2: 6))
+
+    classDef circle fill:#ffffff,stroke:#000000,stroke-width:2px,shape:circle;
+    class Start,D1,D2,D3,D4,D5,D6,D1_1,D1_2,D1_3,D1_4,D1_5,D1_6,D2_1,D2_2,D2_3,D2_4,D2_5,D2_6,D3_1,D3_2,D3_3,D3_4,D3_5,D3_6,D4_1,D4_2,D4_3,D4_4,D4_5,D4_6,D5_1,D5_2,D5_3,D5_4,D5_5,D5_6,D6_1,D6_2,D6_3,D6_4,D6_5,D6_6 circle;
+  </div>
+</div>
+
+
+
+If some outcomes represent a probability distribution, we use the sample distribution.
+A sample distribution is a method of observing the results of actual sampling.
+
+
+Let's use the incremental method learned earlier to sample and calculate the expected value of the sum when two dice are rolled.
+
+`incremental method` : $$ V_n = V_{n - 1} + \frac{1}{n} (s_n - V_{n - 1}) $$
+
+```python
+trial = 10000
+import numpy as np
+
+
+def Sample():
+    x = 0
+    for _ in range(2):
+        x += np.random.choice([1, 2, 3, 4, 5, 6])
+    return x
+
+
+trial = 1000
+V, n = 0, 0
+
+
+for i in range(trial):
+    s = Sample()
+    n += 1
+    V += (s - V) / n
+    if (i + 1) % 100 == 0:
+        print(f"Trial {i + 1}: Sample mean = {V}")
+
+# result
+# Trial 100: Sample mean = 7.119999999999997
+# Trial 200: Sample mean = 6.8199999999999985
+# Trial 300: Sample mean = 6.783333333333331
+# Trial 400: Sample mean = 6.8575
+# Trial 500: Sample mean = 6.844000000000001
+# Trial 600: Sample mean = 6.861666666666671
+# Trial 700: Sample mean = 6.8885714285714315
+# Trial 800: Sample mean = 6.8999999999999995
+# Trial 900: Sample mean = 6.948888888888891
+# Trial 1000: Sample mean = 6.938000000000002
+```
+
+`Value - Function` : $$ V_n = \mathbb{E_{\pi}}[G \mid s] $$
+
+This method applies the Monte Carlo approach to estimate values.
+
+<div style="overflow-x: auto;">
+$$
+V_{\pi}(s) = \frac{G^{(1)} + G^{(2)}+ G^{(3)} + \cdots + G^{(n)}}{n}
+$$
+</div>
+
+where $$ G^{(i)} $$ is the return of the $$ i $$-th episode.
+
+Let me explain the first trial episode.
+
+<div align="center">
+  <div class="mermaid">
+graph TD
+    S((S))
+    S -->|reward_1| A((A))
+    A -->|reward_0| B((B))
+    B -->|reward_2| END((END))
+
+    classDef circle fill:#ffffff,stroke:#000000,stroke-width:2px,shape:circle;
+    class S,A,B,C,END circle;
+  </div>
+</div>
+
+<div style="overflow-x: auto;">
+$$
+G^{(1)} = 1 + 0 + 2 = 3
+$$
+</div>
+
+The second trial episode is as follows.
+
+<div align="center">
+  <div class="mermaid">
+graph TD
+    S((S))
+    S -->|reward_1| A((A))
+    A -->|reward_0| B((B))
+    B -->|reward_1| C((C))
+    C -->|reward_1| END((END))
+
+    classDef circle fill:#ffffff,stroke:#000000,stroke-width:2px,shape:circle;
+    class S,A,B,C,END circle;
+
+  </div>
+</div>
+
+<div style="overflow-x: auto;">
+$$
+G^{(2)} = 1 + 0 + 1 + 1 = 3
+$$
+</div>
+
+As a result, the expected value is as follows. 
+
+<div style="overflow-x: auto;">
+$$
+V_{\pi}(s) = \frac{G^{(1)} + G^{(2)}}{2} = \frac{3 + 3}{2} = 3
+$$
+</div>
+
+Let's calculate the value function for all states using the Monte Carlo method. If there are three states (A, B, C), sample data is obtained by performing actual actions.
+
+<div align="center">
+  <div class="mermaid">
+flowchart TD
+
+    %% A 파이프라인 1
+    A1((A)) --> A2([...]) --> A3([...]) --> Aout((○))
+
+    %% A 파이프라인 2
+    A1b((A)) --> A2b([...]) --> A3b([...]) --> Aoutb((○))
+
+
+    %% B 파이프라인 1
+    B1((B)) --> B2([...]) --> B3([...]) --> Bout((○))
+
+    %% B 파이프라인 2
+    B1b((B)) --> B2b([...]) --> B3b([...]) --> Boutb((○))
+
+    %% C 파이프라인 1
+    C1((C)) --> C2([...]) --> C3([...]) --> Cout((○))
+
+    %% C 파이프라인 2
+    C1b((C)) --> C2b([...]) --> C3b([...]) --> Coutb((○))
+
+    %% 스타일 지정
+    classDef aStyle fill:#b3d9ff,stroke:#3399ff,stroke-width:2px
+    classDef bStyle fill:#ffcc99,stroke:#ff9933,stroke-width:2px
+    classDef cStyle fill:#99ffcc,stroke:#33cc99,stroke-width:2px
+
+    class A1,A2,A3,Aout,A1b,A2b,A3b,Aoutb aStyle
+    class B1,B2,B3,Bout,B1b,B2b,B3b,Boutb bStyle
+    class C1,C2,C3,Cout,C1b,C2b,C3b,Coutb cStyle
+</div>
+</div>
+
+Let's consider starting from state A, taking actions according to policy $$ \pi $$, and reaching the final destination.
+
+<div align="center">
+  <div class="mermaid">
+graph TD
+    A((A))
+    A -->|R0| B((B))
+    B -->|R1| C((C))
+    C -->|R2| END((END))
+
+    classDef aStyle fill:#b3d9ff,stroke:#3399ff,stroke-width:2px
+    classDef bStyle fill:#ffcc99,stroke:#ff9933,stroke-width:2px
+    classDef cStyle fill:#99ffcc,stroke:#33cc99,stroke-width:2px
+    classDef circle fill:#ffffff,stroke:#000000,stroke-width:2px,shape:circle;
+
+    class A aStyle
+    class B bStyle
+    class C cStyle
+    class END circle;
+</div>
+</div>
+
+The total rewards accumulated from state A to the end are as follows.
+
+<div style="overflow-x: auto;">
+$$
+G_A = R_0 + \gamma R_1 + \gamma^2 R_2
+$$
+</div>
+
