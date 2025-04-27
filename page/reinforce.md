@@ -1652,3 +1652,185 @@ G_A = R_0 + \gamma R_1 + \gamma^2 R_2
 $$
 </div>
 
+Let's consider starting from state B. 
+
+<div align="center">
+  <div class="mermaid">
+graph TD
+    B((B)) -->|R1| C((C))
+    C -->|R2| END((END))
+
+    classDef aStyle fill:#b3d9ff,stroke:#3399ff,stroke-width:2px
+    classDef bStyle fill:#ffcc99,stroke:#ff9933,stroke-width:2px
+    classDef cStyle fill:#99ffcc,stroke:#33cc99,stroke-width:2px
+    classDef circle fill:#ffffff,stroke:#000000,stroke-width:2px,shape:circle;
+
+    class B bStyle
+    class C cStyle
+    class END circle;
+</div>
+</div>
+
+
+<div style="overflow-x: auto;">
+$$
+G_B = R_1 + \gamma R_2
+$$
+</div>
+
+Let's consider starting from state C. 
+
+<div align="center">
+  <div class="mermaid">
+graph TD
+    C((C)) -->|R2| END((END))
+
+    classDef aStyle fill:#b3d9ff,stroke:#3399ff,stroke-width:2px
+    classDef bStyle fill:#ffcc99,stroke:#ff9933,stroke-width:2px
+    classDef cStyle fill:#99ffcc,stroke:#33cc99,stroke-width:2px
+    classDef circle fill:#ffffff,stroke:#000000,stroke-width:2px,shape:circle;
+
+    class C cStyle
+    class END circle;
+</div>
+</div>
+
+<div style="overflow-x: auto;">
+$$
+G_C = R_2
+$$
+</div>
+
+So, the following sequence of calculations can eliminate redundant computations.
+
+<div style="overflow-x: auto;">
+$$
+G_C = R_2
+$$
+</div>
+
+<div style="overflow-x: auto;">
+$$
+G_B = R_1 + \gamma G_C
+$$
+</div>
+
+<div style="overflow-x: auto;">
+$$
+G_A = R_0 + \gamma G_B
+$$
+</div>
+
+### implement
+
+Alright, according to the reading, we can implement this for the agent to interact with the environment.
+
+<div align="center">
+  <img src="/images/RL.png" alt="RL" width="100%">
+</div>
+
+The start point is (0, 0), the end point is (5, 5), and the black cell represents a wall that the agent cannot pass.
+
+<div align="center">
+  <img src="/images/montemap.png" alt="MM" width="80%">
+</div>
+
+```python
+import numpy as np
+from tqdm import tqdm
+from collections import defaultdict
+from common.gridworld import GridWorld
+
+reward_map = np.array(
+    [[0, 0, 0, -1.0, 0, None],
+     [0, 0, 0, 0, -1.0, 0],
+     [None, 0, -1.0, 0, 0, 0],
+     [0, -1.0, 0, 0, None, 0],
+     [0, None, -1.0, 0, 0, 0],
+     [None, 0, 0, None, 0, 1.0]]
+)
+
+start = (0, 0)
+goal = (5, 5)
+
+env = GridWorld(reward_map, start, goal)
+env.render_v()
+
+
+class RandomAgent:
+    def __init__(self):
+        self.gamma = 0.9
+        self.action_size = 4
+
+        random_actions = {0: 0.25, 1: 0.25, 2: 0.25, 3: 0.25}
+        self.pi = defaultdict(lambda: random_actions)
+        self.V = defaultdict(lambda: 0.0)
+        self.cnts = defaultdict(lambda: 0.0)
+        self.memory = []
+
+    def get_action(self, state):
+        action_probs = self.pi[state]
+        actions = list(action_probs.keys())
+        probs = list(action_probs.values())
+        return np.random.choice(actions, p=probs)
+
+    def add(self, state, action, reward):
+        data = (state, action, reward)
+        self.memory.append(data)
+
+    def reset(self):
+        self.memory.clear()
+
+    def eval(self):
+        G = 0
+        for data in reversed(self.memory):
+            state, _, reward = data
+            G = reward + self.gamma * G
+            self.cnts[state] += 1
+            self.V[state] += (G - self.V[state]) / self.cnts[state]
+
+
+agent = RandomAgent()
+
+episodes = int(1e3)
+for episode in tqdm(range(episodes), desc="Training Progress"):
+    state = env.reset()
+    agent.reset()
+
+    while True:
+        action = agent.get_action(state)
+        next_state, reward, done = env.step(action)
+        agent.add(state, action, reward)
+        if done:
+            agent.eval()
+            break
+        state = next_state
+
+env.render_v(agent.V)
+```
+
+The value function (expected value) of each cell obtained through the Monte Carlo method is as follows.
+
+<div align="center">
+  <img src="/images/MM1.png" alt="MM" width="80%">
+</div>
+
+### Policy Control Using the Monte Carlo Method
+
+The optimal policy alternates between evaluation and improvement.
+- **Policy Evaluation**: Calculate the value function for the current policy using the Monte Carlo method.
+- **Policy Improvement**: Update the policy to be greedy with respect to the current value function.
+
+State Value Function Evaluation
+
+- `General Method` : $$ V_{\pi}(s) = \frac{G^{(1)} + G^{(2)}+ G^{(3)} + \cdots + G^{(n)}}{n} $$
+
+- `Incremental Method` : $$ V_{\pi}(s) = V_{\pi}(s) + \frac{1}{n} (G - V_{\pi}(s)) $$
+
+Q-Function Evaluation
+
+- `General Method` : $$ Q_{\pi}(s, a) = \frac{G^{(1)} + G^{(2)}+ G^{(3)} + \cdots + G^{(n)}}{n} $$
+
+- `Incremental Method` : $$ Q_{\pi}(s, a) = Q_{\pi}(s, a) + \frac{1}{n} (G - Q_{\pi}(s, a)) $$
+
+

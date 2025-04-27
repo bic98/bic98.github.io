@@ -1541,6 +1541,439 @@ $$V(s) \leftarrow \max_a \left[R(s,a) + \gamma \cdot V(\text{next_state}(s,a)) \
 
 <h2 id="monte-carlo-method">Monte Carlo Method</h2>
 
+<p>We know the transition probabilities \(P( s, a)\) and the reward function \(R\), which allows us to apply Dynamic Programming.</p>
+
+<p>Also, using dynamic programming (DP) is too complex to calculate the entire problem.</p>
+
+<p><strong>What is Monte Carlo method?</strong></p>
+
+<p>It assumes a value function for the agent to gain experience in an environment.
+The experience mentioned here refers to the data (state, action, reward) obtained through the interaction between the environment and the agent.</p>
+
+<p>The following situation can be considered: Think about all possible outcomes when rolling a dice twice.</p>
+
+<div align="center">
+  <div class="mermaid">
+graph TD
+    Start((Start))
+    Start --&gt; D1((Die 1: 1))
+    Start --&gt; D2((Die 1: 2))
+    Start --&gt; D3((Die 1: 3))
+    Start --&gt; D4((Die 1: 4))
+    Start --&gt; D5((Die 1: 5))
+    Start --&gt; D6((Die 1: 6))
+
+    D1 --&gt; D1_1((Die 2: 1))
+    D1 --&gt; D1_2((Die 2: 2))
+    D1 --&gt; D1_3((Die 2: 3))
+    D1 --&gt; D1_4((Die 2: 4))
+    D1 --&gt; D1_5((Die 2: 5))
+    D1 --&gt; D1_6((Die 2: 6))
+
+    D2 --&gt; D2_1((Die 2: 1))
+    D2 --&gt; D2_2((Die 2: 2))
+    D2 --&gt; D2_3((Die 2: 3))
+    D2 --&gt; D2_4((Die 2: 4))
+    D2 --&gt; D2_5((Die 2: 5))
+    D2 --&gt; D2_6((Die 2: 6))
+
+    D3 --&gt; D3_1((Die 2: 1))
+    D3 --&gt; D3_2((Die 2: 2))
+    D3 --&gt; D3_3((Die 2: 3))
+    D3 --&gt; D3_4((Die 2: 4))
+    D3 --&gt; D3_5((Die 2: 5))
+    D3 --&gt; D3_6((Die 2: 6))
+
+    D4 --&gt; D4_1((Die 2: 1))
+    D4 --&gt; D4_2((Die 2: 2))
+    D4 --&gt; D4_3((Die 2: 3))
+    D4 --&gt; D4_4((Die 2: 4))
+    D4 --&gt; D4_5((Die 2: 5))
+    D4 --&gt; D4_6((Die 2: 6))
+
+    D5 --&gt; D5_1((Die 2: 1))
+    D5 --&gt; D5_2((Die 2: 2))
+    D5 --&gt; D5_3((Die 2: 3))
+    D5 --&gt; D5_4((Die 2: 4))
+    D5 --&gt; D5_5((Die 2: 5))
+    D5 --&gt; D5_6((Die 2: 6))
+
+    D6 --&gt; D6_1((Die 2: 1))
+    D6 --&gt; D6_2((Die 2: 2))
+    D6 --&gt; D6_3((Die 2: 3))
+    D6 --&gt; D6_4((Die 2: 4))
+    D6 --&gt; D6_5((Die 2: 5))
+    D6 --&gt; D6_6((Die 2: 6))
+
+    classDef circle fill:#ffffff,stroke:#000000,stroke-width:2px,shape:circle;
+    class Start,D1,D2,D3,D4,D5,D6,D1_1,D1_2,D1_3,D1_4,D1_5,D1_6,D2_1,D2_2,D2_3,D2_4,D2_5,D2_6,D3_1,D3_2,D3_3,D3_4,D3_5,D3_6,D4_1,D4_2,D4_3,D4_4,D4_5,D4_6,D5_1,D5_2,D5_3,D5_4,D5_5,D5_6,D6_1,D6_2,D6_3,D6_4,D6_5,D6_6 circle;
+  </div>
+</div>
+
+<p>If some outcomes represent a probability distribution, we use the sample distribution.
+A sample distribution is a method of observing the results of actual sampling.</p>
+
+<p>Let’s use the incremental method learned earlier to sample and calculate the expected value of the sum when two dice are rolled.</p>
+
+<p><code class="language-plaintext highlighter-rouge">incremental method</code> : \(V_n = V_{n - 1} + \frac{1}{n} (s_n - V_{n - 1})\)</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">trial</span> <span class="o">=</span> <span class="mi">10000</span>
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+
+
+<span class="k">def</span> <span class="nf">Sample</span><span class="p">():</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">+=</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">choice</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">x</span>
+
+
+<span class="n">trial</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="n">V</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">trial</span><span class="p">):</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="nc">Sample</span><span class="p">()</span>
+    <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">V</span> <span class="o">+=</span> <span class="p">(</span><span class="n">s</span> <span class="o">-</span> <span class="n">V</span><span class="p">)</span> <span class="o">/</span> <span class="n">n</span>
+    <span class="nf">if </span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Trial </span><span class="si">{</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="si">}</span><span class="s">: Sample mean = </span><span class="si">{</span><span class="n">V</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+
+<span class="c1"># result
+# Trial 100: Sample mean = 7.119999999999997
+# Trial 200: Sample mean = 6.8199999999999985
+# Trial 300: Sample mean = 6.783333333333331
+# Trial 400: Sample mean = 6.8575
+# Trial 500: Sample mean = 6.844000000000001
+# Trial 600: Sample mean = 6.861666666666671
+# Trial 700: Sample mean = 6.8885714285714315
+# Trial 800: Sample mean = 6.8999999999999995
+# Trial 900: Sample mean = 6.948888888888891
+# Trial 1000: Sample mean = 6.938000000000002
+</span></code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">Value - Function</code> : \(V_n = \mathbb{E_{\pi}}[G \mid s]\)</p>
+
+<p>This method applies the Monte Carlo approach to estimate values.</p>
+
+<div style="overflow-x: auto;">
+$$
+V_{\pi}(s) = \frac{G^{(1)} + G^{(2)}+ G^{(3)} + \cdots + G^{(n)}}{n}
+$$
+</div>
+
+<p>where \(G^{(i)}\) is the return of the \(i\)-th episode.</p>
+
+<p>Let me explain the first trial episode.</p>
+
+<div align="center">
+  <div class="mermaid">
+graph TD
+    S((S))
+    S --&gt;|reward_1| A((A))
+    A --&gt;|reward_0| B((B))
+    B --&gt;|reward_2| END((END))
+
+    classDef circle fill:#ffffff,stroke:#000000,stroke-width:2px,shape:circle;
+    class S,A,B,C,END circle;
+  </div>
+</div>
+
+<div style="overflow-x: auto;">
+$$
+G^{(1)} = 1 + 0 + 2 = 3
+$$
+</div>
+
+<p>The second trial episode is as follows.</p>
+
+<div align="center">
+  <div class="mermaid">
+graph TD
+    S((S))
+    S --&gt;|reward_1| A((A))
+    A --&gt;|reward_0| B((B))
+    B --&gt;|reward_1| C((C))
+    C --&gt;|reward_1| END((END))
+
+    classDef circle fill:#ffffff,stroke:#000000,stroke-width:2px,shape:circle;
+    class S,A,B,C,END circle;
+
+  </div>
+</div>
+
+<div style="overflow-x: auto;">
+$$
+G^{(2)} = 1 + 0 + 1 + 1 = 3
+$$
+</div>
+
+<p>As a result, the expected value is as follows.</p>
+
+<div style="overflow-x: auto;">
+$$
+V_{\pi}(s) = \frac{G^{(1)} + G^{(2)}}{2} = \frac{3 + 3}{2} = 3
+$$
+</div>
+
+<p>Let’s calculate the value function for all states using the Monte Carlo method. If there are three states (A, B, C), sample data is obtained by performing actual actions.</p>
+
+<div align="center">
+  <div class="mermaid">
+flowchart TD
+
+    %% A 파이프라인 1
+    A1((A)) --&gt; A2([...]) --&gt; A3([...]) --&gt; Aout((○))
+
+    %% A 파이프라인 2
+    A1b((A)) --&gt; A2b([...]) --&gt; A3b([...]) --&gt; Aoutb((○))
+
+
+    %% B 파이프라인 1
+    B1((B)) --&gt; B2([...]) --&gt; B3([...]) --&gt; Bout((○))
+
+    %% B 파이프라인 2
+    B1b((B)) --&gt; B2b([...]) --&gt; B3b([...]) --&gt; Boutb((○))
+
+    %% C 파이프라인 1
+    C1((C)) --&gt; C2([...]) --&gt; C3([...]) --&gt; Cout((○))
+
+    %% C 파이프라인 2
+    C1b((C)) --&gt; C2b([...]) --&gt; C3b([...]) --&gt; Coutb((○))
+
+    %% 스타일 지정
+    classDef aStyle fill:#b3d9ff,stroke:#3399ff,stroke-width:2px
+    classDef bStyle fill:#ffcc99,stroke:#ff9933,stroke-width:2px
+    classDef cStyle fill:#99ffcc,stroke:#33cc99,stroke-width:2px
+
+    class A1,A2,A3,Aout,A1b,A2b,A3b,Aoutb aStyle
+    class B1,B2,B3,Bout,B1b,B2b,B3b,Boutb bStyle
+    class C1,C2,C3,Cout,C1b,C2b,C3b,Coutb cStyle
+</div>
+</div>
+
+<p>Let’s consider starting from state A, taking actions according to policy \(\pi\), and reaching the final destination.</p>
+
+<div align="center">
+  <div class="mermaid">
+graph TD
+    A((A))
+    A --&gt;|R0| B((B))
+    B --&gt;|R1| C((C))
+    C --&gt;|R2| END((END))
+
+    classDef aStyle fill:#b3d9ff,stroke:#3399ff,stroke-width:2px
+    classDef bStyle fill:#ffcc99,stroke:#ff9933,stroke-width:2px
+    classDef cStyle fill:#99ffcc,stroke:#33cc99,stroke-width:2px
+    classDef circle fill:#ffffff,stroke:#000000,stroke-width:2px,shape:circle;
+
+    class A aStyle
+    class B bStyle
+    class C cStyle
+    class END circle;
+</div>
+</div>
+
+<p>The total rewards accumulated from state A to the end are as follows.</p>
+
+<div style="overflow-x: auto;">
+$$
+G_A = R_0 + \gamma R_1 + \gamma^2 R_2
+$$
+</div>
+
+<p>Let’s consider starting from state B.</p>
+
+<div align="center">
+  <div class="mermaid">
+graph TD
+    B((B)) --&gt;|R1| C((C))
+    C --&gt;|R2| END((END))
+
+    classDef aStyle fill:#b3d9ff,stroke:#3399ff,stroke-width:2px
+    classDef bStyle fill:#ffcc99,stroke:#ff9933,stroke-width:2px
+    classDef cStyle fill:#99ffcc,stroke:#33cc99,stroke-width:2px
+    classDef circle fill:#ffffff,stroke:#000000,stroke-width:2px,shape:circle;
+
+    class B bStyle
+    class C cStyle
+    class END circle;
+</div>
+</div>
+
+<div style="overflow-x: auto;">
+$$
+G_B = R_1 + \gamma R_2
+$$
+</div>
+
+<p>Let’s consider starting from state C.</p>
+
+<div align="center">
+  <div class="mermaid">
+graph TD
+    C((C)) --&gt;|R2| END((END))
+
+    classDef aStyle fill:#b3d9ff,stroke:#3399ff,stroke-width:2px
+    classDef bStyle fill:#ffcc99,stroke:#ff9933,stroke-width:2px
+    classDef cStyle fill:#99ffcc,stroke:#33cc99,stroke-width:2px
+    classDef circle fill:#ffffff,stroke:#000000,stroke-width:2px,shape:circle;
+
+    class C cStyle
+    class END circle;
+</div>
+</div>
+
+<div style="overflow-x: auto;">
+$$
+G_C = R_2
+$$
+</div>
+
+<p>So, the following sequence of calculations can eliminate redundant computations.</p>
+
+<div style="overflow-x: auto;">
+$$
+G_C = R_2
+$$
+</div>
+
+<div style="overflow-x: auto;">
+$$
+G_B = R_1 + \gamma G_C
+$$
+</div>
+
+<div style="overflow-x: auto;">
+$$
+G_A = R_0 + \gamma G_B
+$$
+</div>
+
+<h3 id="implement">implement</h3>
+
+<p>Alright, according to the reading, we can implement this for the agent to interact with the environment.</p>
+
+<div align="center">
+  <img src="/images/RL.png" alt="RL" width="100%" />
+</div>
+
+<p>The start point is (0, 0), the end point is (5, 5), and the black cell represents a wall that the agent cannot pass.</p>
+
+<div align="center">
+  <img src="/images/montemap.png" alt="MM" width="80%" />
+</div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">from</span> <span class="n">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">from</span> <span class="n">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="n">common.gridworld</span> <span class="kn">import</span> <span class="n">GridWorld</span>
+
+<span class="n">reward_map</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">array</span><span class="p">(</span>
+    <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">None</span><span class="p">],</span>
+     <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+     <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+     <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+     <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+     <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]]</span>
+<span class="p">)</span>
+
+<span class="n">start</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">goal</span> <span class="o">=</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+<span class="n">env</span> <span class="o">=</span> <span class="nc">GridWorld</span><span class="p">(</span><span class="n">reward_map</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">goal</span><span class="p">)</span>
+<span class="n">env</span><span class="p">.</span><span class="nf">render_v</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">RandomAgent</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">=</span> <span class="mf">0.9</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">action_size</span> <span class="o">=</span> <span class="mi">4</span>
+
+        <span class="n">random_actions</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">}</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">pi</span> <span class="o">=</span> <span class="nf">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">random_actions</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">V</span> <span class="o">=</span> <span class="nf">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">cnts</span> <span class="o">=</span> <span class="nf">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">memory</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">get_action</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="n">action_probs</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">pi</span><span class="p">[</span><span class="n">state</span><span class="p">]</span>
+        <span class="n">actions</span> <span class="o">=</span> <span class="nf">list</span><span class="p">(</span><span class="n">action_probs</span><span class="p">.</span><span class="nf">keys</span><span class="p">())</span>
+        <span class="n">probs</span> <span class="o">=</span> <span class="nf">list</span><span class="p">(</span><span class="n">action_probs</span><span class="p">.</span><span class="nf">values</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">choice</span><span class="p">(</span><span class="n">actions</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">probs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">reward</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">reward</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">memory</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">memory</span><span class="p">.</span><span class="nf">clear</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">eval</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="nf">reversed</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">memory</span><span class="p">):</span>
+            <span class="n">state</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">reward</span> <span class="o">=</span> <span class="n">data</span>
+            <span class="n">G</span> <span class="o">=</span> <span class="n">reward</span> <span class="o">+</span> <span class="n">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">G</span>
+            <span class="n">self</span><span class="p">.</span><span class="n">cnts</span><span class="p">[</span><span class="n">state</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">self</span><span class="p">.</span><span class="n">V</span><span class="p">[</span><span class="n">state</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">G</span> <span class="o">-</span> <span class="n">self</span><span class="p">.</span><span class="n">V</span><span class="p">[</span><span class="n">state</span><span class="p">])</span> <span class="o">/</span> <span class="n">self</span><span class="p">.</span><span class="n">cnts</span><span class="p">[</span><span class="n">state</span><span class="p">]</span>
+
+
+<span class="n">agent</span> <span class="o">=</span> <span class="nc">RandomAgent</span><span class="p">()</span>
+
+<span class="n">episodes</span> <span class="o">=</span> <span class="nf">int</span><span class="p">(</span><span class="mf">1e3</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">episode</span> <span class="ow">in</span> <span class="nf">tqdm</span><span class="p">(</span><span class="nf">range</span><span class="p">(</span><span class="n">episodes</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="sh">"</span><span class="s">Training Progress</span><span class="sh">"</span><span class="p">):</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">env</span><span class="p">.</span><span class="nf">reset</span><span class="p">()</span>
+    <span class="n">agent</span><span class="p">.</span><span class="nf">reset</span><span class="p">()</span>
+
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">action</span> <span class="o">=</span> <span class="n">agent</span><span class="p">.</span><span class="nf">get_action</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+        <span class="n">next_state</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span> <span class="o">=</span> <span class="n">env</span><span class="p">.</span><span class="nf">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+        <span class="n">agent</span><span class="p">.</span><span class="nf">add</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">reward</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">done</span><span class="p">:</span>
+            <span class="n">agent</span><span class="p">.</span><span class="nf">eval</span><span class="p">()</span>
+            <span class="k">break</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">next_state</span>
+
+<span class="n">env</span><span class="p">.</span><span class="nf">render_v</span><span class="p">(</span><span class="n">agent</span><span class="p">.</span><span class="n">V</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>The value function (expected value) of each cell obtained through the Monte Carlo method is as follows.</p>
+
+<div align="center">
+  <img src="/images/MM1.png" alt="MM" width="80%" />
+</div>
+
+<h3 id="policy-control-using-the-monte-carlo-method">Policy Control Using the Monte Carlo Method</h3>
+
+<p>The optimal policy alternates between evaluation and improvement.</p>
+<ul>
+  <li><strong>Policy Evaluation</strong>: Calculate the value function for the current policy using the Monte Carlo method.</li>
+  <li><strong>Policy Improvement</strong>: Update the policy to be greedy with respect to the current value function.</li>
+</ul>
+
+<p>State Value Function Evaluation</p>
+
+<ul>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">General Method</code> : \(V_{\pi}(s) = \frac{G^{(1)} + G^{(2)}+ G^{(3)} + \cdots + G^{(n)}}{n}\)</p>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">Incremental Method</code> : \(V_{\pi}(s) = V_{\pi}(s) + \frac{1}{n} (G - V_{\pi}(s))\)</p>
+  </li>
+</ul>
+
+<p>Q-Function Evaluation</p>
+
+<ul>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">General Method</code> : \(Q_{\pi}(s, a) = \frac{G^{(1)} + G^{(2)}+ G^{(3)} + \cdots + G^{(n)}}{n}\)</p>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">Incremental Method</code> : \(Q_{\pi}(s, a) = Q_{\pi}(s, a) + \frac{1}{n} (G - Q_{\pi}(s, a))\)</p>
+  </li>
+</ul>
+
+
 						</div><!-- /.content -->
 					</div><!-- /.col -->
 					<div class="col-md-4 col-md-offset-1">
