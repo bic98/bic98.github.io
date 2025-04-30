@@ -1861,7 +1861,7 @@ $$
 <p>The start point is (0, 0), the end point is (5, 5), and the black cell represents a wall that the agent cannot pass.</p>
 
 <div align="center">
-  <img src="/images/montemap.png" alt="MM" width="80%" />
+  <img src="/images/monemap.png" alt="MM" width="80%" />
 </div>
 
 <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
@@ -1972,6 +1972,211 @@ $$
     <p><code class="language-plaintext highlighter-rouge">Incremental Method</code> : \(Q_{\pi}(s, a) = Q_{\pi}(s, a) + \frac{1}{n} (G - Q_{\pi}(s, a))\)</p>
   </li>
 </ul>
+
+<h3 id="important-concept">important concept</h3>
+
+<ol>
+  <li>
+    <p>Use an epsilon-greedy policy to give the agent opportunities to explore.</p>
+  </li>
+  <li>
+    <p>Train the model by applying an exponential moving average with a fixed value <code class="language-plaintext highlighter-rouge">a</code>, giving greater weight to more recent data.</p>
+  </li>
+</ol>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="n">common.gridworld_render</span> <span class="k">as</span> <span class="n">render_helper</span>
+
+
+<span class="k">class</span> <span class="nc">GridWorld</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">reward_map</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">goal</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">action_space</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># 행동 공간(가능한 행동들)
+</span>        <span class="n">self</span><span class="p">.</span><span class="n">action_meaning</span> <span class="o">=</span> <span class="p">{</span>  <span class="c1"># 행동의 의미
+</span>            <span class="mi">0</span><span class="p">:</span> <span class="sh">"</span><span class="s">UP</span><span class="sh">"</span><span class="p">,</span>
+            <span class="mi">1</span><span class="p">:</span> <span class="sh">"</span><span class="s">DOWN</span><span class="sh">"</span><span class="p">,</span>
+            <span class="mi">2</span><span class="p">:</span> <span class="sh">"</span><span class="s">LEFT</span><span class="sh">"</span><span class="p">,</span>
+            <span class="mi">3</span><span class="p">:</span> <span class="sh">"</span><span class="s">RIGHT</span><span class="sh">"</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="n">self</span><span class="p">.</span><span class="n">reward_map</span> <span class="o">=</span> <span class="n">reward_map</span> <span class="k">if</span> <span class="n">reward_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="k">else</span> <span class="n">np</span><span class="p">.</span><span class="nf">array</span><span class="p">([</span>
+            <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span>
+        <span class="p">])</span>
+
+        <span class="n">self</span><span class="p">.</span><span class="n">goal_state</span> <span class="o">=</span> <span class="n">goal</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">wall_state</span> <span class="o">=</span> <span class="nf">set</span><span class="p">(</span>
+            <span class="nf">zip</span><span class="p">(</span><span class="o">*</span><span class="n">np</span><span class="p">.</span><span class="nf">where</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">reward_map</span> <span class="o">==</span> <span class="bp">None</span><span class="p">)))</span>  <span class="c1"># 벽 상태(좌표)
+</span>        <span class="n">self</span><span class="p">.</span><span class="n">start_state</span> <span class="o">=</span> <span class="n">start</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">agent_state</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">start_state</span>   <span class="c1"># 에이전트 초기 상태(좌표)
+</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">height</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nf">len</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">reward_map</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">width</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nf">len</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">reward_map</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">reward_map</span><span class="p">.</span><span class="n">shape</span>
+
+    <span class="k">def</span> <span class="nf">actions</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">action_space</span>
+
+    <span class="k">def</span> <span class="nf">states</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">height</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">width</span><span class="p">):</span>
+                <span class="nf">yield </span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">next_state</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="c1"># 이동 위치 계산
+</span>        <span class="n">action_move_map</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span>
+        <span class="n">move</span> <span class="o">=</span> <span class="n">action_move_map</span><span class="p">[</span><span class="n">action</span><span class="p">]</span>
+        <span class="n">next_state</span> <span class="o">=</span> <span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">move</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">state</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">move</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">ny</span><span class="p">,</span> <span class="n">nx</span> <span class="o">=</span> <span class="n">next_state</span>
+
+        <span class="c1"># 이동한 위치가 그리드 월드의 테두리 밖이나 벽인가?
+</span>        <span class="k">if</span> <span class="n">nx</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">nx</span> <span class="o">&gt;=</span> <span class="n">self</span><span class="p">.</span><span class="n">width</span> <span class="ow">or</span> <span class="n">ny</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">ny</span> <span class="o">&gt;=</span> <span class="n">self</span><span class="p">.</span><span class="n">height</span><span class="p">:</span>
+            <span class="n">next_state</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="k">elif</span> <span class="n">next_state</span> <span class="ow">in</span> <span class="n">self</span><span class="p">.</span><span class="n">wall_state</span><span class="p">:</span>
+            <span class="n">next_state</span> <span class="o">=</span> <span class="n">state</span>
+
+        <span class="k">return</span> <span class="n">next_state</span>  <span class="c1"># 다음 상태 반환
+</span>
+    <span class="k">def</span> <span class="nf">reward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">next_state</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">reward_map</span><span class="p">[</span><span class="n">next_state</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">agent_state</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">start_state</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">agent_state</span>
+
+    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">agent_state</span>
+        <span class="n">next_state</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="nf">next_state</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span>
+        <span class="n">reward</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="nf">reward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">next_state</span><span class="p">)</span>
+        <span class="n">done</span> <span class="o">=</span> <span class="p">(</span><span class="n">next_state</span> <span class="o">==</span> <span class="n">self</span><span class="p">.</span><span class="n">goal_state</span><span class="p">)</span>
+
+        <span class="n">self</span><span class="p">.</span><span class="n">agent_state</span> <span class="o">=</span> <span class="n">next_state</span>
+        <span class="k">return</span> <span class="n">next_state</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span>
+
+    <span class="k">def</span> <span class="nf">render_v</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">v</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">policy</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">print_value</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="n">renderer</span> <span class="o">=</span> <span class="n">render_helper</span><span class="p">.</span><span class="nc">Renderer</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">reward_map</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">goal_state</span><span class="p">,</span>
+                                          <span class="n">self</span><span class="p">.</span><span class="n">wall_state</span><span class="p">)</span>
+        <span class="n">renderer</span><span class="p">.</span><span class="nf">render_v</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">policy</span><span class="p">,</span> <span class="n">print_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">render_q</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">print_value</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="n">renderer</span> <span class="o">=</span> <span class="n">render_helper</span><span class="p">.</span><span class="nc">Renderer</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">reward_map</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">goal_state</span><span class="p">,</span>
+                                          <span class="n">self</span><span class="p">.</span><span class="n">wall_state</span><span class="p">)</span>
+        <span class="n">renderer</span><span class="p">.</span><span class="nf">render_q</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">print_value</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Define the grid environment and the way the agent moves (policy).</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">os</span><span class="p">,</span> <span class="n">sys</span>
+<span class="kn">from</span> <span class="n">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">from</span> <span class="n">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="n">common.gridworld</span> <span class="kn">import</span> <span class="n">GridWorld</span>
+
+<span class="k">def</span> <span class="nf">greedy_probs</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">action_size</span><span class="o">=</span><span class="mi">4</span><span class="p">):</span>
+    <span class="n">qs</span> <span class="o">=</span> <span class="p">[</span><span class="n">Q</span><span class="p">[(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">)]</span> <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">action_size</span><span class="p">)]</span>
+    <span class="n">max_action</span> <span class="o">=</span> <span class="nf">int</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">argmax</span><span class="p">(</span><span class="n">qs</span><span class="p">))</span>
+
+    <span class="n">base_prob</span> <span class="o">=</span> <span class="n">epsilon</span> <span class="o">/</span> <span class="n">action_size</span>
+    <span class="n">action_probs</span> <span class="o">=</span> <span class="p">{</span><span class="n">action</span><span class="p">:</span> <span class="n">base_prob</span> <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">action_size</span><span class="p">)}</span>  <span class="c1">#{0: ε/4, 1: ε/4, 2: ε/4, 3: ε/4}
+</span>    <span class="n">action_probs</span><span class="p">[</span><span class="n">max_action</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">epsilon</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">action_probs</span>
+
+
+<span class="k">class</span> <span class="nc">McAgent</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">=</span> <span class="mf">0.9</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="mf">0.1</span>  <span class="c1"># (첫 번째 개선) ε-탐욕 정책의 ε
+</span>        <span class="n">self</span><span class="p">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="mf">0.1</span>    <span class="c1"># (두 번째 개선) Q 함수 갱신 시의 고정값 α
+</span>        <span class="n">self</span><span class="p">.</span><span class="n">action_size</span> <span class="o">=</span> <span class="mi">4</span>
+
+        <span class="n">random_actions</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">}</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">pi</span> <span class="o">=</span> <span class="nf">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">random_actions</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">Q</span> <span class="o">=</span> <span class="nf">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># self.cnts = defaultdict(lambda: 0)
+</span>        <span class="n">self</span><span class="p">.</span><span class="n">memory</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">get_action</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="n">action_probs</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">pi</span><span class="p">[</span><span class="n">state</span><span class="p">]</span>
+        <span class="n">actions</span> <span class="o">=</span> <span class="nf">list</span><span class="p">(</span><span class="n">action_probs</span><span class="p">.</span><span class="nf">keys</span><span class="p">())</span>
+        <span class="n">probs</span> <span class="o">=</span> <span class="nf">list</span><span class="p">(</span><span class="n">action_probs</span><span class="p">.</span><span class="nf">values</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">choice</span><span class="p">(</span><span class="n">actions</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">probs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">reward</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">reward</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">memory</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">memory</span><span class="p">.</span><span class="nf">clear</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="nf">reversed</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">memory</span><span class="p">):</span>
+            <span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">reward</span> <span class="o">=</span> <span class="n">data</span>
+            <span class="n">G</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">G</span> <span class="o">+</span> <span class="n">reward</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span>
+            <span class="c1"># self.cnts[key] += 1
+</span>            <span class="c1"># self.Q[key] += (G - self.Q[key]) / self.cnts[key]
+</span>            <span class="n">self</span><span class="p">.</span><span class="n">Q</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">G</span> <span class="o">-</span> <span class="n">self</span><span class="p">.</span><span class="n">Q</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="o">*</span> <span class="n">self</span><span class="p">.</span><span class="n">alpha</span>
+            <span class="n">self</span><span class="p">.</span><span class="n">pi</span><span class="p">[</span><span class="n">state</span><span class="p">]</span> <span class="o">=</span> <span class="nf">greedy_probs</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">Q</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">epsilon</span><span class="p">)</span>
+
+
+<span class="n">reward_map</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">array</span><span class="p">(</span>
+    <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">None</span><span class="p">],</span>
+     <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+     <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+     <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+     <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+     <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]]</span>
+<span class="p">)</span>
+
+<span class="n">start</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">goal</span> <span class="o">=</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+<span class="n">env</span> <span class="o">=</span> <span class="nc">GridWorld</span><span class="p">(</span><span class="n">reward_map</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">goal</span><span class="p">)</span>
+<span class="n">agent</span> <span class="o">=</span> <span class="nc">McAgent</span><span class="p">()</span>
+
+<span class="n">episodes</span> <span class="o">=</span> <span class="nf">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">episode</span> <span class="ow">in</span> <span class="nf">tqdm</span><span class="p">(</span><span class="nf">range</span><span class="p">(</span><span class="n">episodes</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="sh">"</span><span class="s">Training Progress</span><span class="sh">"</span><span class="p">):</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">env</span><span class="p">.</span><span class="nf">reset</span><span class="p">()</span>
+    <span class="n">agent</span><span class="p">.</span><span class="nf">reset</span><span class="p">()</span>
+
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">action</span> <span class="o">=</span> <span class="n">agent</span><span class="p">.</span><span class="nf">get_action</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+        <span class="n">next_state</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span> <span class="o">=</span> <span class="n">env</span><span class="p">.</span><span class="nf">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+        <span class="n">agent</span><span class="p">.</span><span class="nf">add</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">reward</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">done</span><span class="p">:</span>
+            <span class="n">agent</span><span class="p">.</span><span class="nf">update</span><span class="p">()</span>
+            <span class="k">break</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">next_state</span>
+
+<span class="n">env</span><span class="p">.</span><span class="nf">render_q</span><span class="p">(</span><span class="n">agent</span><span class="p">.</span><span class="n">Q</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>The agent alternates between exploration and exploitation over 10,000 episodes. Additionally, it reduces the weight of past experiences and assigns higher weight to the rewards obtained through current experiences.</p>
+
+<p>The Q(S, a) for each state is as follows.</p>
+
+<div align="center">
+  <img src="/images/Figure_1.png" alt="bandit" width="100%" />
+</div>
+
+<p>And, The Optimal Policy for each state is as follows.</p>
+
+<div style="display: flex; justify-content: center; gap: 10px;">
+  <img src="/images/Figure_2.png" alt="bandit1" style="width: 48%;" />
+  <img src="/images/Figure_3.png" alt="bandit2" style="width: 48%;" />
+</div>
 
 
 						</div><!-- /.content -->
