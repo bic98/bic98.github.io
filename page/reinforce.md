@@ -2037,3 +2037,6 @@ And, The Optimal Policy for each state is as follows.
   <img src="/images/Figure_3.png" alt="bandit2" style="width: 48%;">
 </div>
 
+## TD method
+
+
