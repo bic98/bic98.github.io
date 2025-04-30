@@ -1732,7 +1732,7 @@ Alright, according to the reading, we can implement this for the agent to intera
 The start point is (0, 0), the end point is (5, 5), and the black cell represents a wall that the agent cannot pass.
 
 <div align="center">
-  <img src="/images/montemap.png" alt="MM" width="80%">
+  <img src="/images/monemap.png" alt="MM" width="80%">
 </div>
 
 ```python
@@ -1833,4 +1833,207 @@ Q-Function Evaluation
 
 - `Incremental Method` : $$ Q_{\pi}(s, a) = Q_{\pi}(s, a) + \frac{1}{n} (G - Q_{\pi}(s, a)) $$
 
+
+### important concept
+
+1. Use an epsilon-greedy policy to give the agent opportunities to explore. 
+
+2. Train the model by applying an exponential moving average with a fixed value `a`, giving greater weight to more recent data.
+
+```python
+import numpy as np
+import common.gridworld_render as render_helper
+
+
+class GridWorld:
+    def __init__(self, reward_map, start, goal):
+        self.action_space = [0, 1, 2, 3]  # 행동 공간(가능한 행동들)
+        self.action_meaning = {  # 행동의 의미
+            0: "UP",
+            1: "DOWN",
+            2: "LEFT",
+            3: "RIGHT",
+        }
+
+        self.reward_map = reward_map if reward_map is not None else np.array([
+            [0, 0, 0, 0, 0, 0],
+            [0, None, None, None, None, 0],
+            [0, None, 0, 0, None, 0],
+            [0, None, 0, None, None, 0],
+            [0, 0, 0, 0, 0, 10],
+        ])
+
+        self.goal_state = goal
+        self.wall_state = set(
+            zip(*np.where(self.reward_map == None)))  # 벽 상태(좌표)
+        self.start_state = start
+        self.agent_state = self.start_state   # 에이전트 초기 상태(좌표)
+
+    @property
+    def height(self):
+        return len(self.reward_map)
+
+    @property
+    def width(self):
+        return len(self.reward_map[0])
+
+    @property
+    def shape(self):
+        return self.reward_map.shape
+
+    def actions(self):
+        return self.action_space
+
+    def states(self):
+        for h in range(self.height):
+            for w in range(self.width):
+                yield (h, w)
+
+    def next_state(self, state, action):
+        # 이동 위치 계산
+        action_move_map = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        move = action_move_map[action]
+        next_state = (state[0] + move[0], state[1] + move[1])
+        ny, nx = next_state
+
+        # 이동한 위치가 그리드 월드의 테두리 밖이나 벽인가?
+        if nx < 0 or nx >= self.width or ny < 0 or ny >= self.height:
+            next_state = state
+        elif next_state in self.wall_state:
+            next_state = state
+
+        return next_state  # 다음 상태 반환
+
+    def reward(self, state, action, next_state):
+        return self.reward_map[next_state]
+
+    def reset(self):
+        self.agent_state = self.start_state
+        return self.agent_state
+
+    def step(self, action):
+        state = self.agent_state
+        next_state = self.next_state(state, action)
+        reward = self.reward(state, action, next_state)
+        done = (next_state == self.goal_state)
+
+        self.agent_state = next_state
+        return next_state, reward, done
+
+    def render_v(self, v=None, policy=None, print_value=True):
+        renderer = render_helper.Renderer(self.reward_map, self.goal_state,
+                                          self.wall_state)
+        renderer.render_v(v, policy, print_value)
+
+    def render_q(self, q=None, print_value=True):
+        renderer = render_helper.Renderer(self.reward_map, self.goal_state,
+                                          self.wall_state)
+        renderer.render_q(q, print_value)
+```
+
+Define the grid environment and the way the agent moves (policy).
+
+
+```python
+import os, sys
+from tqdm import tqdm
+import numpy as np
+from collections import defaultdict
+from common.gridworld import GridWorld
+
+def greedy_probs(Q, state, epsilon=0.0, action_size=4):
+    qs = [Q[(state, action)] for action in range(action_size)]
+    max_action = int(np.argmax(qs))
+
+    base_prob = epsilon / action_size
+    action_probs = {action: base_prob for action in range(action_size)}  #{0: ε/4, 1: ε/4, 2: ε/4, 3: ε/4}
+    action_probs[max_action] += (1 - epsilon)
+    return action_probs
+
+
+class McAgent:
+    def __init__(self):
+        self.gamma = 0.9
+        self.epsilon = 0.1  # (첫 번째 개선) ε-탐욕 정책의 ε
+        self.alpha = 0.1    # (두 번째 개선) Q 함수 갱신 시의 고정값 α
+        self.action_size = 4
+
+        random_actions = {0: 0.25, 1: 0.25, 2: 0.25, 3: 0.25}
+        self.pi = defaultdict(lambda: random_actions)
+        self.Q = defaultdict(lambda: 0)
+        # self.cnts = defaultdict(lambda: 0)
+        self.memory = []
+
+    def get_action(self, state):
+        action_probs = self.pi[state]
+        actions = list(action_probs.keys())
+        probs = list(action_probs.values())
+        return np.random.choice(actions, p=probs)
+
+    def add(self, state, action, reward):
+        data = (state, action, reward)
+        self.memory.append(data)
+
+    def reset(self):
+        self.memory.clear()
+
+    def update(self):
+        G = 0
+        for data in reversed(self.memory):
+            state, action, reward = data
+            G = self.gamma * G + reward
+            key = (state, action)
+            # self.cnts[key] += 1
+            # self.Q[key] += (G - self.Q[key]) / self.cnts[key]
+            self.Q[key] += (G - self.Q[key]) * self.alpha
+            self.pi[state] = greedy_probs(self.Q, state, self.epsilon)
+
+
+reward_map = np.array(
+    [[0, 0, 0, -1.0, 0, None],
+     [0, 0, 0, 0, -1.0, 0],
+     [None, 0, -1.0, 0, 0, 0],
+     [0, -1.0, 0, 0, None, 0],
+     [0, None, -1.0, 0, 0, 0],
+     [None, 0, 0, None, 0, 1.0]]
+)
+
+start = (0, 0)
+goal = (5, 5)
+
+env = GridWorld(reward_map, start, goal)
+agent = McAgent()
+
+episodes = int(1e4)
+
+for episode in tqdm(range(episodes), desc="Training Progress"):
+    state = env.reset()
+    agent.reset()
+
+    while True:
+        action = agent.get_action(state)
+        next_state, reward, done = env.step(action)
+        agent.add(state, action, reward)
+        if done:
+            agent.update()
+            break
+        state = next_state
+
+env.render_q(agent.Q)
+```
+
+The agent alternates between exploration and exploitation over 10,000 episodes. Additionally, it reduces the weight of past experiences and assigns higher weight to the rewards obtained through current experiences.
+
+The Q(S, a) for each state is as follows.
+
+<div align="center">
+  <img src="/images/Figure_1.png" alt="bandit" width="100%">
+</div>
+
+And, The Optimal Policy for each state is as follows. 
+
+<div style="display: flex; justify-content: center; gap: 10px;">
+  <img src="/images/Figure_2.png" alt="bandit1" style="width: 48%;">
+  <img src="/images/Figure_3.png" alt="bandit2" style="width: 48%;">
+</div>
 
