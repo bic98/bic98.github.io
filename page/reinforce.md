@@ -2642,3 +2642,140 @@ DP의 가장 큰 한계점은 환경 모델에 대한 완전한 지식을 필요
 실시간 동적 프로그래밍은 현재 상태와 관련된 제한된 영역만 업데이트함으로써 계산 효율성을 높인다. 이는 대규모 상태 공간에서 효율적인 의사결정을 가능하게 한다.
 </details>
 </details>
+
+
+### Bootstrap
+
+
+부트스트래핑부트스트래핑은 다음 상태의 현재 추정값을 이용하여 현재 상태의 가치를 갱신하는 방법이다.
+Monte Carlo, Dynamic Programming, 그리고 TD(0)를 비교·증명하고 특징을 살펴보자. 
+
+### 1. Monte Carlo (MC) 방법
+
+
+- **전체 에피소드 리턴**  
+<div style="overflow-x: auto;">
+  \[
+    G_t = \sum_{k=0}^{T-t-1} \gamma^k\,r_{t+k+1}
+  \]
+</div>
+- **업데이트 식**  
+<div style="overflow-x: auto;">
+  \[
+    V(s_t) \leftarrow V(s_t) + \alpha\bigl[G_t - V(s_t)\bigr]
+  \]
+</div>
+- **증명 요약**  
+<div style="overflow-x: auto;">
+  \[
+    \mathbb{E}[G_t]
+    = \sum_{k=0}^{T-t-1}\gamma^k\,\mathbb{E}[r_{t+k+1}\mid s_t=s]
+    = v_\pi(s)
+  \]
+</div>
+
+```mermaid
+flowchart LR
+    classDef circleStyle fill:#fff,stroke:#000,stroke-width:2px;
+
+    Start(("시작"))
+    Init(("초기화: V(s) 및 returns 리스트"))
+    Episode(("에피소드 생성"))
+    Compute(("총 리턴 Gₜ 계산"))
+    Update(("V(sₜ) ← V(sₜ) + α·[Gₜ − V(sₜ)]"))
+    Check(("추가 에피소드?"))
+    End(("종료"))
+
+    class Start,Init,Episode,Compute,Update,Check,End circleStyle;
+
+    Start --> Init --> Episode --> Compute --> Update --> Check
+    Check -->|"예"| Init
+    Check -->|"아니오"| End
+```
+
+### 2. Dynamic Programming (DP)
+- **Bellman 기대 방정식**  
+<div style="overflow-x: auto;">
+  \[
+    v_\pi(s) = \mathbb{E}\bigl[r_{t+1} + \gamma\,v_\pi(s_{t+1}) \mid s_t=s\bigr]
+  \]
+</div>
+- **반복 갱신 (정책 평가)**  
+<div style="overflow-x: auto;">
+  \[
+    V_{k+1}(s) = \mathbb{E}\bigl[r_{t+1} + \gamma V_k(s_{t+1}) \mid s_t=s\bigr]
+  \]
+</div>
+- **수렴성 (Contractive mapping)**  
+<div style="overflow-x: auto;">
+  \[
+    T[V](s) = \mathbb{E}[r_{t+1} + \gamma V(s_{t+1}) \mid s_t=s]
+  \]
+  \[
+    \|T[V] - T[V']\|_\infty \le \gamma\,\|V - V'\|_\infty
+  \]
+</div>
+
+```mermaid
+flowchart LR
+    classDef circleStyle fill:#fff,stroke:#000,stroke-width:2px;
+
+    Start(("시작"))
+    Init(("초기화: V₀(s)"))
+    Iterate(("값 반복 갱신:\nVₖ₊₁(s) = E[r + γ·Vₖ(s')]"))
+    Converge(("‖Vₖ₊₁ − Vₖ‖ < θ ?"))
+    End(("종료"))
+
+    class Start,Init,Iterate,Converge,End circleStyle;
+
+    Start --> Init --> Iterate --> Converge
+    Converge -->|"아니오"| Iterate
+    Converge -->|"예"| End
+
+```
+
+### 3. Temporal-Difference (TD(0))
+
+MC와 DP의 절충: 부트스트래핑을 활용한 온라인 업데이트
+- **TD 오차 (Temporal Difference Error)**  
+<div style="overflow-x: auto;">
+  \[
+    \delta_t = r_{t+1} + \gamma\,V(s_{t+1}) - V(s_t)
+  \]
+</div>
+
+- **업데이트 식**  
+<div style="overflow-x: auto;">
+  \[
+    V(s_t) \leftarrow V(s_t) + \alpha\,\delta_t
+  \]
+</div>
+
+- **특징**  
+
+  - 온라인 업데이트: 한 스텝마다 즉시 갱신  
+  - 부트스트래핑을 활용  
+  - 편향↑, 분산↓ (MC와 반대)
+
+```mermaid
+
+flowchart LR
+    classDef circleStyle fill:#fff,stroke:#000,stroke-width:2px;
+
+    Start(("시작"))
+    Init(("초기화 V(s)"))
+    Observe(("상태 관측: sₜ"))
+    Action(("행동 선택: aₜ ← π(sₜ)"))
+    Step(("보상 및 다음 상태 관측:\nrₜ₊₁, sₜ₊₁"))
+    Update(("TD 업데이트:\nδₜ 계산 및 V(sₜ) 갱신"))
+    Term(("종료 여부 확인"))
+    End(("종료"))
+
+    class Start,Init,Observe,Action,Step,Update,Term,End circleStyle;
+
+    Start --> Init --> Observe --> Action --> Step --> Update --> Term
+    Term -->|"아니오"| Observe
+    Term -->|"예"| End
+
+```
+
