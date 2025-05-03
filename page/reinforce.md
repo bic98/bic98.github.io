@@ -2779,3 +2779,257 @@ flowchart LR
 
 ```
 
+<div align="center">
+  <img src="/images/backups.png" alt="bandit2" style="width: 100%;">
+</div>
+
+### On - policy SARSA
+
+TD 법은 다음 식을 따른다. 
+
+<div style="overflow-x: auto;">
+  \[
+    V(s_t) \gets V(s_t) + \alpha \big(R_{t} + \gamma V(s_{t+1}) - V(s_t)\big)
+  \]
+</div>
+
+<div style="overflow-x: auto;">
+  \[
+    Q_\pi(S_t, A_t) \gets Q_\pi(S_t, A_t) + \alpha \big(R_{t} + \gamma Q_\pi(S_{t + 1}, A_{t + 1}) - Q_\pi(S_t, A_t)\big)
+  \]
+</div>
+
+<div align = 'center'> 
+<div class = 'mermaid'>
+graph LR
+st((s<sub>t</sub>)) --> at((a<sub>t</sub>))
+at --> |Rt| st1((s<sub>t+1</sub>))
+st1 --> at1((a<sub>t+1</sub>))
+</div>
+</div>
+
+```python
+from collections import defaultdict, deque
+import numpy as np
+from common.gridworld import GridWorld
+from common.utils import greedy_probs
+
+
+class SarsaAgent:
+    def __init__(self):
+        self.gamma = 0.9
+        self.alpha = 0.8
+        self.epsilon = 0.1
+        self.action_size = 4
+
+        random_actions = {0: 0.25, 1: 0.25, 2: 0.25, 3: 0.25}
+        self.pi = defaultdict(lambda: random_actions)
+        self.Q = defaultdict(lambda: 0)
+        self.memory = deque(maxlen=2)  # deque 사용
+
+    def get_action(self, state):
+        action_probs = self.pi[state]  # pi에서 선택
+        actions = list(action_probs.keys())
+        probs = list(action_probs.values())
+        return np.random.choice(actions, p=probs)
+
+    def reset(self):
+        self.memory.clear()
+
+    def update(self, state, action, reward, done):
+        self.memory.append((state, action, reward, done))
+        if len(self.memory) < 2:
+            return
+
+        state, action, reward, done = self.memory[0]
+        next_state, next_action, _, _ = self.memory[1]
+        next_q = 0 if done else self.Q[next_state, next_action]  # 다음 Q 함수
+
+        # TD법으로 self.Q 갱신
+        target = reward + self.gamma * next_q
+        self.Q[state, action] += (target - self.Q[state, action]) * self.alpha
+        
+        # 정책 개선
+        self.pi[state] = greedy_probs(self.Q, state, self.epsilon)
+
+
+env = GridWorld()
+agent = SarsaAgent()
+
+episodes = 10000
+for episode in range(episodes):
+    state = env.reset()
+    agent.reset()
+
+    while True:
+        action = agent.get_action(state)
+        next_state, reward, done = env.step(action)
+
+        agent.update(state, action, reward, done)  # 매번 호출
+
+        if done:
+            # 목표에 도달했을 때도 호출
+            agent.update(next_state, None, None, None)
+            break
+        state = next_state
+
+env.render_q(agent.Q)
+```
+
+
+### off SARSA
+
+오프정책에는 행동정책과 대상정책을 따로 가지고 있다. 행동정책은 다양한 행동을 시도하며 샘플 데이터를 폭넓게 수집하는 데 초점을 맞춘다. 이를 통해 환경에 대한 탐색을 극대화한다. 반면, 대상정책은 탐욕정책을 기반으로 하여 최적의 행동을 선택하고 갱신하는 데 사용된다. 이러한 구조는 행동정책과 대상정책의 역할을 분리하여 학습의 효율성을 높이는 데 기여한다.
+
+
+
+<div style="overflow-x: auto;">
+  \[
+    Q_\pi(S_t, A_t) \gets Q_\pi(S_t, A_t) + \alpha \big(R_{t} + \gamma Q_\pi(S_{t + 1}, A_{t + 1}) - Q_\pi(S_t, A_t)\big)
+  \]
+</div>
+
+
+강화학습에서 에이전트는 환경과의 상호작용을 통해 최적의 정책을 학습하게 된다. 이때, 에이전트가 따르는 정책과 학습에 사용되는 정책이 같다면 이를 **on-policy**, 다르다면 **off-policy**라고 부른다. Off-policy 학습은 정책 평가와 데이터 수집의 주체를 분리함으로써 더 유연하고 강력한 학습을 가능하게 한다. 대표적인 예로는 Q-learning, Expected SARSA, 그리고 이 글에서 다룰 **Off-policy SARSA**가 있다.
+
+
+Off-policy SARSA는 기존의 SARSA 방식과 달리, 행동을 생성하는 정책과 학습을 위한 업데이트에 사용되는 정책을 분리한다. **행동정책(behavior policy)**은 데이터를 수집하는 데 사용되며, 보통 ε-greedy와 같이 일정 확률로 무작위 행동을 선택하는 **탐험 중심의 정책**이다. 반면, **대상정책(target policy)**은 실제로 Q 값을 업데이트할 때 기준이 되는 정책이며, 일반적으로 greedy 정책이나 soft policy가 사용된다. 이러한 구조는 다양한 행동을 시도하면서도 최적의 정책을 학습하는 데 유리한 조건을 제공한다.
+
+그러나 행동정책과 대상정책이 다르기 때문에, 수집한 데이터가 학습에 직접적으로 반영되기에는 차이가 존재한다. 이 문제를 해결하기 위해 **중요도 비율(Importance Sampling Ratio)**이 도입된다. 중요도 비율은 *"이 행동이 대상정책이었다면 얼마나 일어났을까?"*를 확률적으로 보정해주는 계수이며, 수식으로는 다음과 같이 정의된다:
+
+<div style="overflow-x: auto;">
+$$
+\rho_t = \frac{\pi(A_t \mid S_t)}{\mu(A_t \mid S_t)}
+$$
+</div>
+
+여기서 $$\pi$$는 대상정책, $$\mu$$는 행동정책을 의미한다. 이 비율을 업데이트 식에 곱해줌으로써, 행동정책으로 수집한 데이터를 대상정책 관점에서 해석할 수 있게 된다.
+
+Off-policy SARSA의 업데이트 식은 다음과 같다:
+
+<div style="overflow-x: auto;">
+$$
+Q(S_t, A_t) \leftarrow Q(S_t, A_t) + \alpha \, \rho_t \left( R_t + \gamma Q(S_{t+1}, A_{t+1}) - Q(S_t, A_t) \right)
+$$
+</div>
+
+위 식에서 $$\rho_t$$는 앞서 설명한 중요도 비율이며, 이를 통해 대상정책 기준으로 TD 오류 항을 조정하게 된다. 만약 $$\rho_t = 1$$이라면, 이는 on-policy 상황과 동일해진다. 반대로, 행동정책과 대상정책이 다를수록 $$\rho_t$$는 1에서 멀어지며, 보정의 영향력이 커진다.
+
+이러한 방식은 이론적으로 매우 강력하지만, 실용적으로는 한 가지 주의할 점이 있다. $$\rho_t$$가 지나치게 크거나 작아질 경우, 학습 과정에서 **분산이 커지고 불안정해질 수 있다.** 이를 방지하기 위해 **클리핑(clipping)**이나 **평균 정규화(mean normalization)** 등의 기법이 사용되기도 한다. 특히 여러 시점에 걸쳐 중요도 비율을 누적해서 사용하는 경우(예: SARSA($$\lambda$$))에는 분산 문제가 더욱 심각해지므로 주의가 필요하다.
+
+Off-policy SARSA는 정책의 유연성과 데이터 재사용 가능성을 극대화할 수 있다는 점에서 매우 실용적인 접근법이며, 다양한 실제 환경에서도 효과적으로 활용될 수 있다.
+
+
+```python
+from collections import defaultdict, deque
+import numpy as np
+from common.gridworld import GridWorld
+from common.utils import greedy_probs
+
+
+class SarsaOffPolicyAgent:
+    def __init__(self):
+        self.gamma = 0.9
+        self.alpha = 0.8
+        self.epsilon = 0.1
+        self.action_size = 4
+
+        random_actions = {0: 0.25, 1: 0.25, 2: 0.25, 3: 0.25}
+        self.pi = defaultdict(lambda: random_actions)
+        self.b = defaultdict(lambda: random_actions)
+        self.Q = defaultdict(lambda: 0)
+        self.memory = deque(maxlen=2)
+
+    def get_action(self, state):
+        action_probs = self.b[state]  # 행동 정책에서 가져옴
+        actions = list(action_probs.keys())
+        probs = list(action_probs.values())
+        return np.random.choice(actions, p=probs)
+
+    def reset(self):
+        self.memory.clear()
+
+    def update(self, state, action, reward, done):
+        self.memory.append((state, action, reward, done))
+        if len(self.memory) < 2:
+            return
+
+        state, action, reward, done = self.memory[0]
+        next_state, next_action, _, _ = self.memory[1]
+
+        if done:
+            next_q = 0
+            rho = 1
+        else:
+            next_q = self.Q[next_state, next_action]
+            rho = self.pi[next_state][next_action] / self.b[next_state][next_action]  # 가중치 rho 계산
+
+        # rho로 TD 목표 보정
+        target = rho * (reward + self.gamma * next_q)
+        self.Q[state, action] += (target - self.Q[state, action]) * self.alpha
+
+        # 각각의 정책 개선
+        self.pi[state] = greedy_probs(self.Q, state, 0)
+        self.b[state] = greedy_probs(self.Q, state, self.epsilon)
+
+
+env = GridWorld()
+agent = SarsaOffPolicyAgent()
+
+episodes = 10000
+for episode in range(episodes):
+    state = env.reset()
+    agent.reset()
+
+    while True:
+        action = agent.get_action(state)
+        next_state, reward, done = env.step(action)
+
+        agent.update(state, action, reward, done)
+
+        if done:
+            agent.update(next_state, None, None, None)
+            break
+        state = next_state
+
+env.render_q(agent.Q)
+```
+
+
+start Point is (0, 0)
+<br>
+end Point is (5, 5)
+
+<div align="center">
+  <img src="/images/sarsa.png" alt="bandit1" style="width: 90%;">
+</div>
+
+
+<div align="center">
+  <img src="/images/sarsa2.png" alt="bandit2" style="width: 90%;">
+</div>
+
+### Q-learning
+
+Q-learning은 강화학습에서 가장 널리 쓰이는 알고리즘 중 하나로, off-policy TD 방법에 속한다. 에이전트는 환경과 상호작용하며 Q 함수를 업데이트하지만, 업데이트 대상은 실제로 선택한 행동이 아닌 미래에 가장 높은 Q 값을 갖는 행동에 기반한다. 이로 인해 Q-learning은 실제 행동과는 무관하게 탐욕적인(target) 정책을 따르는 학습이 가능해진다.
+
+대표적인 특징은 다음과 같다.
+
+`TD(Temporal Difference) 학습`: 부트스트래핑 방식으로, 미래 상태의 Q 값을 이용해 현재 Q 값을 점진적으로 갱신한다.
+
+`Off-policy 학습`: 실제 행동은 ε-greedy 정책 등 탐험적인 행동정책을 따르지만, 학습은 항상 greedy한 대상정책 기준으로 이루어진다.
+
+`중요도 샘플링 불필요`: 대상정책이 항상 greedy하므로, 행동정책과의 차이를 보정할 필요가 없다. 따라서 중요도 비율(importance sampling ratio)을 계산하지 않는다.
+
+Q-learning의 핵심 업데이트 식은 다음과 같다:
+
+<div style="overflow-x: auto;"> \[ Q(S_t, A_t) \leftarrow Q(S_t, A_t) + \alpha \left( R_t + \gamma \max_a Q(S_{t+1}, a) - Q(S_t, A_t) \right) \] </div>
+
+
+이 식에서 핵심은 다음 상태 
+$$S_t+1$$
+에서 가능한 모든 행동 중 가장 큰 Q 값을 선택하여, 그것을 목표 값(target)으로 사용한다는 점이다. 즉, 실제 수행한 
+$$A_t+1$$
+와 무관하게, greedy한 가치를 기준으로 현재 Q 값을 업데이트하는 것이다.
+
+이러한 방식은 학습 안정성과 수렴 이론 측면에서 유리하다. 특히, 수렴 조건이 잘 정의되어 있으며, 충분한 탐험과 적절한 학습률 하에서 최적의 Q 함수로 수렴함이 증명되어 있다. 다만, 탐험을 위한 ε-greedy 정책 등 별도의 수집 전략이 필요하며, 초기에 잘못된 Q 값이 고착되는 문제도 있을 수 있다. 이를 보완하기 위해 Double Q-learning, DQN, Prioritized Experience Replay 등의 다양한 확장 기법이 존재한다.
