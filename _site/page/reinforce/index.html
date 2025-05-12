@@ -3184,6 +3184,42 @@ end Point is (5, 5)</p>
 
 <div style="overflow-x: auto;"> \[ Q(S_t, A_t) \leftarrow Q(S_t, A_t) + \alpha \left( R_t + \gamma \max_a Q(S_{t+1}, a) - Q(S_t, A_t) \right) \] </div>
 
+<p>간단히 말해서, 지금 점수←지금 점수+(진짜 점수 + 예측 점수−지금 점수) 이다.</p>
+
+<ul>
+  <li>
+    <p>R_t: 지금 보상 (샘플링된 거!)</p>
+  </li>
+  <li>
+    <p>Q(s’, a’): 다음 상태에서 가능한 모든 행동에 대해 가장 높은 Q값을 선택 (max!)</p>
+  </li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>알고리즘</th>
+      <th>다음 행동 선택</th>
+      <th>업데이트 기준</th>
+      <th>샘플링 방식</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>SARSA</strong></td>
+      <td>실제로 한 행동</td>
+      <td>\(Q(s, a) \leftarrow r + \gamma Q(s', a')\)</td>
+      <td><strong>보상, 상태, 행동 모두 샘플링</strong> (on-policy)</td>
+    </tr>
+    <tr>
+      <td><strong>Q-learning</strong></td>
+      <td>가장 큰 Q값 선택</td>
+      <td>\(Q(s, a) \leftarrow r + \gamma \max Q(s', a')\)</td>
+      <td><strong>보상/상태는 샘플링, 행동은 max로 대체</strong> (off-policy)</td>
+    </tr>
+  </tbody>
+</table>
+
 <p>이 식에서 핵심은 다음 상태 
 \(S_t+1\)
 에서 가능한 모든 행동 중 가장 큰 Q 값을 선택하여, 그것을 목표 값(target)으로 사용한다는 점이다. 즉, 실제 수행한 
@@ -3191,6 +3227,345 @@ end Point is (5, 5)</p>
 와 무관하게, greedy한 가치를 기준으로 현재 Q 값을 업데이트하는 것이다.</p>
 
 <p>이러한 방식은 학습 안정성과 수렴 이론 측면에서 유리하다. 특히, 수렴 조건이 잘 정의되어 있으며, 충분한 탐험과 적절한 학습률 하에서 최적의 Q 함수로 수렴함이 증명되어 있다. 다만, 탐험을 위한 ε-greedy 정책 등 별도의 수집 전략이 필요하며, 초기에 잘못된 Q 값이 고착되는 문제도 있을 수 있다. 이를 보완하기 위해 Double Q-learning, DQN, Prioritized Experience Replay 등의 다양한 확장 기법이 존재한다.</p>
+
+<h2 id="신경망과-q-learning">신경망과 Q-learning</h2>
+
+<h3 id="기존-dqn">기존 DQN</h3>
+
+<p>업데이트 타겟:</p>
+
+\[y = r + \gamma \max_{a'} Q_{\text{target}}(s', a')\]
+
+<ul>
+  <li>다음 상태 \(s'\)에서 <strong>가장 큰 Q값</strong>을 그대로 사용</li>
+  <li>선택과 평가가 <strong>같은 네트워크</strong>에서 이뤄짐 → 과대추정 가능성</li>
+</ul>
+
+<hr />
+
+<h3 id="double-dqn">Double DQN</h3>
+
+<ol>
+  <li>다음 행동 선택:</li>
+</ol>
+
+\[a^* = \arg\max_{a'} Q_{\text{online}}(s', a')\]
+
+<ol>
+  <li>그 행동의 값 평가:</li>
+</ol>
+
+\[y = r + \gamma Q_{\text{target}}(s', a^*)\]
+
+<ul>
+  <li><strong>online 네트워크</strong>로 행동을 선택하고,</li>
+  <li><strong>target 네트워크</strong>로 그 값을 평가</li>
+  <li>→ 선택과 평가를 <strong>분리</strong>해서 과대추정 방지</li>
+</ul>
+
+<hr />
+
+<p>기존 DQN이 과장된 Q값을 학습하는 이유</p>
+
+<p>기존 DQN (또는 Q-learning)은 다음과 같은 방식으로 Q값을 업데이트:</p>
+
+\[Q(s, a) \leftarrow r + \gamma \max_{a'} Q(s', a')\]
+
+<p>여기서 문제가 발생.</p>
+
+<ul>
+  <li>\(Q(s', a')\) 값들은 아직 학습이 덜 된, <strong>부정확한 값</strong></li>
+  <li>그런데 \(\max\) 연산을 쓰면,</li>
+  <li>운 좋게 <strong>우연히 높은 값</strong>이 선택될 수 있음.</li>
+  <li>그러면 그 높은 값을 <strong>진짜 정답인 줄 알고 학습</strong>함.</li>
+</ul>
+
+<p><strong>결과적으로</strong>:</p>
+
+<blockquote>
+  <p>Q-network는 실제보다 <strong>과장된 Q값 (Overestimated Q-value)</strong> 을 계속 배우게 됨</p>
+</blockquote>
+
+<p>이 현상을 <strong>overestimation bias (과대 추정 편향)</strong> 이라고 부릅니다.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>항목</th>
+      <th>기존 DQN</th>
+      <th>Double DQN</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>행동 선택과 평가</td>
+      <td>같은 Q로 선택하고 평가함 → 과장됨</td>
+      <td>선택은 online Q, 평가는 target Q로 나눔</td>
+    </tr>
+    <tr>
+      <td>결과</td>
+      <td>너무 높게 Q값을 믿음 (overestimate)</td>
+      <td>더 정확한 Q값 예측</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="prioritized-experience-replay-per">Prioritized Experience Replay (PER)</h3>
+
+<h4 id="1-개념-요약">1. 개념 요약</h4>
+
+<p>Prioritized Experience Replay는 중요도가 높은 경험을 더 자주 학습에 사용하도록 샘플링 확률을 조절하는 기법이다.<br />
+기존 Experience Replay에서는 모든 경험을 동일한 확률로 샘플링하지만, PER은 학습에 더 유익한 경험을 우선적으로 학습한다.</p>
+
+<hr />
+
+<h4 id="2-기존-experience-replay의-한계">2. 기존 Experience Replay의 한계</h4>
+
+<ul>
+  <li>환경에서 수집한 경험 $(s, a, r, s’)$을 버퍼에 저장한다.</li>
+  <li>학습 시, 버퍼에서 <strong>무작위로</strong> 샘플링한다.</li>
+  <li>그러나 모든 경험이 학습에 똑같이 유익한 것은 아니다.</li>
+  <li>어떤 경험은 매우 중요한 반면, 어떤 경험은 거의 쓸모없을 수 있다.</li>
+</ul>
+
+<hr />
+
+<h4 id="3-per의-핵심-아이디어">3. PER의 핵심 아이디어</h4>
+
+<ul>
+  <li>경험마다 <strong>우선순위(priority)</strong> 를 부여하고,</li>
+  <li>우선순위가 높을수록 <strong>샘플링 확률을 높인다</strong>.</li>
+</ul>
+
+<hr />
+
+<h4 id="4-td-error를-이용한-우선순위-정의">4. TD-error를 이용한 우선순위 정의</h4>
+
+<p>경험의 우선순위는 일반적으로 TD-error를 기반으로 계산한다.</p>
+
+\[\delta = \left| r + \gamma \max_{a'} Q(s', a') - Q(s, a) \right|\]
+
+<ul>
+  <li>TD-error가 크다는 것은 Q 함수가 그 경험에 대해 잘못 예측했다는 의미이다.</li>
+  <li>따라서 학습을 통해 개선할 여지가 크므로, 더 자주 샘플링할 가치가 있다.</li>
+</ul>
+
+<hr />
+
+<h4 id="5-중요도-보정-importance-sampling">5. 중요도 보정 (Importance Sampling)</h4>
+
+<p>샘플링 확률이 균등하지 않기 때문에 학습이 편향될 수 있다.<br />
+이를 보정하기 위해 Importance Sampling weight를 적용한다.</p>
+
+\[w_i = \left( \frac{1}{N} \cdot \frac{1}{P(i)} \right)^\beta\]
+
+<ul>
+  <li>\(P(i)\): transition \(i\)의 샘플링 확률</li>
+  <li>\(N\): 전체 샘플 수</li>
+  <li>\(\beta\): 보정 강도. 초기에는 작게 시작하고 학습이 진행되며 점차 \(1\)로 증가시킨다.</li>
+</ul>
+
+<p>이 weight는 loss에 곱해서 학습 시 반영한다.</p>
+
+<hr />
+
+<h4 id="6-per의-전체-구조">6. PER의 전체 구조</h4>
+
+<ol>
+  <li>경험 \((s, a, r, s')\) 저장 시, TD-error 기반으로 priority를 초기화한다.</li>
+  <li>샘플링 시, priority가 높은 transition이 뽑힐 확률이 더 높도록 한다.</li>
+  <li>학습 후 TD-error를 다시 계산하여 priority를 갱신한다.</li>
+  <li>Importance Sampling weight를 통해 편향을 보정한다.</li>
+</ol>
+
+<hr />
+
+<h4 id="7-일반-experience-replay와-비교">7. 일반 Experience Replay와 비교</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>항목</th>
+      <th>일반 Experience Replay</th>
+      <th>Prioritized Experience Replay</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>샘플링 방식</td>
+      <td>균등 무작위</td>
+      <td>TD-error 기반 확률적 샘플링</td>
+    </tr>
+    <tr>
+      <td>중요한 경험에 대한 처리</td>
+      <td>모두 동일하게 취급</td>
+      <td>TD-error 큰 경험을 자주 학습</td>
+    </tr>
+    <tr>
+      <td>샘플 효율성</td>
+      <td>낮을 수 있음</td>
+      <td>높음</td>
+    </tr>
+    <tr>
+      <td>학습 수렴 속도</td>
+      <td>느릴 수 있음</td>
+      <td>빠르게 수렴 가능</td>
+    </tr>
+    <tr>
+      <td>단점</td>
+      <td>단순하지만 비효율적</td>
+      <td>구현 복잡, importance sampling 보정 필요</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<h4 id="8-요약">8. 요약</h4>
+
+<p>Prioritized Experience Replay는 TD-error를 기반으로 중요한 경험을 선별적으로 학습하여 Q 함수의 수렴 속도와 효율성을 높인다.<br />
+학습 편향을 줄이기 위해 importance sampling 보정이 필요하며, 일반 Experience Replay에 비해 구현 복잡도는 증가하지만 성능 향상에 기여할 수 있다.</p>
+
+<h3 id="듀얼링-dqndueling-dqn">듀얼링 DQN(Dueling DQN)</h3>
+
+<h4 id="1-핵심-아이디어">1. 핵심 아이디어</h4>
+
+<p>기존 DQN은 상태-행동쌍 Q값을 곧바로 예측한다:</p>
+
+\[Q(s, a)\]
+
+<p>그러나 듀얼링 DQN은 Q값을 두 개의 구성요소로 나누어 표현한다:</p>
+
+<ul>
+  <li>\(V(s)\): 상태 자체의 가치 (Value)</li>
+  <li>\(A(s, a)\): 특정 행동이 그 상태에서 얼마나 더 나은지를 나타내는 이점 (Advantage)</li>
+</ul>
+
+<p>최종적으로 Q값은 다음과 같이 계산된다:</p>
+
+\[Q(s, a) = V(s) + \left( A(s, a) - \frac{1}{|\mathcal{A}|} \sum_{a'} A(s, a') \right)\]
+
+<p>여기서 평균을 빼는 이유는 Advantage 값들이 중심화되어야 안정적으로 학습되기 때문이다.</p>
+
+<hr />
+
+<h4 id="2-왜-분리하는가">2. 왜 분리하는가?</h4>
+
+<p>많은 상황에서 어떤 상태는 명백히 “좋은 상태”이지만,<br />
+그 상태 내에서의 각 행동들은 비슷한 결과를 가져올 수 있다.</p>
+
+<p>예를 들어, 공중에 떠 있는 공을 바라보는 상태에서는<br />
+왼쪽으로 움직이든, 오른쪽으로 움직이든 큰 차이가 없다.<br />
+이때 중요한 것은 “상태 자체의 가치”이지, “행동의 차이”가 아니다.</p>
+
+<p>DQN은 이러한 상황에서 Q값을 제대로 분리하지 못하고<br />
+학습 속도가 느려지거나 불안정해지는 경향이 있다.</p>
+
+<hr />
+
+<h4 id="3-네트워크-구조">3. 네트워크 구조</h4>
+
+<p>듀얼링 DQN은 중간까지 공유된 층을 통과한 후,<br />
+Value와 Advantage를 각각 출력하는 두 갈래(stream)로 나뉜다.</p>
+
+<h3 id="듀얼링-dqndueling-dqn-개념-예시로-이해하기">듀얼링 DQN(Dueling DQN) 개념 예시로 이해하기</h3>
+
+<p>듀얼링 DQN은 Q값을 다음과 같이 두 부분으로 나누어 계산한다:</p>
+
+<ul>
+  <li><strong>상태 가치</strong>: \(V(s)\)</li>
+  <li><strong>행동 이점(advantage)</strong>: \(A(s, a)\)</li>
+</ul>
+
+<p>최종적으로 Q값은 다음과 같이 계산된다:</p>
+
+\[Q(s, a) = V(s) + \left( A(s, a) - \frac{1}{|\mathcal{A}|} \sum_{a'} A(s, a') \right)\]
+
+<hr />
+
+<h4 id="예시-자판기-앞에-선-상황">예시: 자판기 앞에 선 상황</h4>
+
+<p>자판기 앞에 서 있다고 가정하자. 선택 가능한 음료는 다음과 같다:</p>
+
+<ul>
+  <li>콜라</li>
+  <li>사이다</li>
+  <li>커피</li>
+</ul>
+
+<h4 id="상태-가치-vs">상태 가치 \(V(s)\)</h4>
+
+<ul>
+  <li>지금 자판기 앞에 서 있다는 것 자체가 <strong>좋은 상태</strong>이다.</li>
+  <li>어떤 음료를 고르든 간에 갈증을 해소할 수 있기 때문이다.</li>
+  <li>따라서 \(V(s)\)는 높은 값이 된다 (예: 8.0)</li>
+</ul>
+
+<h4 id="행동-이점-as-a">행동 이점 \(A(s, a)\)</h4>
+
+<ul>
+  <li>콜라를 누르든, 사이다를 누르든, 커피를 누르든 <strong>큰 차이 없음</strong></li>
+  <li>즉, <strong>행동의 상대적 차이(advantage)</strong> 는 작다:
+    <ul>
+      <li>
+\[A(s, \text{콜라}) = 0.1\]
+      </li>
+      <li>
+\[A(s, \text{사이다}) = 0.0\]
+      </li>
+      <li>
+\[A(s, \text{커피}) = -0.1\]
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<hr />
+
+<h4 id="기존-dqn-vs-듀얼링-dqn-비교">기존 DQN vs 듀얼링 DQN 비교</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>항목</th>
+      <th>기존 DQN</th>
+      <th>듀얼링 DQN</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Q값 계산 방식</td>
+      <td>\(Q(s, a)\) 직접 예측</td>
+      <td>\(Q(s, a) = V(s) + (A(s, a) - \text{mean}(A))\)</td>
+    </tr>
+    <tr>
+      <td>상태 가치 고려</td>
+      <td>X</td>
+      <td>O</td>
+    </tr>
+    <tr>
+      <td>행동 간 차이 반영</td>
+      <td>모든 Q에 포함됨</td>
+      <td>A(s, a)에만 반영됨</td>
+    </tr>
+    <tr>
+      <td>예시 해석</td>
+      <td>“콜라 Q=8.2, 사이다 Q=8.1 등”</td>
+      <td>“상태가 8.0이고, 콜라는 +0.1, 사이다는 0.0, 커피는 -0.1”</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<h4 id="요약">요약</h4>
+
+<ul>
+  <li>Dueling DQN은 <strong>상태가 좋은 이유와 행동이 좋은 이유를 분리</strong>해서 학습한다.</li>
+  <li>특히 <strong>행동 간 차이가 크지 않은 상황에서 더 효과적</strong>이다.</li>
+  <li>이 구조는 안정적이고 빠른 Q값 학습에 도움을 준다.</li>
+</ul>
+
 
 						</div><!-- /.content -->
 					</div><!-- /.col -->
