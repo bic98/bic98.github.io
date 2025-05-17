@@ -3062,11 +3062,6 @@ Q-learning의 핵심 업데이트 식은 다음과 같다:
 
 - Q(s', a'): 다음 상태에서 가능한 모든 행동에 대해 가장 높은 Q값을 선택 (max!)
 
-| 알고리즘           | 다음 행동 선택     | 업데이트 기준                                      | 샘플링 방식                                  |
-|--------------------|--------------------|---------------------------------------------------|----------------------------------------------|
-| **SARSA**          | 실제로 한 행동     | $$ Q(s, a) \leftarrow r + \gamma Q(s', a') $$     | **보상, 상태, 행동 모두 샘플링** (on-policy)  |
-| **Q-learning**     | 가장 큰 Q값 선택   | $$ Q(s, a) \leftarrow r + \gamma \max Q(s', a') $$ | **보상/상태는 샘플링, 행동은 max로 대체** (off-policy)
-
 
 이 식에서 핵심은 다음 상태 
 $$S_t+1$$
@@ -3727,6 +3722,18 @@ if __name__ == "__main__":
 하나는 실제 행동을 선택할 때 사용되는 policy_net이고,
 다른 하나는 target Q값을 계산할 때 사용되는 target_net이다.
 
+<div style="overflow-x: auto;">
+$$
+Q(s, a) \leftarrow Q(s, a) + \alpha \cdot \left[ r + \gamma \max_{a'} Q(s', a') - Q(s, a) \right]
+$$
+</div>
+
+- **policy_net**은 학습하는 모델
+- **target_net**은 학습을 위한 고정된 타깃 생성기
+- $$ Q(s, a) $$  → policy_net이 예측한 값
+- $$ r + \gamma \max_{a'} Q(s', a') $$ → target_net 으로 TD타깃값이다. 현재의 Q값을 타깃 방향으로 조금씩 이동시켜야 한다. 
+- **TD 타깃(Temporal Difference target)**은 강화학습에서 현재 상태의 Q값을 어떻게 갱신할지 결정하는 기준값.
+
 초기에는 두 네트워크의 가중치가 동일하게 설정되며, 이후 학습이 진행되면 policy_net만 학습되고,
 target_net은 일정 주기마다 policy_net의 가중치를 복사받게 된다.
 이렇게 함으로써 Q-learning에서 발생할 수 있는 불안정한 학습 문제를 완화하고,
@@ -3753,3 +3760,377 @@ TD 타깃의 분산을 줄여 안정적인 학습을 가능하게 한다.
 **eps** = [탐험률(ε-greedy) 초기값, 학습이 진행되면 점점 감소함]
 
 **rewards_log** = [에피소드별 누적 보상을 기록하는 리스트]
+
+### 5. 행동 선택 및 학습 함수
+
+```python
+    def choose_action(state, eps):
+        if random.random() < eps:
+            return random.randrange(env.action_space)
+        with torch.no_grad():
+            state = torch.FloatTensor(state).unsqueeze(0).to(device)
+            return policy_net(state).argmax(1).item()
+
+```
+
+
+(1) 행동 선택 (choose_action)
+
+ε-greedy = [무작위 탐험과 최적 행동 선택을 섞어 사용함]
+
+- random < ε → 랜덤 행동 (탐험)
+- random ≥ ε → argmax(Q) 행동 선택 (활용)
+
+
+--------------------------
+
+```python
+    def train_step():
+        if len(memory) < BATCH_SIZE:
+            return
+        batch = memory.sample(BATCH_SIZE)
+        batch = Transition(*zip(*batch))
+
+        s = torch.FloatTensor(batch.s).to(device)
+        a = torch.LongTensor(batch.a).unsqueeze(1).to(device)
+        r = torch.FloatTensor(batch.r).to(device)
+        ns = torch.FloatTensor(batch.ns).to(device)
+        d = torch.FloatTensor(batch.done).to(device)
+
+        q_sa = policy_net(s).gather(1, a).squeeze()
+        with torch.no_grad():
+            q_ns = target_net(ns).max(1)[0]
+            target = r + GAMMA * q_ns * (1-d)
+        loss = nn.MSELoss()(q_sa, target)
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+```
+
+(2) 학습 step (train_step)
+
+입력 = [리플레이 버퍼에서 샘플링된 batch]
+
+Q(s, a) = [현재 정책 네트워크가 예측한 Q값]
+
+target = [r + γ * max_a′ Q_target(s′, a′)] → DQN의 핵심 업데이트 수식 기반
+
+loss = [예측값과 타깃값의 차이 (MSE)]
+
+역할 = [TD 오차를 기반으로 Q-function을 업데이트함]
+
+#### **경험 개수 확인**
+------------------
+```python
+if len(memory) < BATCH_SIZE:
+    return
+```
+- 리플레이 버퍼에 샘플이 충분히 쌓이지 않았으면 학습하지 않음
+
+
+#### **미니배치 샘플링 및 분리**
+---------------------------
+```python
+batch = memory.sample(BATCH_SIZE)
+batch = Transition(*zip(*batch))
+```
+- 샘플을 BATCH_SIZE만큼 무작위로 선택하고, 각각 s, a, r, s′, done으로 분리
+
+
+#### **텐서로 변환 및 장치로 이동**
+------------------------------
+```python
+s = torch.FloatTensor(batch.s).to(device)
+a = torch.LongTensor(batch.a).unsqueeze(1).to(device)
+r = torch.FloatTensor(batch.r).to(device)
+ns = torch.FloatTensor(batch.ns).to(device)
+d = torch.FloatTensor(batch.done).to(device)
+```
+- 각 배열을 PyTorch 텐서로 변환 후 GPU 또는 CPU로 이동
+
+
+#### **현재 Q값 예측 (예측값)**
+--------------------------
+```python
+q_sa = policy_net(s).gather(1, a).squeeze()
+```
+- policy_net으로 상태에 대한 모든 행동의 Q값 예측
+- gather로 실제 취한 행동의 Q값만 추출
+
+
+#### **TD 타깃 계산 (정답값)**
+--------------------------
+```python
+with torch.no_grad():
+    q_ns = target_net(ns).max(1)[0]
+    target = r + GAMMA * q_ns * (1 - d)
+```
+- target_net으로 다음 상태의 최대 Q값 계산
+- TD 타깃 정의:
+    TD 타깃 = r + γ max Q(s', a')
+- 에피소드가 끝났다면 γ Q(s′, a′)는 무시됨
+
+
+#### **손실 계산**
+-------------
+```python
+loss = nn.MSELoss()(q_sa, target)
+```
+- 예측값과 타깃값 간의 MSE 손실 계산
+
+
+#### **역전파 및 가중치 업데이트**
+-----------------------------
+```python
+optimizer.zero_grad()
+loss.backward()
+optimizer.step()
+```
+- 그래디언트 초기화 → 역전파 → 가중치 업데이트 수행
+
+### 6. 전체 학습 루프
+
+```python
+for ep in range(1, EPISODES+1):
+    state = env.reset()
+    total_r = 0
+    while True:
+        action = choose_action(state, eps)
+        next_state, reward, done, _ = env.step(action)
+        memory.push(state, action, reward, next_state, done)
+        state = next_state
+        total_r += reward
+        train_step()
+        if done:
+            break
+
+    eps = max(EPS_END, eps * EPS_DECAY)
+    rewards_log.append(total_r)
+
+    if ep % TARGET_UPDATE == 0:
+        target_net.load_state_dict(policy_net.state_dict())
+
+    print(
+        f"EP {ep:3d} | Score {env.score:3d} | TotalR {total_r:4.1f} | ε {eps:.2f}")
+```
+
+------------------
+
+env.reset() = [새로운 에피소드 시작]
+
+choose_action() = [ε-greedy로 행동 선택]
+
+env.step() = [환경으로부터 다음 상태, 보상, done 얻음]
+
+memory.push() = [transition 저장]
+
+train_step() = [Q-network 업데이트]
+
+eps 감소 = [탐험률 감소 → 점점 최적 정책으로 수렴]
+
+target_net 업데이트 = [매 TARGET_UPDATE 주기로 동기화]
+
+모델 저장 = [학습 완료된 policy_net을 .pth로 저장]
+
+#### **환경 초기화 및 변수 준비**
+```python
+state = env.reset()
+total_r = 0
+```
+- 새로운 에피소드 시작 시 환경을 초기화하고, 누적 보상 초기화
+
+
+#### **행동 선택 및 환경과 상호작용**
+```python
+action = choose_action(state, eps)
+next_state, reward, done, _ = env.step(action)
+```
+- ε-greedy 방식으로 행동을 선택하고, 그에 따라 환경을 한 스텝 진행
+
+
+#### **경험 저장**
+```python
+memory.push(state, action, reward, next_state, done)
+```
+- 현재 transition을 리플레이 버퍼에 저장함
+
+
+#### **상태 업데이트 및 학습 진행**
+```python
+state = next_state
+total_r += reward
+train_step()
+```
+- 다음 상태로 이동하고, 보상을 누적
+- train_step()을 호출하여 policy_net을 한 번 학습
+
+
+#### **에피소드 종료 처리**
+```python
+if done:
+    break
+```
+- 에이전트가 공을 놓쳐서 에피소드가 끝나면 while 루프를 종료
+
+
+#### **탐험률 감소 및 보상 기록**
+```python
+eps = max(EPS_END, eps * EPS_DECAY)
+rewards_log.append(total_r)
+```
+- ε 값 감소: 점점 무작위 행동 대신 예측 기반 행동을 늘림
+- 총 보상 기록 (에피소드별 학습 경향 확인용)
+
+
+#### **타깃 네트워크 동기화**
+```python
+if ep % TARGET_UPDATE == 0:
+    target_net.load_state_dict(policy_net.state_dict())
+```
+- 일정 주기마다 target_net을 policy_net으로부터 복사하여 안정성 확보
+
+
+#### **로그 출력**
+```python
+print(f"EP {ep:3d} | Score {env.score:3d} | TotalR {total_r:4.1f} | ε {eps:.2f}")
+```
+- 학습 중간 중간 현재 에피소드 결과를 출력하여 진행상황 확인
+
+
+### 7. 학습 결과 시각화
+
+```python
+# play_trained_dqn.py
+import torch
+import numpy as np
+import pygame
+from paddle_env import PaddleEnv
+from train_dqn import QNet  # QNet 클래스 재사용
+
+# 모델 로드
+env = PaddleEnv()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = QNet(env.state_dim, env.action_space).to(device)
+model.load_state_dict(torch.load("paddle_dqn_model.pth", map_location=device))
+model.eval()
+
+# 행동 선택 함수 (ε = 0 → 항상 argmax)
+
+
+def select_action(state):
+    state = torch.FloatTensor(state).unsqueeze(0).to(device)
+    with torch.no_grad():
+        return model(state).argmax().item()
+
+
+# 게임 루프
+state = env.reset()
+done = False
+pygame.init()
+screen = pygame.display.set_mode((env.W, env.H))
+clock = pygame.time.Clock()
+font = pygame.font.SysFont(None, 24)
+
+while True:
+    clock.tick(env.FPS)
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            exit()
+
+    if not done:
+        action = select_action(state)
+        state, _, done, _ = env.step(action)
+
+    screen.fill((0, 0, 0))
+    pygame.draw.circle(screen, (255, 255, 255),
+                       env.ball_pos.astype(int), env.BR)
+    pygame.draw.rect(screen, (255, 255, 255),
+                     (int(env.paddle_x), env.paddle_y, env.PW, env.PH))
+    screen.blit(font.render(
+        f"Score: {env.score}", True, (255, 255, 255)), (10, 10))
+    pygame.display.flip()
+
+    if done:
+        print(f"🎮 최종 점수: {env.score}")
+        pygame.time.wait(2000)
+        break
+
+```
+
+
+## Double DQN implementation
+
+기본 DQN:
+
+<div style="overflow-x: auto;">
+$$
+\text{TD Target}_{\text{DQN}} = r + \gamma \cdot \max_{a'} Q_{\text{target}}(s', a')
+$$
+</div>
+
+Double DQN:
+
+<div style="overflow-x: auto;">
+$$
+\text{TD Target}_{\text{DoubleDQN}} = r + \gamma \cdot Q_{\text{target}}(s', \arg\max_{a'} Q_{\text{policy}}(s', a'))
+$$
+</div>
+
+→ 선택은 `policy_net`, 평가는 `target_net`
+
+
+`Double DQN이 Q값 과대추정을 줄이는 이유`
+
+기본 DQN은 다음 상태에서의 타깃 Q값을 계산할 때, max 연산을 통해 target 네트워크에서 가장 큰 Q값을 직접 선택하고 그 값을 타깃으로 사용한다.
+
+<div style="overflow-x: auto;">
+$$
+\text{TD Target}_{\text{DQN}} = r + \gamma \cdot \max_{a'} Q_{\text{target}}(s', a')
+$$
+</div>
+
+이 방식은 Q값이 정확할 경우엔 문제가 없지만, 실제로는 Q값이 학습 초기에 매우 부정확할 수 있다. 이때 max 연산은 우연히 높게 추정된 Q값을 선택할 가능성이 매우 높다. 그렇게 되면, 잘못된 값을 기반으로 학습이 반복되면서 Q값이 점점 실제보다 부풀려지는 과대추정(overestimation)이 발생한다.
+
+Double DQN은 이 문제를 해결하기 위해 '행동 선택'과 'Q값 평가'를 다른 네트워크로 나눈다. 행동은 policy_net으로 선택하고, 그 행동의 Q값은 target_net으로 평가하는 것이다. 이때 타깃은 다음과 같이 계산된다.
+
+<div style="overflow-x: auto;">
+$$
+\text{TD Target}_{\text{DoubleDQN}} = r + \gamma \cdot Q_{\text{target}}(s', \arg\max_{a'} Q_{\text{policy}}(s', a'))
+$$
+</div>
+
+이렇게 하면 선택은 최신 네트워크(policy_net)가 담당하지만, 평가 기준은 안정적인 target_net을 사용하게 되어, Q값의 선택이 noise에 의해 오염되는 것을 줄일 수 있다.
+
+
+Double DQN이 Q값의 과대추정을 어떻게 줄이는지를 설명하기 위해, 예시를 들어 설명할 수 있다.
+
+어떤 상태 s′에서 세 가지 가능한 행동에 대해 실제 Q값과 policy_net, target_net이 각각 추정한 값이 다음과 같다고 하자.
+
+- 행동 A: 실제 Q = 5.0, policy_net = 5.0, target_net = 5.0
+- 행동 B: 실제 Q = 4.5, policy_net = 6.5 (noise로 과대), target_net = 4.5
+- 행동 C: 실제 Q = 3.0, policy_net = 3.0, target_net = 3.0
+
+기본 DQN의 경우, 타깃 값을 계산할 때 target_net에서 Q값이 가장 큰 행동을 선택하고, 해당 값을 그대로 사용한다.  
+위의 예시에서는 target_net에서 가장 높은 Q값은 행동 A의 5.0이므로 다음과 같이 타깃을 계산하게 된다.
+
+`target_DQN = r + γ * 5.0`
+
+이 방식은 안전해 보일 수 있지만, 선택과 평가가 모두 target_net에 의해 이루어지므로,  
+target_net이 부정확하거나 잡음(noise)이 포함된 상태라면 잘못된 Q값이 선택되어 학습이 오차를 축적할 수 있다.
+
+반면, Double DQN은 Q값이 가장 클 것으로 "예측되는" 행동을 policy_net이 선택하고,  
+그 행동의 실제 Q값은 안정된 target_net으로부터 평가받는다.
+
+위 예시에서 policy_net은 행동 B의 Q값을 6.5로 가장 높게 추정하므로 이 행동을 선택한다.  
+하지만 평가 단계에서는 target_net의 Q값 4.5가 사용되어 타깃을 계산한다.
+
+`target_DoubleDQN = r + γ * 4.5`
+
+이처럼, 행동 선택은 아직 학습 중인 policy_net이 담당하고,  
+그 선택에 대한 Q값 평가는 상대적으로 안정된 target_net으로부터 받아오기 때문에,  
+일시적으로 과대하게 추정된 값이 실제 학습에 반영되지 않게 된다.
+
+결과적으로 Double DQN은 Q값이 noise에 의해 부풀려진 경우에도 안정적인 평가를 통해 학습을 수행하게 되어,  
+기본 DQN보다 더 보수적이고 안정적인 학습이 가능하며, 과대추정 문제를 효과적으로 완화할 수 있다.

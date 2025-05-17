@@ -3195,31 +3195,6 @@ end Point is (5, 5)</p>
   </li>
 </ul>
 
-<table>
-  <thead>
-    <tr>
-      <th>알고리즘</th>
-      <th>다음 행동 선택</th>
-      <th>업데이트 기준</th>
-      <th>샘플링 방식</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><strong>SARSA</strong></td>
-      <td>실제로 한 행동</td>
-      <td>\(Q(s, a) \leftarrow r + \gamma Q(s', a')\)</td>
-      <td><strong>보상, 상태, 행동 모두 샘플링</strong> (on-policy)</td>
-    </tr>
-    <tr>
-      <td><strong>Q-learning</strong></td>
-      <td>가장 큰 Q값 선택</td>
-      <td>\(Q(s, a) \leftarrow r + \gamma \max Q(s', a')\)</td>
-      <td><strong>보상/상태는 샘플링, 행동은 max로 대체</strong> (off-policy)</td>
-    </tr>
-  </tbody>
-</table>
-
 <p>이 식에서 핵심은 다음 상태 
 \(S_t+1\)
 에서 가능한 모든 행동 중 가장 큰 Q 값을 선택하여, 그것을 목표 값(target)으로 사용한다는 점이다. 즉, 실제 수행한 
@@ -3966,6 +3941,20 @@ $$
 하나는 실제 행동을 선택할 때 사용되는 policy_net이고,
 다른 하나는 target Q값을 계산할 때 사용되는 target_net이다.</p>
 
+<div style="overflow-x: auto;">
+$$
+Q(s, a) \leftarrow Q(s, a) + \alpha \cdot \left[ r + \gamma \max_{a'} Q(s', a') - Q(s, a) \right]
+$$
+</div>
+
+<ul>
+  <li><strong>policy_net</strong>은 학습하는 모델</li>
+  <li><strong>target_net</strong>은 학습을 위한 고정된 타깃 생성기</li>
+  <li>\(Q(s, a)\)  → policy_net이 예측한 값</li>
+  <li>\(r + \gamma \max_{a'} Q(s', a')\) → target_net 으로 TD타깃값이다. 현재의 Q값을 타깃 방향으로 조금씩 이동시켜야 한다.</li>
+  <li><strong>TD 타깃(Temporal Difference target)</strong>은 강화학습에서 현재 상태의 Q값을 어떻게 갱신할지 결정하는 기준값.</li>
+</ul>
+
 <p>초기에는 두 네트워크의 가중치가 동일하게 설정되며, 이후 학습이 진행되면 policy_net만 학습되고,
 target_net은 일정 주기마다 policy_net의 가중치를 복사받게 된다.
 이렇게 함으로써 Q-learning에서 발생할 수 있는 불안정한 학습 문제를 완화하고,
@@ -3991,6 +3980,376 @@ TD 타깃의 분산을 줄여 안정적인 학습을 가능하게 한다.</p>
 <p><strong>eps</strong> = [탐험률(ε-greedy) 초기값, 학습이 진행되면 점점 감소함]</p>
 
 <p><strong>rewards_log</strong> = [에피소드별 누적 보상을 기록하는 리스트]</p>
+
+<h3 id="5-행동-선택-및-학습-함수">5. 행동 선택 및 학습 함수</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="k">def</span> <span class="nf">choose_action</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">eps</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">random</span><span class="p">.</span><span class="nf">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">eps</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">random</span><span class="p">.</span><span class="nf">randrange</span><span class="p">(</span><span class="n">env</span><span class="p">.</span><span class="n">action_space</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="p">.</span><span class="nf">no_grad</span><span class="p">():</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nc">FloatTensor</span><span class="p">(</span><span class="n">state</span><span class="p">).</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">).</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nf">policy_net</span><span class="p">(</span><span class="n">state</span><span class="p">).</span><span class="nf">argmax</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="nf">item</span><span class="p">()</span>
+
+</code></pre></div></div>
+
+<p>(1) 행동 선택 (choose_action)</p>
+
+<p>ε-greedy = [무작위 탐험과 최적 행동 선택을 섞어 사용함]</p>
+
+<ul>
+  <li>random &lt; ε → 랜덤 행동 (탐험)</li>
+  <li>random ≥ ε → argmax(Q) 행동 선택 (활용)</li>
+</ul>
+
+<hr />
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="k">def</span> <span class="nf">train_step</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nf">len</span><span class="p">(</span><span class="n">memory</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">BATCH_SIZE</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">batch</span> <span class="o">=</span> <span class="n">memory</span><span class="p">.</span><span class="nf">sample</span><span class="p">(</span><span class="n">BATCH_SIZE</span><span class="p">)</span>
+        <span class="n">batch</span> <span class="o">=</span> <span class="nc">Transition</span><span class="p">(</span><span class="o">*</span><span class="nf">zip</span><span class="p">(</span><span class="o">*</span><span class="n">batch</span><span class="p">))</span>
+
+        <span class="n">s</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nc">FloatTensor</span><span class="p">(</span><span class="n">batch</span><span class="p">.</span><span class="n">s</span><span class="p">).</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nc">LongTensor</span><span class="p">(</span><span class="n">batch</span><span class="p">.</span><span class="n">a</span><span class="p">).</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nc">FloatTensor</span><span class="p">(</span><span class="n">batch</span><span class="p">.</span><span class="n">r</span><span class="p">).</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">ns</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nc">FloatTensor</span><span class="p">(</span><span class="n">batch</span><span class="p">.</span><span class="n">ns</span><span class="p">).</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nc">FloatTensor</span><span class="p">(</span><span class="n">batch</span><span class="p">.</span><span class="n">done</span><span class="p">).</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="n">q_sa</span> <span class="o">=</span> <span class="nf">policy_net</span><span class="p">(</span><span class="n">s</span><span class="p">).</span><span class="nf">gather</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">a</span><span class="p">).</span><span class="nf">squeeze</span><span class="p">()</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="p">.</span><span class="nf">no_grad</span><span class="p">():</span>
+            <span class="n">q_ns</span> <span class="o">=</span> <span class="nf">target_net</span><span class="p">(</span><span class="n">ns</span><span class="p">).</span><span class="nf">max</span><span class="p">(</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="n">r</span> <span class="o">+</span> <span class="n">GAMMA</span> <span class="o">*</span> <span class="n">q_ns</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">d</span><span class="p">)</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">MSELoss</span><span class="p">()(</span><span class="n">q_sa</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+
+        <span class="n">optimizer</span><span class="p">.</span><span class="nf">zero_grad</span><span class="p">()</span>
+        <span class="n">loss</span><span class="p">.</span><span class="nf">backward</span><span class="p">()</span>
+        <span class="n">optimizer</span><span class="p">.</span><span class="nf">step</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>(2) 학습 step (train_step)</p>
+
+<p>입력 = [리플레이 버퍼에서 샘플링된 batch]</p>
+
+<p>Q(s, a) = [현재 정책 네트워크가 예측한 Q값]</p>
+
+<p>target = [r + γ * max_a′ Q_target(s′, a′)] → DQN의 핵심 업데이트 수식 기반</p>
+
+<p>loss = [예측값과 타깃값의 차이 (MSE)]</p>
+
+<p>역할 = [TD 오차를 기반으로 Q-function을 업데이트함]</p>
+
+<h4 id="경험-개수-확인"><strong>경험 개수 확인</strong></h4>
+<hr />
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">if</span> <span class="nf">len</span><span class="p">(</span><span class="n">memory</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">BATCH_SIZE</span><span class="p">:</span>
+    <span class="k">return</span>
+</code></pre></div></div>
+<ul>
+  <li>리플레이 버퍼에 샘플이 충분히 쌓이지 않았으면 학습하지 않음</li>
+</ul>
+
+<h4 id="미니배치-샘플링-및-분리"><strong>미니배치 샘플링 및 분리</strong></h4>
+<hr />
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">batch</span> <span class="o">=</span> <span class="n">memory</span><span class="p">.</span><span class="nf">sample</span><span class="p">(</span><span class="n">BATCH_SIZE</span><span class="p">)</span>
+<span class="n">batch</span> <span class="o">=</span> <span class="nc">Transition</span><span class="p">(</span><span class="o">*</span><span class="nf">zip</span><span class="p">(</span><span class="o">*</span><span class="n">batch</span><span class="p">))</span>
+</code></pre></div></div>
+<ul>
+  <li>샘플을 BATCH_SIZE만큼 무작위로 선택하고, 각각 s, a, r, s′, done으로 분리</li>
+</ul>
+
+<h4 id="텐서로-변환-및-장치로-이동"><strong>텐서로 변환 및 장치로 이동</strong></h4>
+<hr />
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">s</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nc">FloatTensor</span><span class="p">(</span><span class="n">batch</span><span class="p">.</span><span class="n">s</span><span class="p">).</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<span class="n">a</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nc">LongTensor</span><span class="p">(</span><span class="n">batch</span><span class="p">.</span><span class="n">a</span><span class="p">).</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nc">FloatTensor</span><span class="p">(</span><span class="n">batch</span><span class="p">.</span><span class="n">r</span><span class="p">).</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<span class="n">ns</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nc">FloatTensor</span><span class="p">(</span><span class="n">batch</span><span class="p">.</span><span class="n">ns</span><span class="p">).</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nc">FloatTensor</span><span class="p">(</span><span class="n">batch</span><span class="p">.</span><span class="n">done</span><span class="p">).</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+</code></pre></div></div>
+<ul>
+  <li>각 배열을 PyTorch 텐서로 변환 후 GPU 또는 CPU로 이동</li>
+</ul>
+
+<h4 id="현재-q값-예측-예측값"><strong>현재 Q값 예측 (예측값)</strong></h4>
+<hr />
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">q_sa</span> <span class="o">=</span> <span class="nf">policy_net</span><span class="p">(</span><span class="n">s</span><span class="p">).</span><span class="nf">gather</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">a</span><span class="p">).</span><span class="nf">squeeze</span><span class="p">()</span>
+</code></pre></div></div>
+<ul>
+  <li>policy_net으로 상태에 대한 모든 행동의 Q값 예측</li>
+  <li>gather로 실제 취한 행동의 Q값만 추출</li>
+</ul>
+
+<h4 id="td-타깃-계산-정답값"><strong>TD 타깃 계산 (정답값)</strong></h4>
+<hr />
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">with</span> <span class="n">torch</span><span class="p">.</span><span class="nf">no_grad</span><span class="p">():</span>
+    <span class="n">q_ns</span> <span class="o">=</span> <span class="nf">target_net</span><span class="p">(</span><span class="n">ns</span><span class="p">).</span><span class="nf">max</span><span class="p">(</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="n">r</span> <span class="o">+</span> <span class="n">GAMMA</span> <span class="o">*</span> <span class="n">q_ns</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">d</span><span class="p">)</span>
+</code></pre></div></div>
+<ul>
+  <li>target_net으로 다음 상태의 최대 Q값 계산</li>
+  <li>TD 타깃 정의:
+  TD 타깃 = r + γ max Q(s’, a’)</li>
+  <li>에피소드가 끝났다면 γ Q(s′, a′)는 무시됨</li>
+</ul>
+
+<h4 id="손실-계산"><strong>손실 계산</strong></h4>
+<hr />
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">loss</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">MSELoss</span><span class="p">()(</span><span class="n">q_sa</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+</code></pre></div></div>
+<ul>
+  <li>예측값과 타깃값 간의 MSE 손실 계산</li>
+</ul>
+
+<h4 id="역전파-및-가중치-업데이트"><strong>역전파 및 가중치 업데이트</strong></h4>
+<hr />
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">optimizer</span><span class="p">.</span><span class="nf">zero_grad</span><span class="p">()</span>
+<span class="n">loss</span><span class="p">.</span><span class="nf">backward</span><span class="p">()</span>
+<span class="n">optimizer</span><span class="p">.</span><span class="nf">step</span><span class="p">()</span>
+</code></pre></div></div>
+<ul>
+  <li>그래디언트 초기화 → 역전파 → 가중치 업데이트 수행</li>
+</ul>
+
+<h3 id="6-전체-학습-루프">6. 전체 학습 루프</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for</span> <span class="n">ep</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">EPISODES</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">env</span><span class="p">.</span><span class="nf">reset</span><span class="p">()</span>
+    <span class="n">total_r</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">action</span> <span class="o">=</span> <span class="nf">choose_action</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">eps</span><span class="p">)</span>
+        <span class="n">next_state</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">env</span><span class="p">.</span><span class="nf">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+        <span class="n">memory</span><span class="p">.</span><span class="nf">push</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">next_state</span><span class="p">,</span> <span class="n">done</span><span class="p">)</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">next_state</span>
+        <span class="n">total_r</span> <span class="o">+=</span> <span class="n">reward</span>
+        <span class="nf">train_step</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">done</span><span class="p">:</span>
+            <span class="k">break</span>
+
+    <span class="n">eps</span> <span class="o">=</span> <span class="nf">max</span><span class="p">(</span><span class="n">EPS_END</span><span class="p">,</span> <span class="n">eps</span> <span class="o">*</span> <span class="n">EPS_DECAY</span><span class="p">)</span>
+    <span class="n">rewards_log</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">total_r</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">ep</span> <span class="o">%</span> <span class="n">TARGET_UPDATE</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">target_net</span><span class="p">.</span><span class="nf">load_state_dict</span><span class="p">(</span><span class="n">policy_net</span><span class="p">.</span><span class="nf">state_dict</span><span class="p">())</span>
+
+    <span class="nf">print</span><span class="p">(</span>
+        <span class="sa">f</span><span class="sh">"</span><span class="s">EP </span><span class="si">{</span><span class="n">ep</span><span class="si">:</span><span class="mi">3</span><span class="n">d</span><span class="si">}</span><span class="s"> | Score </span><span class="si">{</span><span class="n">env</span><span class="p">.</span><span class="n">score</span><span class="si">:</span><span class="mi">3</span><span class="n">d</span><span class="si">}</span><span class="s"> | TotalR </span><span class="si">{</span><span class="n">total_r</span><span class="si">:</span><span class="mf">4.1</span><span class="n">f</span><span class="si">}</span><span class="s"> | ε </span><span class="si">{</span><span class="n">eps</span><span class="si">:</span><span class="p">.</span><span class="mi">2</span><span class="n">f</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<hr />
+
+<p>env.reset() = [새로운 에피소드 시작]</p>
+
+<p>choose_action() = [ε-greedy로 행동 선택]</p>
+
+<p>env.step() = [환경으로부터 다음 상태, 보상, done 얻음]</p>
+
+<p>memory.push() = [transition 저장]</p>
+
+<p>train_step() = [Q-network 업데이트]</p>
+
+<p>eps 감소 = [탐험률 감소 → 점점 최적 정책으로 수렴]</p>
+
+<p>target_net 업데이트 = [매 TARGET_UPDATE 주기로 동기화]</p>
+
+<p>모델 저장 = [학습 완료된 policy_net을 .pth로 저장]</p>
+
+<h4 id="환경-초기화-및-변수-준비"><strong>환경 초기화 및 변수 준비</strong></h4>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">state</span> <span class="o">=</span> <span class="n">env</span><span class="p">.</span><span class="nf">reset</span><span class="p">()</span>
+<span class="n">total_r</span> <span class="o">=</span> <span class="mi">0</span>
+</code></pre></div></div>
+<ul>
+  <li>새로운 에피소드 시작 시 환경을 초기화하고, 누적 보상 초기화</li>
+</ul>
+
+<h4 id="행동-선택-및-환경과-상호작용"><strong>행동 선택 및 환경과 상호작용</strong></h4>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">action</span> <span class="o">=</span> <span class="nf">choose_action</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">eps</span><span class="p">)</span>
+<span class="n">next_state</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">env</span><span class="p">.</span><span class="nf">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+</code></pre></div></div>
+<ul>
+  <li>ε-greedy 방식으로 행동을 선택하고, 그에 따라 환경을 한 스텝 진행</li>
+</ul>
+
+<h4 id="경험-저장"><strong>경험 저장</strong></h4>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">memory</span><span class="p">.</span><span class="nf">push</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">next_state</span><span class="p">,</span> <span class="n">done</span><span class="p">)</span>
+</code></pre></div></div>
+<ul>
+  <li>현재 transition을 리플레이 버퍼에 저장함</li>
+</ul>
+
+<h4 id="상태-업데이트-및-학습-진행"><strong>상태 업데이트 및 학습 진행</strong></h4>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">state</span> <span class="o">=</span> <span class="n">next_state</span>
+<span class="n">total_r</span> <span class="o">+=</span> <span class="n">reward</span>
+<span class="nf">train_step</span><span class="p">()</span>
+</code></pre></div></div>
+<ul>
+  <li>다음 상태로 이동하고, 보상을 누적</li>
+  <li>train_step()을 호출하여 policy_net을 한 번 학습</li>
+</ul>
+
+<h4 id="에피소드-종료-처리"><strong>에피소드 종료 처리</strong></h4>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">if</span> <span class="n">done</span><span class="p">:</span>
+    <span class="k">break</span>
+</code></pre></div></div>
+<ul>
+  <li>에이전트가 공을 놓쳐서 에피소드가 끝나면 while 루프를 종료</li>
+</ul>
+
+<h4 id="탐험률-감소-및-보상-기록"><strong>탐험률 감소 및 보상 기록</strong></h4>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">eps</span> <span class="o">=</span> <span class="nf">max</span><span class="p">(</span><span class="n">EPS_END</span><span class="p">,</span> <span class="n">eps</span> <span class="o">*</span> <span class="n">EPS_DECAY</span><span class="p">)</span>
+<span class="n">rewards_log</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">total_r</span><span class="p">)</span>
+</code></pre></div></div>
+<ul>
+  <li>ε 값 감소: 점점 무작위 행동 대신 예측 기반 행동을 늘림</li>
+  <li>총 보상 기록 (에피소드별 학습 경향 확인용)</li>
+</ul>
+
+<h4 id="타깃-네트워크-동기화"><strong>타깃 네트워크 동기화</strong></h4>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">if</span> <span class="n">ep</span> <span class="o">%</span> <span class="n">TARGET_UPDATE</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="n">target_net</span><span class="p">.</span><span class="nf">load_state_dict</span><span class="p">(</span><span class="n">policy_net</span><span class="p">.</span><span class="nf">state_dict</span><span class="p">())</span>
+</code></pre></div></div>
+<ul>
+  <li>일정 주기마다 target_net을 policy_net으로부터 복사하여 안정성 확보</li>
+</ul>
+
+<h4 id="로그-출력"><strong>로그 출력</strong></h4>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">EP </span><span class="si">{</span><span class="n">ep</span><span class="si">:</span><span class="mi">3</span><span class="n">d</span><span class="si">}</span><span class="s"> | Score </span><span class="si">{</span><span class="n">env</span><span class="p">.</span><span class="n">score</span><span class="si">:</span><span class="mi">3</span><span class="n">d</span><span class="si">}</span><span class="s"> | TotalR </span><span class="si">{</span><span class="n">total_r</span><span class="si">:</span><span class="mf">4.1</span><span class="n">f</span><span class="si">}</span><span class="s"> | ε </span><span class="si">{</span><span class="n">eps</span><span class="si">:</span><span class="p">.</span><span class="mi">2</span><span class="n">f</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+<ul>
+  <li>학습 중간 중간 현재 에피소드 결과를 출력하여 진행상황 확인</li>
+</ul>
+
+<h3 id="7-학습-결과-시각화">7. 학습 결과 시각화</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># play_trained_dqn.py
+</span><span class="kn">import</span> <span class="n">torch</span>
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="n">pygame</span>
+<span class="kn">from</span> <span class="n">paddle_env</span> <span class="kn">import</span> <span class="n">PaddleEnv</span>
+<span class="kn">from</span> <span class="n">train_dqn</span> <span class="kn">import</span> <span class="n">QNet</span>  <span class="c1"># QNet 클래스 재사용
+</span>
+<span class="c1"># 모델 로드
+</span><span class="n">env</span> <span class="o">=</span> <span class="nc">PaddleEnv</span><span class="p">()</span>
+<span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">device</span><span class="p">(</span><span class="sh">"</span><span class="s">cuda</span><span class="sh">"</span> <span class="k">if</span> <span class="n">torch</span><span class="p">.</span><span class="n">cuda</span><span class="p">.</span><span class="nf">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="sh">"</span><span class="s">cpu</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="nc">QNet</span><span class="p">(</span><span class="n">env</span><span class="p">.</span><span class="n">state_dim</span><span class="p">,</span> <span class="n">env</span><span class="p">.</span><span class="n">action_space</span><span class="p">).</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<span class="n">model</span><span class="p">.</span><span class="nf">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="nf">load</span><span class="p">(</span><span class="sh">"</span><span class="s">paddle_dqn_model.pth</span><span class="sh">"</span><span class="p">,</span> <span class="n">map_location</span><span class="o">=</span><span class="n">device</span><span class="p">))</span>
+<span class="n">model</span><span class="p">.</span><span class="nf">eval</span><span class="p">()</span>
+
+<span class="c1"># 행동 선택 함수 (ε = 0 → 항상 argmax)
+</span>
+
+<span class="k">def</span> <span class="nf">select_action</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nc">FloatTensor</span><span class="p">(</span><span class="n">state</span><span class="p">).</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">).</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">torch</span><span class="p">.</span><span class="nf">no_grad</span><span class="p">():</span>
+        <span class="k">return</span> <span class="nf">model</span><span class="p">(</span><span class="n">state</span><span class="p">).</span><span class="nf">argmax</span><span class="p">().</span><span class="nf">item</span><span class="p">()</span>
+
+
+<span class="c1"># 게임 루프
+</span><span class="n">state</span> <span class="o">=</span> <span class="n">env</span><span class="p">.</span><span class="nf">reset</span><span class="p">()</span>
+<span class="n">done</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="n">pygame</span><span class="p">.</span><span class="nf">init</span><span class="p">()</span>
+<span class="n">screen</span> <span class="o">=</span> <span class="n">pygame</span><span class="p">.</span><span class="n">display</span><span class="p">.</span><span class="nf">set_mode</span><span class="p">((</span><span class="n">env</span><span class="p">.</span><span class="n">W</span><span class="p">,</span> <span class="n">env</span><span class="p">.</span><span class="n">H</span><span class="p">))</span>
+<span class="n">clock</span> <span class="o">=</span> <span class="n">pygame</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="nc">Clock</span><span class="p">()</span>
+<span class="n">font</span> <span class="o">=</span> <span class="n">pygame</span><span class="p">.</span><span class="n">font</span><span class="p">.</span><span class="nc">SysFont</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="mi">24</span><span class="p">)</span>
+
+<span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+    <span class="n">clock</span><span class="p">.</span><span class="nf">tick</span><span class="p">(</span><span class="n">env</span><span class="p">.</span><span class="n">FPS</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pygame</span><span class="p">.</span><span class="n">event</span><span class="p">.</span><span class="nf">get</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">event</span><span class="p">.</span><span class="nb">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="p">.</span><span class="n">QUIT</span><span class="p">:</span>
+            <span class="n">pygame</span><span class="p">.</span><span class="nf">quit</span><span class="p">()</span>
+            <span class="nf">exit</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">done</span><span class="p">:</span>
+        <span class="n">action</span> <span class="o">=</span> <span class="nf">select_action</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+        <span class="n">state</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">env</span><span class="p">.</span><span class="nf">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+
+    <span class="n">screen</span><span class="p">.</span><span class="nf">fill</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="n">pygame</span><span class="p">.</span><span class="n">draw</span><span class="p">.</span><span class="nf">circle</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
+                       <span class="n">env</span><span class="p">.</span><span class="n">ball_pos</span><span class="p">.</span><span class="nf">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span> <span class="n">env</span><span class="p">.</span><span class="n">BR</span><span class="p">)</span>
+    <span class="n">pygame</span><span class="p">.</span><span class="n">draw</span><span class="p">.</span><span class="nf">rect</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
+                     <span class="p">(</span><span class="nf">int</span><span class="p">(</span><span class="n">env</span><span class="p">.</span><span class="n">paddle_x</span><span class="p">),</span> <span class="n">env</span><span class="p">.</span><span class="n">paddle_y</span><span class="p">,</span> <span class="n">env</span><span class="p">.</span><span class="n">PW</span><span class="p">,</span> <span class="n">env</span><span class="p">.</span><span class="n">PH</span><span class="p">))</span>
+    <span class="n">screen</span><span class="p">.</span><span class="nf">blit</span><span class="p">(</span><span class="n">font</span><span class="p">.</span><span class="nf">render</span><span class="p">(</span>
+        <span class="sa">f</span><span class="sh">"</span><span class="s">Score: </span><span class="si">{</span><span class="n">env</span><span class="p">.</span><span class="n">score</span><span class="si">}</span><span class="sh">"</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">)),</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+    <span class="n">pygame</span><span class="p">.</span><span class="n">display</span><span class="p">.</span><span class="nf">flip</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">done</span><span class="p">:</span>
+        <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">🎮 최종 점수: </span><span class="si">{</span><span class="n">env</span><span class="p">.</span><span class="n">score</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="nf">wait</span><span class="p">(</span><span class="mi">2000</span><span class="p">)</span>
+        <span class="k">break</span>
+
+</code></pre></div></div>
+
+<h2 id="double-dqn-implementation">Double DQN implementation</h2>
+
+<p>기본 DQN:</p>
+
+<div style="overflow-x: auto;">
+$$
+\text{TD Target}_{\text{DQN}} = r + \gamma \cdot \max_{a'} Q_{\text{target}}(s', a')
+$$
+</div>
+
+<p>Double DQN:</p>
+
+<div style="overflow-x: auto;">
+$$
+\text{TD Target}_{\text{DoubleDQN}} = r + \gamma \cdot Q_{\text{target}}(s', \arg\max_{a'} Q_{\text{policy}}(s', a'))
+$$
+</div>
+
+<p>→ 선택은 <code class="language-plaintext highlighter-rouge">policy_net</code>, 평가는 <code class="language-plaintext highlighter-rouge">target_net</code></p>
+
+<p><code class="language-plaintext highlighter-rouge">Double DQN이 Q값 과대추정을 줄이는 이유</code></p>
+
+<p>기본 DQN은 다음 상태에서의 타깃 Q값을 계산할 때, max 연산을 통해 target 네트워크에서 가장 큰 Q값을 직접 선택하고 그 값을 타깃으로 사용한다.</p>
+
+<div style="overflow-x: auto;">
+$$
+\text{TD Target}_{\text{DQN}} = r + \gamma \cdot \max_{a'} Q_{\text{target}}(s', a')
+$$
+</div>
+
+<p>이 방식은 Q값이 정확할 경우엔 문제가 없지만, 실제로는 Q값이 학습 초기에 매우 부정확할 수 있다. 이때 max 연산은 우연히 높게 추정된 Q값을 선택할 가능성이 매우 높다. 그렇게 되면, 잘못된 값을 기반으로 학습이 반복되면서 Q값이 점점 실제보다 부풀려지는 과대추정(overestimation)이 발생한다.</p>
+
+<p>Double DQN은 이 문제를 해결하기 위해 ‘행동 선택’과 ‘Q값 평가’를 다른 네트워크로 나눈다. 행동은 policy_net으로 선택하고, 그 행동의 Q값은 target_net으로 평가하는 것이다. 이때 타깃은 다음과 같이 계산된다.</p>
+
+<div style="overflow-x: auto;">
+$$
+\text{TD Target}_{\text{DoubleDQN}} = r + \gamma \cdot Q_{\text{target}}(s', \arg\max_{a'} Q_{\text{policy}}(s', a'))
+$$
+</div>
+
+<p>이렇게 하면 선택은 최신 네트워크(policy_net)가 담당하지만, 평가 기준은 안정적인 target_net을 사용하게 되어, Q값의 선택이 noise에 의해 오염되는 것을 줄일 수 있다.</p>
+
+<p>Double DQN이 Q값의 과대추정을 어떻게 줄이는지를 설명하기 위해, 예시를 들어 설명할 수 있다.</p>
+
+<p>어떤 상태 s′에서 세 가지 가능한 행동에 대해 실제 Q값과 policy_net, target_net이 각각 추정한 값이 다음과 같다고 하자.</p>
+
+<ul>
+  <li>행동 A: 실제 Q = 5.0, policy_net = 5.0, target_net = 5.0</li>
+  <li>행동 B: 실제 Q = 4.5, policy_net = 6.5 (noise로 과대), target_net = 4.5</li>
+  <li>행동 C: 실제 Q = 3.0, policy_net = 3.0, target_net = 3.0</li>
+</ul>
+
+<p>기본 DQN의 경우, 타깃 값을 계산할 때 target_net에서 Q값이 가장 큰 행동을 선택하고, 해당 값을 그대로 사용한다.<br />
+위의 예시에서는 target_net에서 가장 높은 Q값은 행동 A의 5.0이므로 다음과 같이 타깃을 계산하게 된다.</p>
+
+<p><code class="language-plaintext highlighter-rouge">target_DQN = r + γ * 5.0</code></p>
+
+<p>이 방식은 안전해 보일 수 있지만, 선택과 평가가 모두 target_net에 의해 이루어지므로,<br />
+target_net이 부정확하거나 잡음(noise)이 포함된 상태라면 잘못된 Q값이 선택되어 학습이 오차를 축적할 수 있다.</p>
+
+<p>반면, Double DQN은 Q값이 가장 클 것으로 “예측되는” 행동을 policy_net이 선택하고,<br />
+그 행동의 실제 Q값은 안정된 target_net으로부터 평가받는다.</p>
+
+<p>위 예시에서 policy_net은 행동 B의 Q값을 6.5로 가장 높게 추정하므로 이 행동을 선택한다.<br />
+하지만 평가 단계에서는 target_net의 Q값 4.5가 사용되어 타깃을 계산한다.</p>
+
+<p><code class="language-plaintext highlighter-rouge">target_DoubleDQN = r + γ * 4.5</code></p>
+
+<p>이처럼, 행동 선택은 아직 학습 중인 policy_net이 담당하고,<br />
+그 선택에 대한 Q값 평가는 상대적으로 안정된 target_net으로부터 받아오기 때문에,<br />
+일시적으로 과대하게 추정된 값이 실제 학습에 반영되지 않게 된다.</p>
+
+<p>결과적으로 Double DQN은 Q값이 noise에 의해 부풀려진 경우에도 안정적인 평가를 통해 학습을 수행하게 되어,<br />
+기본 DQN보다 더 보수적이고 안정적인 학습이 가능하며, 과대추정 문제를 효과적으로 완화할 수 있다.</p>
 
 						</div><!-- /.content -->
 					</div><!-- /.col -->
