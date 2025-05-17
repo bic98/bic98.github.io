@@ -3230,11 +3230,41 @@ end Point is (5, 5)</p>
 
 <h2 id="신경망과-q-learning">신경망과 Q-learning</h2>
 
+<p>MC법은</p>
+
+\[V(s_t) \leftarrow V(s_t) + \alpha [G_t - V(s_t)]\]
+
+<p>와 같은 형태로 상태 가치 함수를 갱신하는데, 이때 전체 에피소드가 끝나야 \(G_t\)를 계산할 수 있기 때문에 반드시 에피소드가 종료된 이후에만 업데이트가 가능했다. 하지만 Temporal-Difference(TD) 방식은 현재 상태에서 받은 보상과 다음 상태에서 예측되는 가치의 합을 이용해 한 스텝 단위로 업데이트할 수 있다. 이때 사용하는 것이 TD 오차이며, 이는</p>
+
+<div style="overflow-x: auto;"> 
+$$
+\delta = r + \gamma V(s_{t+1}) - V(s_t)
+$$
+</div>
+
+<p>와 같이 정의된다. 이러한 원리를 행동 가치 함수 \(Q(s, a)\)에 적용한 것이 Q-learning이다.</p>
+
+<p>Q-learning에서는 단순히 다음 상태의 가치 \(V(s_{t+1})\)를 사용하는 것이 아니라, 다음 상태에서 가능한 모든 행동 중 가장 높은 Q값을 가진 행동을 취한다고 가정하고 업데이트를 수행한다. 즉,</p>
+
+<div style="overflow-x: auto;">
+$$
+Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \left[ r + \gamma \max_{a'} Q(s_{t+1}, a') - Q(s_t, a_t) \right]
+$$
+</div>
+
+<p>형태로 이루어진다. 이때 중요한 점은, 에이전트가 실제로 \(\max_{a'}\)에 해당하는 행동을 선택하지 않았더라도, 마치 그 행동을 했다고 가정하고 Q값을 갱신한다는 것이다. 그래서 Q-learning은 on-policy 방식이 아니라, 실제 행동과는 무관하게 최적 정책을 따르는 것처럼 업데이트하는 off-policy 학습 방법에 해당한다.</p>
+
+<p>결국 Q-learning은 TD 방식과 마찬가지로 TD 오차를 기반으로 하며, 에피소드가 끝나기 전에도 실시간으로 값을 갱신할 수 있다는 공통점을 가지지만, 가치 추정 시에 현재의 정책이 아닌 최적 정책을 따르는 것처럼 가정한다는 점에서 차이가 있다.</p>
+
 <h3 id="기존-dqn">기존 DQN</h3>
 
 <p>업데이트 타겟:</p>
 
-\[y = r + \gamma \max_{a'} Q_{\text{target}}(s', a')\]
+<div style="overflow-x: auto;">
+$$
+y = r + \gamma \max_{a'} Q_{\text{target}}(s', a')
+$$
+</div>
 
 <ul>
   <li>다음 상태 \(s'\)에서 <strong>가장 큰 Q값</strong>을 그대로 사용</li>
@@ -3249,13 +3279,21 @@ end Point is (5, 5)</p>
   <li>다음 행동 선택:</li>
 </ol>
 
-\[a^* = \arg\max_{a'} Q_{\text{online}}(s', a')\]
+<div style="overflow-x: auto;">
+$$
+a^* = \arg\max_{a'} Q_{\text{online}}(s', a')
+$$
+</div>
 
 <ol>
   <li>그 행동의 값 평가:</li>
 </ol>
 
-\[y = r + \gamma Q_{\text{target}}(s', a^*)\]
+<div style="overflow-x: auto;">
+$$
+y = r + \gamma Q_{\text{target}}(s', a^*)
+$$
+</div>
 
 <ul>
   <li><strong>online 네트워크</strong>로 행동을 선택하고,</li>
@@ -3269,7 +3307,11 @@ end Point is (5, 5)</p>
 
 <p>기존 DQN (또는 Q-learning)은 다음과 같은 방식으로 Q값을 업데이트:</p>
 
-\[Q(s, a) \leftarrow r + \gamma \max_{a'} Q(s', a')\]
+<div style="overflow-x: auto;">
+$$
+Q(s, a) \leftarrow r + \gamma \max_{a'} Q(s', a')
+$$
+</div>
 
 <p>여기서 문제가 발생.</p>
 
@@ -3343,7 +3385,11 @@ end Point is (5, 5)</p>
 
 <p>경험의 우선순위는 일반적으로 TD-error를 기반으로 계산한다.</p>
 
-\[\delta = \left| r + \gamma \max_{a'} Q(s', a') - Q(s, a) \right|\]
+<div style="overflow-x: auto;">
+$$
+\delta = \left| r + \gamma \max_{a'} Q(s', a') - Q(s, a) \right|
+$$
+</div>
 
 <ul>
   <li>TD-error가 크다는 것은 Q 함수가 그 경험에 대해 잘못 예측했다는 의미이다.</li>
@@ -3357,7 +3403,11 @@ end Point is (5, 5)</p>
 <p>샘플링 확률이 균등하지 않기 때문에 학습이 편향될 수 있다.<br />
 이를 보정하기 위해 Importance Sampling weight를 적용한다.</p>
 
-\[w_i = \left( \frac{1}{N} \cdot \frac{1}{P(i)} \right)^\beta\]
+<div style="overflow-x: auto;">
+$$
+w_i = \left( \frac{1}{N} \cdot \frac{1}{P(i)} \right)^\beta
+$$
+</div>
 
 <ul>
   <li>\(P(i)\): transition \(i\)의 샘플링 확률</li>
@@ -3443,7 +3493,11 @@ end Point is (5, 5)</p>
 
 <p>최종적으로 Q값은 다음과 같이 계산된다:</p>
 
-\[Q(s, a) = V(s) + \left( A(s, a) - \frac{1}{|\mathcal{A}|} \sum_{a'} A(s, a') \right)\]
+<div style="overflow-x: auto;">
+$$
+Q(s, a) = V(s) + \left( A(s, a) - \frac{1}{|\mathcal{A}|} \sum_{a'} A(s, a') \right)
+$$
+</div>
 
 <p>여기서 평균을 빼는 이유는 Advantage 값들이 중심화되어야 안정적으로 학습되기 때문이다.</p>
 
@@ -3479,7 +3533,11 @@ Value와 Advantage를 각각 출력하는 두 갈래(stream)로 나뉜다.</p>
 
 <p>최종적으로 Q값은 다음과 같이 계산된다:</p>
 
-\[Q(s, a) = V(s) + \left( A(s, a) - \frac{1}{|\mathcal{A}|} \sum_{a'} A(s, a') \right)\]
+<div style="overflow-x: auto;">
+$$
+Q(s, a) = V(s) + \left( A(s, a) - \frac{1}{|\mathcal{A}|} \sum_{a'} A(s, a') \right)
+$$
+</div>
 
 <hr />
 
@@ -3506,18 +3564,10 @@ Value와 Advantage를 각각 출력하는 두 갈래(stream)로 나뉜다.</p>
 <ul>
   <li>콜라를 누르든, 사이다를 누르든, 커피를 누르든 <strong>큰 차이 없음</strong></li>
   <li>즉, <strong>행동의 상대적 차이(advantage)</strong> 는 작다:
-    <ul>
-      <li>
-\[A(s, \text{콜라}) = 0.1\]
-      </li>
-      <li>
-\[A(s, \text{사이다}) = 0.0\]
-      </li>
-      <li>
-\[A(s, \text{커피}) = -0.1\]
-      </li>
-    </ul>
-  </li>
+<br />
+\(A(s, \text{콜라}) = 0.1\)<br />
+\(A(s, \text{사이다}) = 0.0\)<br />
+\(A(s, \text{커피}) = -0.1\)</li>
 </ul>
 
 <hr />
@@ -3565,6 +3615,8 @@ Value와 Advantage를 각각 출력하는 두 갈래(stream)로 나뉜다.</p>
   <li>특히 <strong>행동 간 차이가 크지 않은 상황에서 더 효과적</strong>이다.</li>
   <li>이 구조는 안정적이고 빠른 Q값 학습에 도움을 준다.</li>
 </ul>
+
+<h2 id="데이터-센터-냉난방-비용-최소화-하기">데이터 센터 냉난방 비용 최소화 하기</h2>
 
 
 						</div><!-- /.content -->
