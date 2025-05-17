@@ -3368,6 +3368,388 @@ $$A(s, \text{커피}) = -0.1$$
 - 특히 **행동 간 차이가 크지 않은 상황에서 더 효과적**이다.
 - 이 구조는 안정적이고 빠른 Q값 학습에 도움을 준다.
 
-## 데이터 센터 냉난방 비용 최소화 하기 
+
+## DQN implemenatation
+
+ANN + Q learning을 이용하여 실제로 학습을 시행하여 가장 높은 행동보상을 얻어보자. 
+
+먼저 환경 구성을 해야한다. 문제의 예시로 공튀기기게임(paddle game)을 강화학습된 ai로 게임을 시행해보자.
+
+강화학습을 하기위해서는 환경구성을 해야하고 환경을 구현할 때는 S, A, R, D를 고려해야한다. 
+
+`State` = [공의 x좌표, 공의 y좌표, 공의 x벡터 속도, 공의 y벡터 속도, 패들의 위치 x]
+
+`Action` = [패들을 왼쪽으로 이동, 정지, 패들을 오른쪽으로 이동]
+
+`Reward` = [패들에 맞아서 공이 튕긴다. +1, 공이 떨어진다. -1]
+
+`Done` = [종료조건 : 공이 떨어지는 경우]
+
+---
+
+`reset()` = [ 환경을 초기화하고, 학습 에피소드의 시작 상태를 반환하는 함수이다.]
+
+`step(action)` = [함수는 에이전트가 선택한 행동에 따라
+환경을 한 스텝 앞으로 진행시키고,
+공과 패들의 물리적 움직임을 계산하며,
+그에 따른 보상과 게임 종료 여부를 판단해준다.]
+
+`render()` = [화면 시각화]
+
+위의 조건들을 바탕으로 패들게임의 환경구성 클래스를 구현해보자. 
+
+```python
+import numpy as np
+import pygame
+
+# PaddleEnv 클래스: 공 튀기기 환경을 구현한 강화학습용 환경 클래스
+class PaddleEnv:
+    def __init__(self, width=400, height=300):
+        # 화면의 너비와 높이 설정
+        self.W, self.H = width, height
+        # 공의 반지름
+        self.BR = 10
+        # 패들의 가로, 세로 크기
+        self.PW, self.PH = 60, 10
+        # 화면 갱신 프레임 설정
+        self.FPS = 60
+        # 패들 위치는 화면 맨 아래쪽
+        self.paddle_y = self.H - self.PH
+        # 행동 공간: 왼쪽(0), 정지(1), 오른쪽(2)
+        self.action_space = 3
+        # 상태 차원: 공 위치(x, y), 공 속도(vx, vy), 패들 위치(x)
+        self.state_dim = 5
+        # 초기화
+        self.reset()
+
+    def reset(self):
+        # 공의 초기 위치: x는 무작위, y는 고정된 위쪽
+        self.ball_pos = np.array([
+            np.random.uniform(self.BR, self.W - self.BR),
+            self.BR + 10
+        ], dtype=np.float32)
+
+        # 공의 초기 속도 방향: -30도 ~ +30도 범위에서 랜덤 각도
+        angle = np.random.uniform(-np.pi / 6, np.pi / 6)
+        speed = 4.0  # 초기 속도 크기
+        self.ball_vel = np.array([
+            speed * np.sin(angle),  # x방향 속도
+            speed * np.cos(angle)   # y방향 속도
+        ], dtype=np.float32)
+
+        # 패들은 항상 가운데서 시작
+        self.paddle_x = self.W / 2 - self.PW / 2
+        # 게임 상태: 종료 아님
+        self.done = False
+        # 점수 초기화
+        self.score = 0
+        return self._get_state()
+
+    def _get_state(self):
+        # 상태 벡터 반환 (정규화된 값으로)
+        return np.array([
+            self.ball_pos[0] / self.W,
+            self.ball_pos[1] / self.H,
+            self.ball_vel[0] / 10.0,
+            self.ball_vel[1] / 10.0,
+            self.paddle_x / self.W
+        ], dtype=np.float32)
+
+    def step(self, action: int):
+        # 패들 이동: 왼쪽(0), 정지(1), 오른쪽(2)
+        if action == 0:
+            self.paddle_x -= 5
+        elif action == 2:
+            self.paddle_x += 5
+        # 패들이 화면 밖으로 나가지 않도록 제한
+        self.paddle_x = np.clip(self.paddle_x, 0, self.W - self.PW)
+
+        # 공 위치 업데이트
+        self.ball_pos += self.ball_vel
+
+        # 벽(좌/우) 충돌 처리
+        if self.ball_pos[0] <= 0:
+            self.ball_pos[0] = self.BR
+            self.ball_vel[0] *= -1
+            if abs(self.ball_vel[1]) < 1.0:
+                self.ball_vel[1] = np.sign(self.ball_vel[1]) * 2.0
+
+        elif self.ball_pos[0] >= self.W - self.BR:
+            self.ball_pos[0] = self.W - self.BR
+            self.ball_vel[0] *= -1
+            if abs(self.ball_vel[1]) < 1.0:
+                self.ball_vel[1] = np.sign(self.ball_vel[1]) * 2.0
+
+        # 천장 충돌 처리 (y 방향 반전)
+        if self.ball_pos[1] <= 0:
+            self.ball_pos[1] = self.BR
+            self.ball_vel[1] *= -1
+
+        # 보상 초기화
+        reward = 0
+
+        # 패들과 공의 충돌 판정
+        ball_x, ball_y = self.ball_pos
+        paddle_left = self.paddle_x
+        paddle_right = self.paddle_x + self.PW
+        paddle_top = self.paddle_y
+        paddle_bottom = self.paddle_y + self.PH
+
+        # 충돌 조건 (공이 패들 위쪽에 닿았을 때)
+        hit = (paddle_left - self.BR <= ball_x <= paddle_right + self.BR) and \
+              (paddle_top - self.BR <= ball_y <= paddle_bottom)
+
+        if hit:
+            # 충돌 시 반사각 계산
+            paddle_center = self.paddle_x + self.PW / 2
+            offset = (ball_x - paddle_center) / (self.PW / 2)
+            max_bounce_angle = np.radians(60)
+            angle = offset * max_bounce_angle
+
+            # 속도 크기 유지 + 반사각 적용
+            speed = max(3.5, np.linalg.norm(self.ball_vel))
+            self.ball_vel[0] = speed * np.sin(angle)
+            self.ball_vel[1] = -abs(speed * np.cos(angle))  # 반드시 위로 튕김
+
+            reward = 1
+            self.score += 1
+
+        # 바닥에 떨어진 경우 → 게임 종료 + 보상 -1
+        if self.ball_pos[1] >= self.H:
+            reward = -1
+            self.done = True
+
+        return self._get_state(), reward, self.done, {}
 
 
+
+# 수동 조작 모드 (← / → 키로 플레이 가능)
+if __name__ == "__main__":
+    env = PaddleEnv()
+    state = env.reset()
+
+    pygame.init()
+    screen = pygame.display.set_mode((env.W, env.H))
+    pygame.display.set_caption("Paddle Game - Manual Play")
+    clock = pygame.time.Clock()
+    font = pygame.font.SysFont(None, 24)
+
+    running = True
+    while running:
+        clock.tick(env.FPS)
+        for e in pygame.event.get():
+            if e.type == pygame.QUIT:
+                running = False
+
+        # 키보드 입력 처리
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT]:
+            action = 0
+        elif keys[pygame.K_RIGHT]:
+            action = 2
+        else:
+            action = 1
+
+        state, reward, done, _ = env.step(action)
+
+        # 화면 그리기
+        screen.fill((0, 0, 0))
+        pygame.draw.circle(screen, (255, 255, 255), env.ball_pos.astype(int), env.BR)
+        pygame.draw.rect(screen, (255, 255, 255),
+                         (int(env.paddle_x), env.paddle_y, env.PW, env.PH))
+        screen.blit(font.render(f"Score: {env.score}", True, (255, 255, 255)), (10, 10))
+        pygame.display.flip()
+
+        if done:
+            print(f"Game Over | Final Score: {env.score}")
+            pygame.time.wait(2000)
+            running = False
+
+    pygame.quit()
+
+```
+
+### reset() 함수 구성
+환경을 초기화하고, 학습 에피소드의 시작 상태를 반환하는 함수이다.
+
+`공 초기 위치 설정` = [공의 x좌표는 화면 너비 범위 내에서 무작위로 설정되고, y좌표는 항상 화면 상단에서 시작함]
+
+`공 초기 속도 설정` = [-30도에서 +30도 사이의 랜덤 각도로 초기 속도를 설정하며, 공은 항상 아래 방향으로 움직이도록 함]
+
+`패들 초기 위치 설정` = [패들은 항상 화면 하단 중앙에 위치하도록 초기화됨]
+
+`게임 상태 초기화` = [점수(score)는 0으로, 게임 종료 상태(done)는 False로 초기화됨]
+
+`초기 상태 반환` = [현재 공과 패들의 상태를 벡터 형태로 정리해 반환함 → `State` 형식]
+
+---
+
+### step(action) 함수 구성
+함수는 에이전트가 선택한 행동에 따라
+환경을 한 스텝 앞으로 진행시키고,
+공과 패들의 물리적 움직임을 계산하며,
+그에 따른 보상과 게임 종료 여부를 판단해준다.
+
+`패들 이동 처리` = [입력된 행동(action)에 따라 패들을 왼쪽 또는 오른쪽으로 이동시키고, 화면 경계를 넘지 않도록 제한함]
+
+`공 위치 갱신` = [현재 공의 속도 벡터에 따라 공의 위치를 업데이트함]
+
+`벽 충돌 처리` = [공이 좌우 벽에 닿으면 x축 속도를 반전시키고, y속도가 너무 작을 경우에는 낑김 방지를 위해 보정함]
+
+`천장 충돌 처리` = [공이 화면의 상단(천장)에 닿으면 y축 속도를 반전시킴]
+
+`패들 충돌 처리` = [공이 패들에 닿으면 반사각을 계산하여 위쪽으로 튀기고, 보상 +1을 부여하며 점수를 1점 증가시킴]
+
+`바닥 충돌 처리` = [공이 바닥에 닿으면 게임이 종료되고, 보상 -1이 부여되며 done = True로 설정됨]
+
+`결과 반환` = [다음 상태(State), 보상(Reward), 종료 여부(Done), 추가 정보({})를 함께 반환함]
+
+---
+
+
+이제 환경 구성을 끝냈으니 DQN을 구현해보자. 먼저 학습에 사용할 하이퍼 파라미터를 설정해보자. 
+
+### 1. 하이퍼파라미터 설정
+
+```python
+# ----- 하이퍼 파라미터 -----
+EPISODES = 500
+GAMMA = 0.99
+LR = 1e-3
+BATCH_SIZE = 64
+MEM_CAPACITY = 20000
+EPS_START = 1.0
+EPS_END = 0.05
+EPS_DECAY = 0.995
+TARGET_UPDATE = 10
+```
+
+**EPISODES** = [전체 학습 에피소드 수, 총 몇 번 게임을 플레이하며 학습할지 설정함]
+
+**GAMMA** = [보상 할인율, 미래 보상의 중요도를 결정함 (0에 가까울수록 즉시 보상 중시)]
+
+**LR** = [학습률, 가중치 업데이트 속도를 조절함]
+
+**BATCH_SIZE** = [Q-네트워크를 학습할 때 사용하는 미니배치 크기]
+
+**MEM_CAPACITY** = [리플레이 버퍼에 저장할 수 있는 최대 transition 수]
+
+**EPS_START** / **EPS_END** / **EPS_DECAY** = [ε-greedy 탐험 전략의 시작값, 최소값, 감소율]
+
+**TARGET_UPDATE** = [타겟 네트워크를 몇 에피소드마다 policy_net으로부터 동기화할지 설정]
+
+
+---
+
+### 2. Q-네트워크 정의
+
+```python
+# ----- Q-네트워크 정의 -----
+
+
+class QNet(nn.Module):
+    def __init__(self, in_dim, out_dim):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(in_dim, 128), nn.ReLU(),
+            nn.Linear(128, 64),     nn.ReLU(),
+            nn.Linear(64, out_dim)
+        )
+
+    def forward(self, x): return self.net(x)
+
+```
+
+-------------------
+
+**입력 (state)** = [공의 위치/속도, 패들 위치 등 총 5차원]
+
+**출력 (Q값)** = [각 행동(왼쪽, 정지, 오른쪽)에 대한 Q값 (3차원)]
+
+**구조** = [2개의 은닉층 (128→64) + ReLU 활성화 → 출력층]
+
+**역할** = [상태를 받아 각 행동의 가치를 예측하는 함수 근사기 역할]
+
+### 3. 리플레이 버퍼 구성
+
+```python
+# ----- 리플레이 버퍼 -----
+Transition = collections.namedtuple(
+    'Transition', ['s', 'a', 'r', 'ns', 'done'])
+
+
+class ReplayBuffer:
+    def __init__(self, cap): self.buffer = collections.deque(maxlen=cap)
+    def push(self, *args):   self.buffer.append(Transition(*args))
+    def sample(self, bsize): return random.sample(self.buffer, bsize)
+    def __len__(self): return len(self.buffer)
+
+```
+----------------------
+강화학습에서 에이전트는 환경과 상호작용하며 상태(state), 행동(action), 보상(reward), 다음 상태(next state)를 반복적으로 경험하게 된다. 이런 경험을 매 timestep마다 바로바로 사용해서 학습에 반영하는 방식도 있지만, 이렇게 하면 학습이 매우 불안정해질 수 있다. 그 이유는 에이전트가 얻는 경험들이 서로 강하게 연관된 순차적인 데이터들이기 때문이다. 예를 들어 공이 튀고 패들이 움직이는 연속된 장면들에서는 비슷한 상태가 반복되기 때문에, 이걸 그대로 학습하면 모델이 특정 상황에만 과적합되기 쉽다.
+
+이런 문제를 해결하기 위해 사용되는 게 바로 리플레이 버퍼다. 리플레이 버퍼는 과거의 경험들을 저장해두고, 학습할 때마다 그 중에서 무작위로 일부를 샘플링해서 사용하는 방식이다. 이 방식의 핵심은 학습에 사용되는 데이터들이 무작위화(i.i.d. 가정) 되도록 만드는 데에 있다. 그렇게 하면 데이터 간의 상관성을 줄일 수 있고, 딥러닝 모델이 안정적으로 학습될 수 있다.
+
+또한 리플레이 버퍼는 과거의 경험을 재활용할 수 있다는 점에서도 효율적이다. 한 번의 에피소드에서 수집한 데이터가 바로 사라지지 않고, 여러 번 샘플링되어 Q값 갱신에 활용되기 때문에 학습 효율도 올라간다. 특히 보상이 드물게 발생하는 환경에서는 유용한 경험이 저장되어 있다면, 그걸 반복해서 학습에 사용할 수 있어서 훨씬 빠르게 학습이 진행된다.
+
+결국 리플레이 버퍼는 DQN에서 가장 핵심적인 안정화 기법 중 하나로, 데이터 분포를 균일하게 만들고, 학습을 효과적으로 일반화시킬 수 있도록 도와주는 중요한 구성요소다.
+
+**Transition** = [하나의 경험을 (s, a, r, s′, done) 튜플로 저장함]
+
+**ReplayBuffer** = [deque로 구현된 고정 크기 큐 구조]
+
+**역할** = [경험을 모아 무작위로 샘플링하여 i.i.d. 샘플로 학습 가능하게 함]
+
+**이론적 효과** = [샘플 효율성 향상 + 학습 안정화 (non-correlated 샘플)]
+
+
+### 4. 주요 초기화 구성
+
+```python
+if __name__ == "__main__":
+    env = PaddleEnv()
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    policy_net = QNet(env.state_dim, env.action_space).to(device)
+    target_net = QNet(env.state_dim, env.action_space).to(device)
+    target_net.load_state_dict(policy_net.state_dict())
+    optimizer = optim.Adam(policy_net.parameters(), lr=LR)
+    memory = ReplayBuffer(MEM_CAPACITY)
+
+    eps = EPS_START
+    rewards_log = []
+```
+
+---------------------
+
+강화학습 학습 루프가 시작되기 전에, 에이전트가 학습할 수 있도록 여러 구성요소들을 먼저 초기화해야한다. 
+
+먼저 PaddleEnv()를 통해 환경을 생성하고, 학습에 사용할 Q-network를 두 개 만든다.
+하나는 실제 행동을 선택할 때 사용되는 policy_net이고,
+다른 하나는 target Q값을 계산할 때 사용되는 target_net이다.
+
+초기에는 두 네트워크의 가중치가 동일하게 설정되며, 이후 학습이 진행되면 policy_net만 학습되고,
+target_net은 일정 주기마다 policy_net의 가중치를 복사받게 된다.
+이렇게 함으로써 Q-learning에서 발생할 수 있는 불안정한 학습 문제를 완화하고,
+TD 타깃의 분산을 줄여 안정적인 학습을 가능하게 한다.
+
+또한, policy_net의 파라미터를 업데이트하기 위한 옵티마이저로는 Adam을 사용하며,
+경험을 저장하고 샘플링하기 위한 ReplayBuffer도 함께 초기화된다.
+탐험-활용 균형을 조절하는 ε(엡실론)도 초기값으로 설정하고,
+에피소드별 총 보상을 기록할 rewards_log도 빈 리스트로 준비해둔다.
+
+
+**env** = [에이전트가 상호작용할 강화학습 환경 객체 (PaddleEnv)]
+
+**policy_net** = [현재 정책을 기반으로 행동을 선택하는 Q-network]
+
+**target_net** = [TD 타깃을 안정적으로 계산하기 위한 Q-network (policy_net의 복사본)]
+
+**target_net.copy()** = [일정 주기마다 policy_net의 가중치를 복사하여 안정성 확보]
+
+**optimizer** = [policy_net의 파라미터를 학습시키기 위한 옵티마이저 (Adam 사용)]
+
+**memory** = [transition들을 저장하는 경험 리플레이 버퍼]
+
+**eps** = [탐험률(ε-greedy) 초기값, 학습이 진행되면 점점 감소함]
+
+**rewards_log** = [에피소드별 누적 보상을 기록하는 리스트]
