@@ -3305,28 +3305,6 @@ $$
 
 <p>이 현상을 <strong>overestimation bias (과대 추정 편향)</strong> 이라고 부릅니다.</p>
 
-<table>
-  <thead>
-    <tr>
-      <th>항목</th>
-      <th>기존 DQN</th>
-      <th>Double DQN</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>행동 선택과 평가</td>
-      <td>같은 Q로 선택하고 평가함 → 과장됨</td>
-      <td>선택은 online Q, 평가는 target Q로 나눔</td>
-    </tr>
-    <tr>
-      <td>결과</td>
-      <td>너무 높게 Q값을 믿음 (overestimate)</td>
-      <td>더 정확한 Q값 예측</td>
-    </tr>
-  </tbody>
-</table>
-
 <h3 id="prioritized-experience-replay-per">Prioritized Experience Replay (PER)</h3>
 
 <h4 id="1-개념-요약">1. 개념 요약</h4>
@@ -3402,47 +3380,6 @@ $$
   <li>학습 후 TD-error를 다시 계산하여 priority를 갱신한다.</li>
   <li>Importance Sampling weight를 통해 편향을 보정한다.</li>
 </ol>
-
-<hr />
-
-<h4 id="7-일반-experience-replay와-비교">7. 일반 Experience Replay와 비교</h4>
-
-<table>
-  <thead>
-    <tr>
-      <th>항목</th>
-      <th>일반 Experience Replay</th>
-      <th>Prioritized Experience Replay</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>샘플링 방식</td>
-      <td>균등 무작위</td>
-      <td>TD-error 기반 확률적 샘플링</td>
-    </tr>
-    <tr>
-      <td>중요한 경험에 대한 처리</td>
-      <td>모두 동일하게 취급</td>
-      <td>TD-error 큰 경험을 자주 학습</td>
-    </tr>
-    <tr>
-      <td>샘플 효율성</td>
-      <td>낮을 수 있음</td>
-      <td>높음</td>
-    </tr>
-    <tr>
-      <td>학습 수렴 속도</td>
-      <td>느릴 수 있음</td>
-      <td>빠르게 수렴 가능</td>
-    </tr>
-    <tr>
-      <td>단점</td>
-      <td>단순하지만 비효율적</td>
-      <td>구현 복잡, importance sampling 보정 필요</td>
-    </tr>
-  </tbody>
-</table>
 
 <hr />
 
@@ -3544,42 +3481,6 @@ $$
 \(A(s, \text{사이다}) = 0.0\)<br />
 \(A(s, \text{커피}) = -0.1\)</li>
 </ul>
-
-<hr />
-
-<h4 id="기존-dqn-vs-듀얼링-dqn-비교">기존 DQN vs 듀얼링 DQN 비교</h4>
-
-<table>
-  <thead>
-    <tr>
-      <th>항목</th>
-      <th>기존 DQN</th>
-      <th>듀얼링 DQN</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Q값 계산 방식</td>
-      <td>\(Q(s, a)\) 직접 예측</td>
-      <td>\(Q(s, a) = V(s) + (A(s, a) - \text{mean}(A))\)</td>
-    </tr>
-    <tr>
-      <td>상태 가치 고려</td>
-      <td>X</td>
-      <td>O</td>
-    </tr>
-    <tr>
-      <td>행동 간 차이 반영</td>
-      <td>모든 Q에 포함됨</td>
-      <td>A(s, a)에만 반영됨</td>
-    </tr>
-    <tr>
-      <td>예시 해석</td>
-      <td>“콜라 Q=8.2, 사이다 Q=8.1 등”</td>
-      <td>“상태가 8.0이고, 콜라는 +0.1, 사이다는 0.0, 커피는 -0.1”</td>
-    </tr>
-  </tbody>
-</table>
 
 <hr />
 
