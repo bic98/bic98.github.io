@@ -11,6 +11,7 @@ class PaddleEnv:
         self.paddle_y = self.H - self.PH
         self.action_space = 3
         self.state_dim = 5
+        self.score_limit = 300
         self.reset()
 
     def reset(self):
@@ -95,6 +96,11 @@ class PaddleEnv:
             reward = -1
             self.done = True
 
+        # 점수 제한 도달 시 자동 종료
+        if self.score >= self.score_limit:
+            reward = 0
+            self.done = True
+
         return self._get_state(), reward, self.done, {}
 
     def render(self, wait_after_done=1000):
@@ -130,47 +136,3 @@ class PaddleEnv:
                 running = False
 
         pygame.quit()
-
-
-if __name__ == "__main__":
-    env = PaddleEnv()
-    state = env.reset()
-
-    pygame.init()
-    screen = pygame.display.set_mode((env.W, env.H))
-    pygame.display.set_caption("Paddle Game - Manual Play")
-    clock = pygame.time.Clock()
-    font = pygame.font.SysFont(None, 24)
-
-    running = True
-    while running:
-        clock.tick(env.FPS)
-        for e in pygame.event.get():
-            if e.type == pygame.QUIT:
-                running = False
-
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]:
-            action = 0
-        elif keys[pygame.K_RIGHT]:
-            action = 2
-        else:
-            action = 1
-
-        state, reward, done, _ = env.step(action)
-
-        screen.fill((0, 0, 0))
-        pygame.draw.circle(screen, (255, 255, 255),
-                           env.ball_pos.astype(int), env.BR)
-        pygame.draw.rect(screen, (255, 255, 255),
-                         (int(env.paddle_x), env.paddle_y, env.PW, env.PH))
-        screen.blit(font.render(
-            f"Score: {env.score}", True, (255, 255, 255)), (10, 10))
-        pygame.display.flip()
-
-        if done:
-            print(f"Game Over | Final Score: {env.score}")
-            pygame.time.wait(2000)
-            running = False
-
-    pygame.quit()

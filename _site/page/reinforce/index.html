@@ -4252,6 +4252,364 @@ target_net이 부정확하거나 잡음(noise)이 포함된 상태라면 잘못�
 <p>결과적으로 Double DQN은 Q값이 noise에 의해 부풀려진 경우에도 안정적인 평가를 통해 학습을 수행하게 되어,<br />
 기본 DQN보다 더 보수적이고 안정적인 학습이 가능하며, 과대추정 문제를 효과적으로 완화할 수 있다.</p>
 
+<h2 id="lstm과-r2d2구조">LSTM과 R2D2구조</h2>
+
+<h3 id="lstm이란">LSTM이란?</h3>
+
+<p><strong>LSTM(Long Short-Term Memory)</strong>은 기존 순환신경망(RNN)의 단점을 보완한 구조이다.
+일반적인 RNN은 데이터를 순서대로 처리하면서 과거 정보를 다음 단계로 전달하는 구조이지만,
+시간이 길어질수록 오래된 정보를 잊어버리는 경향이 강해지며, 이로 인해 학습이 불안정해지는 문제가 발생한다.
+이를 <strong>장기 의존성 문제(long-term dependency)</strong>라고 한다.</p>
+
+<p>LSTM은 이러한 문제를 해결하기 위해 내부에 <strong>기억 셀(cell state)</strong>과 게이트(gate) 구조를 도입하였다.
+게이트는 입력 게이트, 망각 게이트, 출력 게이트로 구성되며, 각각의 게이트는 현재 입력과 이전 정보를 바탕으로
+어떤 정보를 기억할지, 어떤 정보를 잊을지, 어떤 정보를 출력할지를 조절한다.
+이러한 구조 덕분에 LSTM은 긴 문맥 정보가 필요한 문제에서도 안정적인 학습이 가능하다.</p>
+
+<p>예를 들어, 공이 어디에서 튀어나와 적이 어떻게 움직이는지를 판단해야 하는 게임에서는
+한 순간의 화면 정보만 가지고 행동을 정하기 어렵다.
+이때 LSTM을 사용하면, 과거의 움직임을 기억하면서 현재의 상황을 해석하고, 더 나은 행동을 선택할 수 있다.</p>
+
+<div align="center">
+  <img src="https://cdn.dida.do/new-project-3-1-1024x607-1024x585.webp" alt="bandit" width="100%" />
+</div>
+
+<p>과거의 정보를 얼마나 유지할지,<br />
+새로운 정보를 얼마나 받아들일지,<br />
+최종적으로 어떤 정보를 출력할지를 결정하는 게이트 기반 메커니즘이다.</p>
+
+<h4 id="-1-입력-구성">🟢 1. 입력 구성</h4>
+<ul>
+  <li>\(x_t\): 현재 시점의 입력 (예: 현재 관찰)</li>
+  <li>\(h_{t-1}\): 이전 시점의 출력 (hidden state)</li>
+  <li>\(C_{t-1}\): 이전 시점의 셀 상태 (cell state)
+→ 이 세 가지가 모두 LSTM 셀 내부 계산에 사용된다.</li>
+</ul>
+
+<hr />
+
+<h4 id="-2-forget-gate-잊을-정보-결정">🔵 2. Forget Gate (잊을 정보 결정)</h4>
+
+<ul>
+  <li>
+    <p>계산식:<br />
+\(f_t = \sigma(W_f \cdot [h_{t-1}, x_t] + b_f)\)</p>
+  </li>
+  <li>
+    <p>역할:<br />
+과거 기억 \(C_{t-1}\) 에서 얼마나 지울지를 결정한다.</p>
+  </li>
+  <li>
+    <p>해석:<br />
+\(\\sigma\) 를 거쳐 곱셈(×)을 하게 되면,<br />
+값이 0에 가까우면 기억을 지우고, 1에 가까우면 유지한다는 뜻이다.</p>
+  </li>
+</ul>
+
+<hr />
+
+<h4 id="-3-input-gate--후보-기억-생성">🟡 3. Input Gate + 후보 기억 생성</h4>
+
+<ul>
+  <li>
+    <p>입력 게이트:<br />
+\(i_t = \sigma(W_i \cdot [h_{t-1}, x_t] + b_i)\)</p>
+  </li>
+  <li>
+    <p>후보 셀 상태 생성:<br />
+\(\tilde{C}_t = \tanh(W_c \cdot [h_{t-1}, x_t] + b_c)\)</p>
+  </li>
+  <li>
+    <p>해석:<br />
+이 둘을 곱해서 현재 시점에 얼마나 새로운 정보를 저장할지를 결정한다.</p>
+  </li>
+</ul>
+
+<hr />
+
+<h4 id="-4-셀-상태-업데이트">🟠 4. 셀 상태 업데이트</h4>
+
+<ul>
+  <li>
+    <p>업데이트 식:<br />
+\(C_t = f_t \cdot C_{t-1} + i_t \cdot \tilde{C}_t\)</p>
+  </li>
+  <li>
+    <p>해석:<br />
+과거 기억 중 일부는 잊고 (forget),<br />
+새로운 정보를 일부 받아들여서 (input),<br />
+새로운 셀 상태 \(C_t\) 를 만든다.</p>
+  </li>
+</ul>
+
+<hr />
+
+<h4 id="-5-output-gate-출력-결정">🔴 5. Output Gate (출력 결정)</h4>
+
+<ul>
+  <li>
+    <p>출력 게이트:<br />
+\(o_t = \sigma(W_o \cdot [h_{t-1}, x_t] + b_o)\)</p>
+  </li>
+  <li>
+    <p>최종 출력(hidden state):<br />
+\(h_t = o_t \cdot \tanh(C_t)\)</p>
+  </li>
+  <li>
+    <p>해석:<br />
+셀 상태를 전체 그대로 내보내는 것이 아니라,<br />
+output gate를 통해 출력할 정보의 양을 조절한다.</p>
+  </li>
+</ul>
+
+<h3 id="r2d2란-무엇인가">R2D2란 무엇인가?</h3>
+
+<p><strong>R2D2</strong> 는 DeepMind에서 제안한 강화학습 알고리즘으로, 기존의 DQN(Deep Q-Network)에 LSTM을 결합하고, 이를 경험 재생(replay) 과 분산 학습 구조와 함께 사용하는 방식이다.</p>
+
+<p>이 알고리즘의 핵심은 <strong>“기억”</strong> 과 <strong>“순차성”</strong> 을 다루는 데 있다.
+기존 DQN은 하나의 상태만을 보고 즉각적인 행동을 결정하기 때문에, 환경의 시간적 맥락(과거 정보)을 반영하는 데 한계가 있다.</p>
+
+<p>예를 들어, 앞에서 어떤 행동을 했는지를 고려하지 않고 단순히 현재 상태만 보고 판단한다면, 시계열 환경에서는 중요한 전략을 놓치기 쉽다.</p>
+
+<p>이 문제를 해결하기 위해 R2D2는 <strong>순환 신경망(LSTM)</strong>을 Q-network 내부에 통합한다.
+LSTM은 과거의 정보를 hidden state로 전달받아, 현재 입력과 함께 처리하기 때문에 시간 흐름에 따른 정보의 연속성을 유지할 수 있다.</p>
+
+<h4 id="1-lstm-기반-q-network">1. LSTM 기반 Q-Network</h4>
+
+<p>기본 DQN은 여러 개의 fully connected layer를 이용하지만, R2D2는 중간에 LSTM을 삽입한다.<br />
+이렇게 하면 에이전트는 과거 관찰과 행동의 연속 흐름을 기반으로 Q값을 추론할 수 있다.<br />
+예를 들어, 공이 어디로 튀었는지, 상대가 직전에 어떤 행동을 했는지를 LSTM이 기억하고, 그걸 바탕으로 지금 어떤 행동을 할지 판단한다.</p>
+
+<hr />
+
+<h4 id="2-recurrent-replay-buffer">2. Recurrent Replay Buffer</h4>
+
+<p>기존 DQN은 transition 단위로 (s, a, r, s’, done) 데이터를 저장하지만,<br />
+R2D2는 전체 시퀀스 또는 고정 길이의 연속된 transition 묶음을 저장한다.<br />
+이유는 LSTM이 이전 hidden state를 유지해야 의미 있는 출력을 내기 때문이다.</p>
+
+<hr />
+
+<h4 id="3-burn-in-단계">3. Burn-in 단계</h4>
+
+<p>LSTM의 학습에는 한 가지 어려움이 있는데, 바로 학습 중간에 임의의 시점에서 시작하면 그 시점의 hidden state가 없다는 것이다.<br />
+이 문제를 해결하기 위해, R2D2는 학습할 때 시퀀스의 앞부분을 <strong>“burn-in 구간”</strong>으로 지정하고,<br />
+이 구간을 실제로 학습하지 않고, 오직 hidden state를 복원하는 용도로만 사용한다.</p>
+
+<p>예를 들어, 전체 시퀀스가 20 timestep이라고 가정하자.<br />
+이 중 0~5 timestep은 LSTM의 상태를 다시 재현하는 데 사용되고,<br />
+6~19 timestep부터는 실제로 loss를 계산하며 Q-learning 업데이트를 진행한다.<br />
+이렇게 하면 LSTM은 마치 실제 에피소드의 흐름을 계속 이어나가는 것처럼 상태를 유지할 수 있다.</p>
+
+<hr />
+
+<h4 id="4-n-step-q-learning">4. n-step Q-learning</h4>
+
+<p>R2D2는 일반적인 Q-learning이 아닌 n-step TD target을 사용한다.<br />
+즉, 바로 다음 시점의 보상이 아니라, 일정 시간 뒤까지의 누적 보상을 이용해 타깃을 계산한다.<br />
+이 방식은 시간적으로 더 먼 결과까지 고려하는 데 효과적이다.</p>
+
+<hr />
+
+<h4 id="5-prioritized-replay--importance-sampling">5. Prioritized Replay + Importance Sampling</h4>
+
+<p>중요한 시퀀스(예: TD-error가 큰 것)를 우선 샘플링하고,<br />
+그에 따른 보정 계수로 가중치를 조절하는 기법도 함께 사용된다.</p>
+
+<hr />
+
+<h4 id="6-분산-강화학습-구조-distributed-learning">6. 분산 강화학습 구조 (Distributed Learning)</h4>
+
+<p>R2D2는 단일 에이전트가 환경을 탐험하고 학습하는 구조가 아니다.<br />
+대신, <strong>여러 개의 actor(에이전트)</strong>가 병렬로 환경을 플레이하며 데이터를 수집하고,<br />
+<strong>하나의 중앙 learner(학습기)</strong>가 이 데이터를 기반으로 학습한다.</p>
+
+<p>이 구조의 장점은 다음과 같다:</p>
+<ul>
+  <li>학습 데이터가 다양해진다 (탐험이 풍부함)</li>
+  <li>학습 속도가 매우 빨라진다 (병렬 처리)</li>
+  <li>다양한 정책(epsilon 차이 등)을 동시에 실험할 수 있다</li>
+</ul>
+
+<hr />
+
+<h4 id="예시-패들-게임에서의-r2d2-적용">예시: 패들 게임에서의 R2D2 적용</h4>
+
+<p>패들 게임에서 공이 계속 움직이고, 상대방도 계속 반응하기 때문에,<br />
+에이전트는 과거에 공이 튀었던 방향, 이전에 자신의 패들이 어떤 위치에 있었는지를 기억할 수 있어야 한다.<br />
+이런 정보를 단기적인 관찰만으로 판단하기는 어렵다.<br />
+R2D2는 LSTM을 통해 이런 정보를 시간 순서대로 쌓아두고,<br />
+현재의 상황을 이해할 때 이 기억들을 함께 고려해서 전략적인 움직임을 선택하게 만든다.<br />
+예를 들어, “지금은 왼쪽으로 움직이는 게 좋겠어. 왜냐하면 3타임 전부터 공이 점점 왼쪽으로 오고 있었거든.”<br />
+이런 추론이 가능한 것이다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">random</span>
+<span class="kn">import</span> <span class="n">collections</span>
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="n">torch</span>
+<span class="kn">import</span> <span class="n">torch.nn</span> <span class="k">as</span> <span class="n">nn</span>
+<span class="kn">import</span> <span class="n">torch.optim</span> <span class="k">as</span> <span class="n">optim</span>
+<span class="kn">from</span> <span class="n">paddle_env</span> <span class="kn">import</span> <span class="n">PaddleEnv</span>
+
+<span class="c1"># ----- 하이퍼 파라미터 -----
+</span><span class="n">EPISODES</span> <span class="o">=</span> <span class="mi">1100</span>
+<span class="n">GAMMA</span> <span class="o">=</span> <span class="mf">0.99</span>
+<span class="n">LR</span> <span class="o">=</span> <span class="mf">1e-3</span>
+<span class="n">BATCH_SIZE</span> <span class="o">=</span> <span class="mi">16</span>
+<span class="n">MEM_CAPACITY</span> <span class="o">=</span> <span class="mi">2000</span>
+<span class="n">EPS_START</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="n">EPS_END</span> <span class="o">=</span> <span class="mf">0.05</span>
+<span class="n">EPS_DECAY</span> <span class="o">=</span> <span class="mf">0.98</span>
+<span class="n">TARGET_UPDATE</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">HIDDEN_DIM</span> <span class="o">=</span> <span class="mi">128</span>
+<span class="n">BURN_IN</span> <span class="o">=</span> <span class="mi">5</span>  <span class="c1"># 초기 hidden state 복원용
+</span>
+<span class="c1"># -------------------------------------------------------------
+# [1] LSTM 기반 Q-Network 구현
+# 기존 DQN은 단순한 MLP를 사용하지만, R2D2는 과거 정보를 기억하기 위해 LSTM을 사용한다.
+# 이 LSTM은 과거 timestep으로부터 받은 hidden state를 유지하며 현재 Q값을 예측한다.
+# -------------------------------------------------------------
+</span><span class="k">class</span> <span class="nc">R2D2Net</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">in_dim</span><span class="p">,</span> <span class="n">out_dim</span><span class="p">):</span>
+        <span class="nf">super</span><span class="p">().</span><span class="nf">__init__</span><span class="p">()</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">fc1</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Linear</span><span class="p">(</span><span class="n">in_dim</span><span class="p">,</span> <span class="n">HIDDEN_DIM</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">lstm</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">LSTM</span><span class="p">(</span><span class="n">HIDDEN_DIM</span><span class="p">,</span> <span class="n">HIDDEN_DIM</span><span class="p">,</span> <span class="n">batch_first</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">out</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Linear</span><span class="p">(</span><span class="n">HIDDEN_DIM</span><span class="p">,</span> <span class="n">out_dim</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">hidden</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">relu</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="nf">fc1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>              <span class="c1"># [B, T, D] -&gt; [B, T, H]
+</span>        <span class="n">x</span><span class="p">,</span> <span class="n">hidden</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="nf">lstm</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">hidden</span><span class="p">)</span>         <span class="c1"># [B, T, H]
+</span>        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="nf">out</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">hidden</span>               <span class="c1"># Q-values: [B, T, A]
+</span>
+<span class="c1"># -------------------------------------------------------------
+# [2] Recurrent Replay Buffer 구현
+# 일반 DQN은 단일 transition을 저장하지만, R2D2는 LSTM의 문맥 유지 특성 때문에 전체 시퀀스를 저장한다.
+# 이를 위해 에피소드 단위로 buffer에 저장한다.
+# -------------------------------------------------------------
+</span><span class="k">class</span> <span class="nc">RecurrentReplayBuffer</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">capacity</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="nb">buffer</span> <span class="o">=</span> <span class="n">collections</span><span class="p">.</span><span class="nf">deque</span><span class="p">(</span><span class="n">maxlen</span><span class="o">=</span><span class="n">capacity</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">push</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">episode</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="nb">buffer</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">episode</span><span class="p">)</span>  <span class="c1"># 시퀀스 단위 저장
+</span>
+    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">bsize</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">random</span><span class="p">.</span><span class="nf">sample</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="nb">buffer</span><span class="p">,</span> <span class="n">bsize</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nf">len</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="nb">buffer</span><span class="p">)</span>
+
+<span class="c1"># ----- 학습 루프 시작 -----
+</span><span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="sh">"</span><span class="s">__main__</span><span class="sh">"</span><span class="p">:</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="nc">PaddleEnv</span><span class="p">()</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">device</span><span class="p">(</span><span class="sh">'</span><span class="s">cuda</span><span class="sh">'</span> <span class="k">if</span> <span class="n">torch</span><span class="p">.</span><span class="n">cuda</span><span class="p">.</span><span class="nf">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="sh">'</span><span class="s">cpu</span><span class="sh">'</span><span class="p">)</span>
+    <span class="n">policy_net</span> <span class="o">=</span> <span class="nc">R2D2Net</span><span class="p">(</span><span class="n">env</span><span class="p">.</span><span class="n">state_dim</span><span class="p">,</span> <span class="n">env</span><span class="p">.</span><span class="n">action_space</span><span class="p">).</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">target_net</span> <span class="o">=</span> <span class="nc">R2D2Net</span><span class="p">(</span><span class="n">env</span><span class="p">.</span><span class="n">state_dim</span><span class="p">,</span> <span class="n">env</span><span class="p">.</span><span class="n">action_space</span><span class="p">).</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">target_net</span><span class="p">.</span><span class="nf">load_state_dict</span><span class="p">(</span><span class="n">policy_net</span><span class="p">.</span><span class="nf">state_dict</span><span class="p">())</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="p">.</span><span class="nc">Adam</span><span class="p">(</span><span class="n">policy_net</span><span class="p">.</span><span class="nf">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">LR</span><span class="p">)</span>
+    <span class="n">memory</span> <span class="o">=</span> <span class="nc">RecurrentReplayBuffer</span><span class="p">(</span><span class="n">MEM_CAPACITY</span><span class="p">)</span>
+
+    <span class="n">eps</span> <span class="o">=</span> <span class="n">EPS_START</span>
+    <span class="n">rewards_log</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># ---------------------------------------------------------
+</span>    <span class="c1"># [3] 행동 선택 함수 (epsilon-greedy + LSTM hidden 유지)
+</span>    <span class="c1"># 에이전트는 epsilon 확률로 무작위 선택을 하며, 그 외에는
+</span>    <span class="c1"># LSTM 기반 Q-network의 출력을 사용해 최적 행동을 선택한다.
+</span>    <span class="c1"># ---------------------------------------------------------
+</span>    <span class="k">def</span> <span class="nf">choose_action</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">hidden</span><span class="p">,</span> <span class="n">eps</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">random</span><span class="p">.</span><span class="nf">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">eps</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">random</span><span class="p">.</span><span class="nf">randrange</span><span class="p">(</span><span class="n">env</span><span class="p">.</span><span class="n">action_space</span><span class="p">),</span> <span class="n">hidden</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="p">.</span><span class="nf">no_grad</span><span class="p">():</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nc">FloatTensor</span><span class="p">(</span><span class="n">state</span><span class="p">).</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">).</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">).</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>  <span class="c1"># [1, 1, D]
+</span>            <span class="n">q</span><span class="p">,</span> <span class="n">hidden</span> <span class="o">=</span> <span class="nf">policy_net</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">hidden</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">q</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">].</span><span class="nf">argmax</span><span class="p">().</span><span class="nf">item</span><span class="p">(),</span> <span class="n">hidden</span>
+
+    <span class="c1"># ---------------------------------------------------------
+</span>    <span class="c1"># [4] 학습 함수 (train_step)
+</span>    <span class="c1"># 핵심 부분: burn-in을 사용하여 LSTM의 hidden state를 복원하고,
+</span>    <span class="c1"># 이후 구간에 대해 Q-learning 업데이트를 수행한다.
+</span>    <span class="c1"># 현재는 1-step Q-learning만 포함됨 (n-step 미포함)
+</span>    <span class="c1"># ---------------------------------------------------------
+</span>    <span class="k">def</span> <span class="nf">train_step</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nf">len</span><span class="p">(</span><span class="n">memory</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">BATCH_SIZE</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">batch</span> <span class="o">=</span> <span class="n">memory</span><span class="p">.</span><span class="nf">sample</span><span class="p">(</span><span class="n">BATCH_SIZE</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">episode</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">:</span>
+            <span class="n">states</span><span class="p">,</span> <span class="n">actions</span><span class="p">,</span> <span class="n">rewards</span><span class="p">,</span> <span class="n">next_states</span><span class="p">,</span> <span class="n">dones</span> <span class="o">=</span> <span class="nf">zip</span><span class="p">(</span><span class="o">*</span><span class="n">episode</span><span class="p">)</span>
+            <span class="n">T</span> <span class="o">=</span> <span class="nf">len</span><span class="p">(</span><span class="n">states</span><span class="p">)</span>
+
+            <span class="n">s</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">tensor</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">array</span><span class="p">(</span><span class="n">states</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="p">.</span><span class="n">float32</span><span class="p">).</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">).</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">ns</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">tensor</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">array</span><span class="p">(</span><span class="n">next_states</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="p">.</span><span class="n">float32</span><span class="p">).</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">).</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">tensor</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">array</span><span class="p">(</span><span class="n">actions</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="p">.</span><span class="nb">long</span><span class="p">).</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">).</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">).</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">tensor</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">array</span><span class="p">(</span><span class="n">rewards</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="p">.</span><span class="n">float32</span><span class="p">).</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">).</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">tensor</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">array</span><span class="p">(</span><span class="n">dones</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="p">.</span><span class="n">float32</span><span class="p">).</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">).</span><span class="nf">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+            <span class="n">hidden</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">if</span> <span class="n">T</span> <span class="o">&gt;</span> <span class="n">BURN_IN</span><span class="p">:</span>
+                <span class="n">_</span><span class="p">,</span> <span class="n">hidden</span> <span class="o">=</span> <span class="nf">policy_net</span><span class="p">(</span><span class="n">s</span><span class="p">[:,</span> <span class="p">:</span><span class="n">BURN_IN</span><span class="p">],</span> <span class="n">hidden</span><span class="p">)</span>  <span class="c1"># burn-in: LSTM 상태 복원만 수행
+</span>
+                <span class="n">q_s</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="nf">policy_net</span><span class="p">(</span><span class="n">s</span><span class="p">[:,</span> <span class="n">BURN_IN</span><span class="p">:],</span> <span class="n">hidden</span><span class="p">)</span>
+                <span class="n">q_s</span> <span class="o">=</span> <span class="n">q_s</span><span class="p">.</span><span class="nf">gather</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">a</span><span class="p">[:,</span> <span class="n">BURN_IN</span><span class="p">:]).</span><span class="nf">squeeze</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+                <span class="k">with</span> <span class="n">torch</span><span class="p">.</span><span class="nf">no_grad</span><span class="p">():</span>
+                    <span class="n">q_ns_policy</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="nf">policy_net</span><span class="p">(</span><span class="n">ns</span><span class="p">[:,</span> <span class="n">BURN_IN</span><span class="p">:])</span>
+                    <span class="n">best_actions</span> <span class="o">=</span> <span class="n">q_ns_policy</span><span class="p">.</span><span class="nf">argmax</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                    <span class="n">q_ns_target</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="nf">target_net</span><span class="p">(</span><span class="n">ns</span><span class="p">[:,</span> <span class="n">BURN_IN</span><span class="p">:])</span>
+                    <span class="n">q_ns</span> <span class="o">=</span> <span class="n">q_ns_target</span><span class="p">.</span><span class="nf">gather</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">best_actions</span><span class="p">).</span><span class="nf">squeeze</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+                    <span class="n">target</span> <span class="o">=</span> <span class="n">r</span><span class="p">[:,</span> <span class="n">BURN_IN</span><span class="p">:]</span> <span class="o">+</span> <span class="n">GAMMA</span> <span class="o">*</span> <span class="n">q_ns</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">d</span><span class="p">[:,</span> <span class="n">BURN_IN</span><span class="p">:])</span>  <span class="c1"># 1-step target 계산
+</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">MSELoss</span><span class="p">()(</span><span class="n">q_s</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+                <span class="n">optimizer</span><span class="p">.</span><span class="nf">zero_grad</span><span class="p">()</span>
+                <span class="n">loss</span><span class="p">.</span><span class="nf">backward</span><span class="p">()</span>
+                <span class="n">optimizer</span><span class="p">.</span><span class="nf">step</span><span class="p">()</span>
+
+    <span class="c1"># ---------------------------------------------------------
+</span>    <span class="c1"># [5] 에피소드 반복 (탐험, 학습, 버퍼 저장)
+</span>    <span class="c1"># 하나의 에피소드를 플레이하고, 시퀀스 전체를 replay buffer에 저장
+</span>    <span class="c1"># 이후 train_step()을 호출하여 Q-network 업데이트 수행
+</span>    <span class="c1"># ---------------------------------------------------------
+</span>    <span class="k">for</span> <span class="n">ep</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">EPISODES</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">env</span><span class="p">.</span><span class="nf">reset</span><span class="p">()</span>
+        <span class="n">total_r</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">episode_buffer</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">hidden</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">action</span><span class="p">,</span> <span class="n">hidden</span> <span class="o">=</span> <span class="nf">choose_action</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">hidden</span><span class="p">,</span> <span class="n">eps</span><span class="p">)</span>
+            <span class="n">next_state</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">env</span><span class="p">.</span><span class="nf">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+            <span class="n">episode_buffer</span><span class="p">.</span><span class="nf">append</span><span class="p">((</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">next_state</span><span class="p">,</span> <span class="nf">float</span><span class="p">(</span><span class="n">done</span><span class="p">)))</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="n">next_state</span>
+            <span class="n">total_r</span> <span class="o">+=</span> <span class="n">reward</span>
+            <span class="k">if</span> <span class="n">done</span><span class="p">:</span>
+                <span class="k">break</span>
+
+        <span class="n">memory</span><span class="p">.</span><span class="nf">push</span><span class="p">(</span><span class="n">episode_buffer</span><span class="p">)</span>
+        <span class="nf">train_step</span><span class="p">()</span>
+
+        <span class="n">eps</span> <span class="o">=</span> <span class="nf">max</span><span class="p">(</span><span class="n">EPS_END</span><span class="p">,</span> <span class="n">eps</span> <span class="o">*</span> <span class="n">EPS_DECAY</span><span class="p">)</span>
+        <span class="n">rewards_log</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">total_r</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">ep</span> <span class="o">%</span> <span class="n">TARGET_UPDATE</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">target_net</span><span class="p">.</span><span class="nf">load_state_dict</span><span class="p">(</span><span class="n">policy_net</span><span class="p">.</span><span class="nf">state_dict</span><span class="p">())</span>
+
+        <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">EP </span><span class="si">{</span><span class="n">ep</span><span class="si">:</span><span class="mi">4</span><span class="n">d</span><span class="si">}</span><span class="s"> | Score </span><span class="si">{</span><span class="n">env</span><span class="p">.</span><span class="n">score</span><span class="si">:</span><span class="mi">3</span><span class="n">d</span><span class="si">}</span><span class="s"> | TotalR </span><span class="si">{</span><span class="n">total_r</span><span class="si">:</span><span class="mf">5.1</span><span class="n">f</span><span class="si">}</span><span class="s"> | ε </span><span class="si">{</span><span class="n">eps</span><span class="si">:</span><span class="p">.</span><span class="mi">3</span><span class="n">f</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+
+    <span class="c1"># ---------------------------------------------------------
+</span>    <span class="c1"># [6] 모델 저장
+</span>    <span class="c1"># ---------------------------------------------------------
+</span>    <span class="n">torch</span><span class="p">.</span><span class="nf">save</span><span class="p">(</span><span class="n">policy_net</span><span class="p">.</span><span class="nf">state_dict</span><span class="p">(),</span> <span class="sh">"</span><span class="s">paddle_dqn_model.pth</span><span class="sh">"</span><span class="p">)</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">모델 저장 완료: paddle_dqn_model.pth</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>모델을 저장하여 실행해본 결과</p>
+
+<div align="center">
+  <img src="/images/lstm.gif" alt="bandit" width="60%" />
+</div>
+
+<p>학습이 아주 잘 이루어져 게임을 즐기는 ai를 확인할 수 있다.</p>
+
 						</div><!-- /.content -->
 					</div><!-- /.col -->
 					<div class="col-md-4 col-md-offset-1">
